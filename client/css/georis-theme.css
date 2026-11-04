@@ -1,0 +1,573 @@
+/**
+ * georis-theme.css
+ * Identidad Corporativa Oficial MÁXIME Salud Digital & Sistema Geoespacial GeoRIS MINSA
+ * Diseño Institucional Premium de Grado Hospitalario (Normativas WCAG 2.1 AA/AAA, ISO 9241-210)
+ *
+ * Principios:
+ * 1. Paleta institucional ejecutiva (Navy Médico Oficial #0B1E3F, Slate Neutro, acentos clínicos sobrios).
+ * 2. Cero colores chillones ni juguetescos: armonía cromática premium, seria y confiable.
+ * 3. Tipografía clínica de alta legibilidad con cifras tabulares y umbral mínimo de 12px.
+ * 4. Contraste cromático estricto WCAG AA/AAA (>= 4.5:1 en todos los textos clínicos).
+ * 5. Barra institucional ejecutiva con controles unificados y cohesivos.
+ */
+
+:root {
+  /* ==========================================================================
+     1. SISTEMA ESPACIAL MODULAR (Retícula de 8pt / 4pt)
+     ========================================================================== */
+  --space-0-5: 2px;
+  --space-1:   4px;
+  --space-1-5: 6px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+
+  /* ==========================================================================
+     2. ESCALA TIPOGRÁFICA Y FIGURAS TABULARES (Google Aesthetic)
+     ========================================================================== */
+  --font-family: "Google Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --font-xs:   0.75rem;    /* 12px - Metadata secundaria, badges compactos */
+  --font-sm:   0.8125rem;  /* 13px - Etiquetas de apoyo, campos de formulario */
+  --font-base: 0.875rem;   /* 14px - Lectura clínica regular, botones, celdas */
+  --font-md:   1rem;       /* 16px - Títulos de tarjeta, nombres de paciente */
+  --font-lg:   1.125rem;   /* 18px - Encabezados de sección y subtítulos */
+  --font-xl:   1.375rem;   /* 22px - KPIs destacados, presión arterial */
+  --font-2xl:  1.625rem;   /* 26px - Títulos de aplicación y modales */
+
+  --lh-tight:   1.25;
+  --lh-snug:    1.375;
+  --lh-normal:  1.5;
+  --lh-relaxed: 1.625;
+
+  /* ==========================================================================
+     3. OBJETIVOS TÁCTILES ACCESIBLES (Fitts's Law)
+     ========================================================================== */
+  --target-min-desktop: 36px;
+  --target-min-touch:   44px;
+
+  /* ==========================================================================
+     4. PALETA NEUTRAL COHESIVA LUMINOSA (Google Workspace & Material 3)
+     ========================================================================== */
+  --slate-50:  #F8F9FA;
+  --slate-100: #F1F3F4;
+  --slate-200: #E8EAED;
+  --slate-300: #DADCE0;
+  --slate-400: #BDC1C6;
+  --slate-500: #9AA0A6;
+  --slate-600: #80868B;
+  --slate-700: #5F6368;
+  --slate-800: #3C4043;
+  --slate-900: #202124;
+
+  --surface-ground:      #F8F9FA;
+  --surface-card:        #FFFFFF;
+  --surface-card-subtle: #F1F3F4;
+  --surface-hover:       #F8F9FA;
+  --surface-active:      #E8F0FE;
+  --surface-overlay:     rgba(32, 33, 36, 0.40);
+  --border-subtle:       #E8EAED;
+  --border-strong:       #DADCE0;
+  --border-focus:        #1A73E8;
+
+  --text-main:           #202124;
+  --text-secondary:      #5F6368;
+  --text-muted:          #80868B;
+  --text-inverse:        #FFFFFF;
+
+  /* ==========================================================================
+     5. IDENTIDAD INSTITUCIONAL AZUL GOOGLE & SALUD DIGITAL
+     ========================================================================== */
+  --google-blue:         #1A73E8;
+  --google-blue-hover:   #1765CC;
+  --google-blue-surface: #E8F0FE;
+  --google-blue-text:    #1967D2;
+
+  --maxime-navy:         #1A73E8;
+  --maxime-navy-dark:    #1765CC;
+  --maxime-navy-light:   #1967D2;
+  --maxime-blue:         #1A73E8;
+  --georis-cyan:         #1A73E8;
+  --georis-cyan-hover:   #1765CC;
+
+  /* ==========================================================================
+     6. SEMÁFORO CLÍNICO HEARTS (Google Material You Health Accents)
+     ========================================================================== */
+  /* Verde (En Meta / Controlado) */
+  --hearts-green:        #1E8E3E;
+  --hearts-green-bg:     #E6F4EA;
+  --hearts-green-border: #CEEAD6;
+  --hearts-green-text:   #137333;
+  --hearts-green-pin:    #1E8E3E;
+
+  /* Ámbar (Próximo / En Seguimiento) */
+  --hearts-yellow:       #F29900;
+  --hearts-yellow-bg:    #FEF7E0;
+  --hearts-yellow-border:#FEEFC3;
+  --hearts-yellow-text:  #B06000;
+  --hearts-yellow-pin:   #F29900;
+
+  /* Rojo (Deserción / Cita Vencida) */
+  --hearts-red:          #D93025;
+  --hearts-red-bg:       #FCE8E6;
+  --hearts-red-border:   #FAD2CF;
+  --hearts-red-text:     #C5221F;
+  --hearts-red-pin:      #D93025;
+
+  /* Púrpura (Brecha HOSIX / Paciente sin Empadronar) */
+  --hearts-purple:       #9334E6;
+  --hearts-purple-bg:    #F3E8FD;
+  --hearts-purple-border:#E9D2FD;
+  --hearts-purple-text:  #8430CE;
+  --hearts-purple-pin:   #9334E6;
+
+  /* Neutro (Sin Cita / Fallecido) */
+  --hearts-gray:         #5F6368;
+  --hearts-gray-bg:      #F1F3F4;
+  --hearts-gray-border:  #DADCE0;
+  --hearts-gray-text:    #3C4043;
+  --hearts-gray-pin:     #5F6368;
+
+  /* ==========================================================================
+     7. ELEVACIONES Y SOMBRAS SUTILES GOOGLE M3
+     ========================================================================== */
+  --shadow-xs: 0 1px 2px 0 rgba(60, 64, 67, 0.12), 0 1px 3px 1px rgba(60, 64, 67, 0.08);
+  --shadow-sm: 0 1px 3px 0 rgba(60, 64, 67, 0.16), 0 2px 6px 2px rgba(60, 64, 67, 0.08);
+  --shadow-md: 0 4px 12px 0 rgba(60, 64, 67, 0.14), 0 1px 4px 0 rgba(60, 64, 67, 0.12);
+  --shadow-lg: 0 8px 24px 0 rgba(60, 64, 67, 0.15), 0 2px 8px 0 rgba(60, 64, 67, 0.10);
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+}
+
+/* ==========================================================================
+   RESET Y TIPOGRAFÍA BASE
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-base);
+  line-height: var(--lh-normal);
+  color: var(--text-main);
+  background-color: var(--surface-ground);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Figuras tabulares alineadas a números clínicos */
+.tabular-numbers,
+.kpi-val,
+.pcard-cell-val,
+.hearts-pa-val,
+.hearts-metric-value,
+.georis-popup-val {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Indicadores de foco accesibles */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   1. BARRA SUPERIOR INSTITUCIONAL EJECUTIVA (Estilo Google Workspace & M3)
+   ========================================================================== */
+.georis-header {
+  height: 56px;
+  background-color: #FFFFFF;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.08), 0 1px 3px 1px rgba(60, 64, 67, 0.04);
+  border-bottom: 1px solid var(--border-strong);
+  z-index: 1000;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.georis-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.brand-logo-card {
+  background: #FFFFFF;
+  padding: 4px 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  flex-shrink: 0;
+}
+
+.brand-logo-card:hover {
+  background: var(--surface-card-subtle);
+  box-shadow: var(--shadow-xs);
+}
+
+.brand-logo-img {
+  height: 24px;
+  width: auto;
+  display: block;
+}
+
+.georis-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.georis-main-title {
+  font-size: var(--font-base);
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--lh-tight);
+}
+
+.georis-subtitle {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--lh-tight);
+  margin-top: 1px;
+}
+
+/* ==========================================================================
+   2. BARRA DE HERRAMIENTAS EJECUTIVA UNIFICADA (Estilo Google)
+   ========================================================================== */
+.georis-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.basemap-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--slate-50);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-2);
+  height: 36px;
+  transition: all 0.16s ease;
+}
+
+.basemap-selector-wrap:hover {
+  background: #FFFFFF;
+  border-color: var(--slate-400);
+}
+
+.basemap-label {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.basemap-select {
+  background: transparent;
+  color: var(--text-main);
+  border: none;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  max-width: 175px;
+}
+
+.basemap-select option {
+  background: #FFFFFF;
+  color: var(--text-main);
+}
+
+.georis-tool-btn {
+  height: 36px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  background: #FFFFFF;
+  color: var(--text-main);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  transition: all 0.16s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.georis-tool-btn:hover {
+  background: var(--surface-card-subtle);
+  border-color: var(--slate-400);
+  color: var(--google-blue);
+}
+
+.georis-tool-btn.active,
+#btn-toggle-layers.active,
+#btn-toggle-hearts.active {
+  background: var(--google-blue-surface) !important;
+  color: var(--google-blue-text) !important;
+  border-color: #D2E3FC !important;
+  font-weight: 600;
+}
+
+.fhir-badge-pill {
+  background: var(--google-blue-surface);
+  border: 1px solid #D2E3FC;
+  color: var(--google-blue-text);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: 0 var(--space-2);
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  background: var(--slate-50);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-3) 0 var(--space-2);
+  height: 36px;
+  font-size: var(--font-xs);
+  color: var(--text-main);
+  transition: all 0.16s ease;
+}
+
+.user-chip:hover {
+  background: var(--surface-card-subtle);
+  border-color: var(--slate-400);
+}
+
+.user-chip-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.user-chip-role {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-left: 2px;
+}
+
+.user-chip-role {
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+  margin-left: 2px;
+}
+
+/* ==========================================================================
+   3. POPUPS CARTOGRÁFICOS LEAFLET (Diseño Hospitalario Institucional)
+   ========================================================================== */
+.leaflet-popup-content-wrapper {
+  background: #FFFFFF !important;
+  color: var(--text-main) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border-strong) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: var(--lh-normal) !important;
+  min-width: 290px !important;
+}
+
+.leaflet-popup-tip {
+  background: #FFFFFF !important;
+  border: 1px solid var(--border-strong) !important;
+}
+
+.georis-popup {
+  display: flex;
+  flex-direction: column;
+}
+
+.georis-popup-header {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  background: var(--surface-card-subtle);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.georis-popup-body {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  background: #FFFFFF;
+}
+
+.georis-popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--font-xs);
+  gap: var(--space-2);
+}
+
+.georis-popup-label {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.georis-popup-val {
+  color: var(--text-main);
+  font-weight: 700;
+  text-align: right;
+}
+
+.georis-popup-footer {
+  padding: var(--space-2) var(--space-3);
+  background: var(--slate-50);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Tooltips precisos */
+.georis-tooltip {
+  background: rgba(11, 30, 63, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: var(--space-2) var(--space-3) !important;
+  font-size: var(--font-xs) !important;
+  line-height: var(--lh-snug) !important;
+}
+
+/* ==========================================================================
+   4. NOTIFICACIONES TOAST (Institucionales)
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  bottom: 40px;
+  right: var(--space-4);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.georis-toast {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 400px;
+  animation: slideInToast 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+
+@keyframes slideInToast {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-info {
+  background: #FFFFFF;
+  color: var(--text-main);
+  border-left: 4px solid var(--georis-cyan);
+  border-color: var(--border-strong);
+}
+
+.toast-success {
+  background: #FFFFFF;
+  color: var(--text-main);
+  border-left: 4px solid var(--hearts-green);
+  border-color: var(--border-strong);
+}
+
+.toast-warning {
+  background: #FFFFFF;
+  color: var(--text-main);
+  border-left: 4px solid var(--hearts-yellow);
+  border-color: var(--border-strong);
+}
+
+.toast-danger {
+  background: #FFFFFF;
+  color: var(--text-main);
+  border-left: 4px solid var(--hearts-red);
+  border-color: var(--border-strong);
+}
+
+/* ==========================================================================
+   5. BARRA DE ESTADO INFERIOR
+   ========================================================================== */
+.georis-statusbar {
+  height: 28px;
+  background: #FFFFFF;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  z-index: 800;
+  flex-shrink: 0;
+}

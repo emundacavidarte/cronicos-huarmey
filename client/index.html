@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MÁXIME Salud Digital | Sistema de Manejo Territorial de Crónicos (GeoRIS & HL7 FHIR)</title>
+  
+  <!-- Favicon Oficial MÁXIME -->
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/favicon.png">
+
+  <!-- Manifiesto PWA para Android -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Leaflet CSS (OpenSource GIS) -->
+  <link rel="stylesheet" href="libs/leaflet.css">
+
+  <!-- Limpieza proactiva de caché de Service Worker en recarga -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let r of registrations) { r.update(); }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let name of names) {
+          if (name !== 'maxime-cronicos-huarmey-v20261027-v30-syntaxfix') {
+            caches.delete(name);
+          }
+        }
+      });
+    }
+  </script>
+
+  <!-- Estilos Temáticos Oficiales MÁXIME Salud Digital y Layout Responsivo -->
+  <link rel="stylesheet" href="css/georis-theme.css?v=20261027_v6">
+  <link rel="stylesheet" href="css/layout.css?v=20261030_r12">
+  <link rel="stylesheet" href="css/components.css?v=20261029_a8f">
+  <link rel="stylesheet" href="css/padron-grid.css?v=20261027_v6">
+  <link rel="stylesheet" href="css/registro-clinico.css?v=20261027_v6">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- 1. BARRA SUPERIOR SLIM GOOGLE (56px, Fondo Blanco, Buscador Central Omnicanal) -->
+    <header class="georis-header">
+      <div class="georis-brand">
+        <button id="btn-toggle-rail" class="nav-toggle-btn" title="Alternar menú lateral" onclick="window.app.toggleNavRail()" aria-label="Alternar menú lateral">
+          ☰
+        </button>
+        <div class="brand-logo-card" onclick="window.app.switchView('mapa'); if(window.app.mapManager) window.app.mapManager.home();" title="MÁXIME Consultoría en Salud">
+          <img src="assets/images/logo_maxime.png" alt="MÁXIME Consultoría en Salud" class="brand-logo-img">
+        </div>
+        <div class="georis-titles">
+          <span class="georis-main-title">Crónicos Huarmey</span>
+          <span class="georis-subtitle">Hospital II-1 • RIS Pacífico Sur (N° 156)</span>
+        </div>
+      </div>
+
+      <!-- Buscador Central Omnicanal Tipo Google Search -->
+      <div class="google-header-search" data-permiso="verPacientes">
+        <div class="georis-search-box">
+          <span class="search-icon-left" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><circle cx="11" cy="11" r="7" stroke="#5F6368" stroke-width="2.2"/><path d="M20 20L16 16" stroke="#5F6368" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </span>
+          <input type="text" id="search-input" class="georis-search-input" placeholder="Buscar por DNI, nombre, calle o sector..." aria-label="Buscar paciente">
+          <button id="btn-clear-search" class="georis-search-clear" title="Limpiar búsqueda" aria-label="Limpiar búsqueda" style="display:none;">✕</button>
+        </div>
+      </div>
+
+      <!-- Barra de Herramientas Ágil y Perfil de Usuario -->
+      <div class="georis-toolbar">
+        <!-- Selector Rápido de Mapa Base -->
+        <div class="basemap-selector-wrap">
+          <span class="basemap-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10" stroke="#5F6368" stroke-width="2"/><path d="M2 12H22M12 2C14.5 4.5 16 8 16 12C16 16 14.5 19.5 12 22C9.5 19.5 8 16 8 12C8 8 9.5 4.5 12 2Z" stroke="#5F6368" stroke-width="1.8"/></svg>
+          </span>
+          <select id="select-basemap" class="basemap-select" onchange="window.app.setBaseMapGlobal(this.value)">
+            <option value="Esri Calles y Vías" selected>Calles y Vías</option>
+            <option value="GeoRIS Oficial (MINSA)">GeoRIS Vectorial</option>
+            <option value="Esri Satelital Híbrido">Satelital HD</option>
+            <option value="Gris Claro Minimalista">Gris Claro</option>
+            <option value="Modo Noche / Oscuro">Modo Noche</option>
+            <option value="Esri Topográfico">Topográfico</option>
+            <option value="OSM Humanitario Salud">OSM Salud</option>
+          </select>
+        </div>
+
+        <span class="fhir-badge-pill" title="Interoperabilidad nativa con estándar internacional HL7 FHIR">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px; margin-right:4px;"><path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="#1A73E8" stroke-width="2.2" stroke-linecap="round"/></svg>
+          HL7 FHIR R4
+        </span>
+
+        <!-- Botones compatibles con pruebas / controladores -->
+        <button id="btn-toggle-layers" class="georis-tool-btn" style="display:none;" title="Capas & Zonas">
+          <span>Capas</span>
+        </button>
+        <button id="btn-toggle-hearts" data-permiso="verPacientes" class="georis-tool-btn" style="display:none;" title="Padrón HEARTS">
+          <span>Padrón</span>
+        </button>
+        <button id="btn-top-subir-excel" data-permiso="escribir" class="georis-tool-btn" style="display:none;" title="Subir Padrón Excel">
+          <span>Excel</span>
+        </button>
+        <button id="btn-top-nuevo-registro" data-permiso="escribir" class="georis-tool-btn" style="display:none;" title="Registro Clínico">
+          <span>Registro</span>
+        </button>
+
+        <!-- Sesión: usuario activo, gestión de usuarios (solo Administrador) y cierre de sesión -->
+        <button id="btn-usuarios" type="button" data-permiso="gestionarUsuarios" class="georis-tool-btn perm-hidden" title="Registrar y administrar usuarios">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-3px; margin-right:4px;"><path d="M16 21V19C16 16.8 14.2 15 12 15H5C2.8 15 1 16.8 1 19V21" stroke="#1A73E8" stroke-width="2"/><circle cx="8.5" cy="7" r="4" stroke="#1A73E8" stroke-width="2"/></svg> Usuarios
+        </button>
+        <div id="user-chip" class="user-chip">
+          <span class="user-chip-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><circle cx="12" cy="8" r="4" fill="#1A73E8"/><path d="M20 20C20 16.5 16.5 14 12 14C7.5 14 4 16.5 4 20" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <span class="user-chip-text">
+            <span id="user-chip-name" class="user-chip-name"></span>
+            <span id="user-chip-role" class="user-chip-role"></span>
+          </span>
+        </div>
+        <button id="btn-logout" type="button" class="georis-tool-btn" title="Cerrar sesión" style="border-radius:50%; width:36px; height:36px; padding:0; justify-content:center;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M9 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H9" stroke="#5F6368" stroke-width="2" stroke-linecap="round"/><path d="M16 17L21 12M21 12L16 7M21 12H9" stroke="#5F6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. DISTRIBUCIÓN HORIZONTAL PRINCIPAL: RAIL LATERAL + ÁREA DE TRABAJO -->
+    <div class="app-body-layout">
+
+      <!-- BARRA DE NAVEGACIÓN LATERAL (GOOGLE NAVIGATION RAIL) -->
+      <nav class="google-nav-rail" id="app-nav-rail" aria-label="Navegación principal">
+        <!-- Botón de Acción Rápida (FAB Estilo Google) -->
+        <button class="rail-fab-btn" id="rail-btn-nuevo" data-permiso="escribir" title="Nueva Atención Clínica" onclick="window.app.abrirRegistroClinico()">
+          <span class="rail-fab-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </span>
+          <span class="rail-fab-label">Nueva Atención</span>
+        </button>
+
+        <!-- Ítems de Navegación con Íconos Vectoriales Premium -->
+        <button class="rail-nav-item active" id="rail-tab-mapa" data-view="mapa" title="Mapa Territorial Geoespacial" onclick="window.app.switchView('mapa')">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 18L3 15.5V3.5L9 6L15 3.5L21 6V18L15 15.5L9 18Z" stroke="#1A73E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6V18M15 3.5V15.5" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="8.5" r="2.5" fill="#34A853" stroke="#FFF" stroke-width="1"/></svg>
+          </span>
+          <span class="rail-label">Mapa</span>
+        </button>
+
+        <button class="rail-nav-item" id="rail-tab-dashboard" data-view="dashboard" title="Tablero de Indicadores y Dashboards" onclick="window.app.switchView('dashboard')">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="13" width="4.5" height="8" rx="1.5" fill="#1A73E8"/><rect x="9.75" y="8" width="4.5" height="13" rx="1.5" fill="#9334E6"/><rect x="16.5" y="3" width="4.5" height="18" rx="1.5" fill="#1E8E3E"/><path d="M3 11L9.5 5.5L14.5 9.5L21 3" stroke="#F29900" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <span class="rail-label">Indicadores</span>
+        </button>
+
+        <button class="rail-nav-item" id="rail-tab-padron" data-permiso="verPacientes" title="Padrón Nominal HEARTS" onclick="window.app.toggleHeartsPanel()">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 2H15C15.5 2 16 2.5 16 3V4.5H8V3C8 2.5 8.5 2 9 2Z" fill="#1A73E8"/><rect x="4.5" y="4.5" width="15" height="17" rx="2" stroke="#1A73E8" stroke-width="2"/><path d="M8.5 9.5H15.5M8.5 13H15.5M8.5 16.5H12" stroke="#5F6368" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="16.5" r="3.5" fill="#D93025"/><path d="M15.2 16.5L16.2 17.5L17.8 15.8" stroke="#FFF" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </span>
+          <span class="rail-label">Padrón</span>
+        </button>
+
+        <button class="rail-nav-item" id="rail-tab-excel" data-permiso="escribir" title="Subir Padrón Estandarizado Excel" onclick="window.app.abrirModalPadronGrid()">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#1E8E3E" stroke-width="2" stroke-linejoin="round"/><path d="M14 2V8H20" stroke="#1E8E3E" stroke-width="2"/><path d="M8.5 15.5L11.5 18.5M11.5 18.5L14.5 15.5M11.5 18.5V12" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <span class="rail-label">Subir Excel</span>
+        </button>
+
+        <div class="rail-spacer"></div>
+        <div class="rail-divider"></div>
+
+        <button class="rail-nav-item" id="rail-btn-capas" title="Capas y Delimitación Territorial" onclick="window.app.toggleLeftSidebar()">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7.5L12 13L22 7.5L12 2Z" stroke="#1A73E8" stroke-width="2" stroke-linejoin="round"/><path d="M2 12.5L12 18L22 12.5" stroke="#9334E6" stroke-width="2" stroke-linejoin="round"/><path d="M2 17.5L12 23L22 17.5" stroke="#1E8E3E" stroke-width="2" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="rail-label">Capas</span>
+        </button>
+
+        <button class="rail-nav-item perm-hidden" id="rail-btn-usuarios" data-permiso="gestionarUsuarios" title="Gestión de Usuarios" onclick="document.getElementById('btn-usuarios').click()">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M16 21V19C16 16.8 14.2 15 12 15H5C2.8 15 1 16.8 1 19V21" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/><circle cx="8.5" cy="7" r="4" stroke="#1A73E8" stroke-width="2"/><path d="M23 21V19C23 17.2 21.6 15.6 19.8 15.2" stroke="#5F6368" stroke-width="2" stroke-linecap="round"/><path d="M16 3.3C17.5 3.6 18.5 5 18.5 7C18.5 9 17.5 10.4 16 10.7" stroke="#5F6368" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <span class="rail-label">Usuarios</span>
+        </button>
+      </nav>
+
+      <!-- ESPACIO DE TRABAJO PRINCIPAL (MULTIVISTA) -->
+      <main class="main-workspace">
+
+        <!-- VISTA 1: MAPA TERRITORIAL INTERACTIVO -->
+        <section id="view-map" class="app-view">
+          <!-- MUELLE FLOTANTE DE KPIS ESTILO GOOGLE MAPS -->
+          <div class="hud-kpi-dock" role="region" aria-label="Resumen de indicadores HEARTS">
+            <span class="hud-kpi-dock-title">HEARTS</span>
+            <div class="hud-kpi-strip" title="Haga clic en cualquier indicador para desplegar la lista de pacientes">
+              <div class="kpi-card" id="card-kpi-total" data-kpi="ALL" tabindex="0" role="button" aria-label="Ver todos los pacientes crónicos">
+                <span id="kpi-total" class="kpi-val">0</span>
+                <span class="kpi-label">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M16 21V19C16 16.8 14.2 15 12 15H5C2.8 15 1 16.8 1 19V21" stroke="#1A73E8" stroke-width="2"/><circle cx="8.5" cy="7" r="4" stroke="#1A73E8" stroke-width="2"/></svg> Total
+                </span>
+              </div>
+              <div class="kpi-card kpi-green" id="card-kpi-green" data-kpi="green" tabindex="0" role="button" aria-label="Filtrar pacientes con cita vigente de control">
+                <span id="kpi-green" class="kpi-val">0</span>
+                <span class="kpi-label">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><circle cx="12" cy="12" r="9" fill="#E6F4EA" stroke="#1E8E3E" stroke-width="2"/><path d="M8 12L11 15L16 9" stroke="#1E8E3E" stroke-width="2" stroke-linecap="round"/></svg> Cita vigente
+                </span>
+              </div>
+              <div class="kpi-card kpi-yellow" id="card-kpi-yellow" data-kpi="yellow" tabindex="0" role="button" aria-label="Filtrar pacientes con cita próxima a vencer">
+                <span id="kpi-yellow" class="kpi-val">0</span>
+                <span class="kpi-label">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><circle cx="12" cy="12" r="9" fill="#FEF7E0" stroke="#F29900" stroke-width="2"/><path d="M12 7V12L15 14" stroke="#F29900" stroke-width="2" stroke-linecap="round"/></svg> Próximos
+                </span>
+              </div>
+              <div class="kpi-card kpi-red" id="card-kpi-red" data-kpi="red" tabindex="0" role="button" aria-label="Filtrar pacientes en deserción o cita vencida">
+                <span id="kpi-red" class="kpi-val">0</span>
+                <span class="kpi-label">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M12 3L2 21H22L12 3Z" fill="#FCE8E6" stroke="#D93025" stroke-width="2"/><path d="M12 10V14M12 17V17.5" stroke="#D93025" stroke-width="2" stroke-linecap="round"/></svg> Deserción
+                </span>
+              </div>
+              <div class="kpi-card kpi-purple" id="card-kpi-purple" data-kpi="purple" tabindex="0" role="button" aria-label="Filtrar pacientes captados por HOSIX">
+                <span id="kpi-purple" class="kpi-val">0</span>
+                <span class="kpi-label">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><rect x="3" y="4" width="18" height="16" rx="2" fill="#F3E8FD" stroke="#9334E6" stroke-width="2"/><path d="M12 8V16M8 12H16" stroke="#9334E6" stroke-width="2" stroke-linecap="round"/></svg> HOSIX
+                </span>
+              </div>
+            </div>
+          </div>
+
+      <!-- PESTAÑA LATERAL IZQUIERDA (HANDLE DIRECTO PARA ABRIR/OCULTAR SIN IR AL HEADER) -->
+      <button id="left-drawer-handle" class="drawer-edge-handle handle-left" onclick="window.app.toggleLeftSidebar()" title="Mostrar / Ocultar Capas y Territorio" aria-expanded="false" aria-controls="left-sidebar" aria-label="Mostrar u ocultar territorio y capas GeoRIS">
+        <span class="handle-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M12 2L2 7.5L12 13L22 7.5L12 2Z" stroke="#1A73E8" stroke-width="2"/><path d="M2 12.5L12 18L22 12.5" stroke="#9334E6" stroke-width="2"/><path d="M2 17.5L12 23L22 17.5" stroke="#1E8E3E" stroke-width="2"/></svg>
+        </span>
+        <span class="handle-text">Capas y Red</span>
+        <span id="left-handle-chevron" class="handle-chevron">❯</span>
+      </button>
+
+      <!-- PANEL LATERAL IZQUIERDO: INICIA CONTRAÍDO PARA NO SATURAR LA PANTALLA -->
+      <aside id="left-sidebar" class="georis-left-sidebar collapsed">
+        <div class="sidebar-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7.5L12 13L22 7.5L12 2Z" stroke="#1A73E8" stroke-width="2"/><path d="M2 12.5L12 18L22 12.5" stroke="#9334E6" stroke-width="2"/><path d="M2 17.5L12 23L22 17.5" stroke="#1E8E3E" stroke-width="2"/></svg>
+            <span>TERRITORIO Y CAPAS GEORIS</span>
+          </div>
+          <button class="panel-close-btn" onclick="window.app.toggleLeftSidebar(false)" title="Ocultar panel lateral">❮ Ocultar</button>
+        </div>
+        <div class="sidebar-content">
+          
+          <!-- SELECTOR DE MODO DE MAPA BASE -->
+          <div style="margin-bottom:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px;">
+            <label class="ux-field-label" style="margin-top:0;">Modo de Visualización del Mapa:</label>
+            <select id="select-basemap-sidebar" class="georis-select" onchange="window.app.setBaseMapGlobal(this.value)">
+              <option value="Esri Calles y Vías" selected>Calles y Sentidos Viales (Por Defecto)</option>
+              <option value="GeoRIS Oficial (MINSA)">GeoRIS Vectorial (MINSA)</option>
+              <option value="Esri Satelital Híbrido">Satelital HD Híbrido (Google/Maxar)</option>
+              <option value="Gris Claro Minimalista">Gris Claro Minimalista (Executive)</option>
+              <option value="Modo Noche / Oscuro">Modo Noche / Oscuro (Alto Contraste)</option>
+              <option value="Esri Topográfico">Topográfico y Relieve</option>
+              <option value="OSM Humanitario Salud">OSM Humanitario Salud (HOT)</option>
+            </select>
+          </div>
+
+          <!-- ACORDEÓN 1: NAVEGADOR JERÁRQUICO GEORIS -->
+          <details class="ux-accordion" open>
+            <summary class="ux-accordion-summary">1. Delimitación Territorial (RIS)</summary>
+            <div class="ux-accordion-body">
+              <label class="ux-field-label">Red Integrada de Salud (Áncash):</label>
+              <select id="select-ris" class="georis-select" onchange="window.app.selectRis(this.value)">
+                <option value="ALL">-- Todas las RIS de Áncash (7 Redes) --</option>
+                <option value="156" selected>RIS PACIFICO SUR (N° 156)</option>
+                <option value="157">RIS PACIFICO NORTE (N° 157)</option>
+                <option value="101">RIS HUAYLAS SUR 1 (N° 101)</option>
+                <option value="104">RIS HUAYLAS SUR 2 (N° 104)</option>
+                <option value="69">RIS HUAYLAS NORTE (N° 69)</option>
+                <option value="111">RIS CONCHUCOS NORTE (N° 111)</option>
+                <option value="87">RIS CONCHUCOS SUR (N° 87)</option>
+              </select>
+
+              <label class="ux-field-label" style="margin-top:8px;">Zona Sanitaria (Microrred):</label>
+              <select id="select-zona" class="georis-select" onchange="window.app.selectZona(this.value)">
+                <option value="ALL">-- Todas las Zonas Sanitarias --</option>
+              </select>
+
+              <label class="ux-field-label" style="margin-top:8px;">IPRESS Puerta de Entrada:</label>
+              <select id="select-puerta" class="georis-select" onchange="window.app.selectPuertaEntrada(this.value)">
+                <option value="ALL">-- Seleccionar Puerta de Entrada --</option>
+              </select>
+
+              <label class="ux-field-label" style="margin-top:8px;">Hospital de Referencia (II-1 / II-2):</label>
+              <select id="select-hospital" class="georis-select" onchange="window.app.seleccionarHospitalReferencia(this.value)">
+                <option value="00001741" selected>NUEVO HOSPITAL DE APOYO HUARMEY (II-1)</option>
+                <option value="00001720">HOSPITAL DE APOYO CASMA (II-1)</option>
+                <option value="00001701">ELEAZAR GUZMAN BARRON (II-2)</option>
+                <option value="00001650">HOSPITAL LA CALETA (II-2)</option>
+                <option value="00001850">HOSPITAL VICTOR RAMOS GUARDIA (II-2)</option>
+              </select>
+
+              <div id="zona-info-panel">
+                <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:8px; margin-top:8px; font-size:var(--font-xs); line-height:var(--lh-normal);">
+                  <strong style="color:#0369a1;">RIS PACÍFICO SUR (N° 156)</strong><br>
+                  • <strong>Población:</strong> 292,742 hab. | <strong>Zonas:</strong> 6 | <strong>Sectores:</strong> 72<br>
+                  • <strong>Cabecera:</strong> Hospital de Apoyo Huarmey II-1
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- ACORDEÓN 2: CAPAS TEMÁTICAS DEL MAPA -->
+          <details class="ux-accordion" open>
+            <summary class="ux-accordion-summary">2. Capas Visibles en el Mapa</summary>
+            <div class="ux-accordion-body">
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.pacientes.addTo(window.app.mapManager.map) : window.app.mapManager.layers.pacientes.remove()">
+                  <span style="font-weight:700;">Pacientes Crónicos (HEARTS)</span>
+                </label>
+                <span class="legend-mini-badge badge-paciente"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61C19.85 3.6 18.49 3 17 3C15.05 3 13.36 4.07 12 5.58C10.64 4.07 8.95 3 7 3C5.51 3 4.15 3.6 3.16 4.61C1.06 6.76 1.06 10.24 3.16 12.39L12 21.42L20.84 12.39C22.94 10.24 22.94 6.76 20.84 4.61Z" fill="#D93025"/><path d="M7 12H9.5L11 8L13 16L14.5 12H17" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/></svg></span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.areaSanitaria.addTo(window.app.mapManager.map) : window.app.mapManager.layers.areaSanitaria.remove()">
+                  <span style="font-weight:700;">Hospital de Área (II-1 / II-2)</span>
+                </label>
+                <span class="legend-mini-badge badge-hosp"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" fill="#F3E8FD" stroke="#9334E6" stroke-width="2"/><path d="M12 8V16M8 12H16" stroke="#9334E6" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.zonaSanitaria.addTo(window.app.mapManager.map) : window.app.mapManager.layers.zonaSanitaria.remove()">
+                  <span>Cabeceras de Zona (I-3 / I-4)</span>
+                </label>
+                <span class="legend-mini-badge badge-zona"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 21H21M5 21V7L13 3V21M13 10L19 7V21" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/></svg></span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.puertaEntrada.addTo(window.app.mapManager.map) : window.app.mapManager.layers.puertaEntrada.remove()">
+                  <span>Postas Puerta de Entrada (I-1 / I-2)</span>
+                </label>
+                <span class="legend-mini-badge badge-puerta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M19 21V3C19 2.44772 18.5523 2 18 2H6C5.44772 2 5 2.44772 5 3V21M2 21H22M14 11H15" stroke="#1E8E3E" stroke-width="2" stroke-linecap="round"/></svg></span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.referenciasLines.addTo(window.app.mapManager.map) : window.app.mapManager.layers.referenciasLines.remove()">
+                  <span>Rutas de Referencia y Distancias</span>
+                </label>
+                <span class="legend-mini-badge" style="background:#e0f2fe; color:#0284c7; font-weight:800; font-size:var(--font-xs);">➔ km</span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.sectoresSanitarios.addTo(window.app.mapManager.map) : window.app.mapManager.layers.sectoresSanitarios.remove()">
+                  <span>Sectores Sanitarios (72 Comunales)</span>
+                </label>
+                <span class="georis-layer-legend-dot" style="background:#38bdf8; border:1px dotted #0369a1;"></span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.zonasSanitarias.addTo(window.app.mapManager.map) : window.app.mapManager.layers.zonasSanitarias.remove()">
+                  <span>Zonas Sanitarias (44 Microrredes)</span>
+                </label>
+                <span class="georis-layer-legend-dot" style="background:#10b981; border:1px dashed #000;"></span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.limiteRis.addTo(window.app.mapManager.map) : window.app.mapManager.layers.limiteRis.remove()">
+                  <span>Límites de Redes RIS (7 Redes)</span>
+                </label>
+                <span class="georis-layer-legend-dot" style="background:#0284c7;"></span>
+              </div>
+
+              <div class="georis-layer-item">
+                <label class="georis-layer-label">
+                  <input type="checkbox" checked onchange="this.checked ? window.app.mapManager.layers.catastroUrbano.addTo(window.app.mapManager.map) : window.app.mapManager.layers.catastroUrbano.remove()">
+                  <span>Catastro Urbano (Lotes y Vías)</span>
+                </label>
+                <span class="legend-mini-badge" style="background:#f1f5f9; color:#475569; font-weight:800; font-size:var(--font-xs);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 21H21M4 18V11M8 18V11M12 18V11M16 18V11M20 18V11M2 7L12 2L22 7V9H2V7Z" stroke="#5F6368" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              </div>
+            </div>
+          </details>
+
+        </div>
+      </aside>
+
+      <!-- MAPA PRINCIPAL INTERACTIVO CON RENDERER CANVAS -->
+      <div id="map"></div>
+
+      <!-- CONTROLES DE NAVEGACIÓN DEL MAPA (UBICADOS EN ESQUINA INFERIOR DERECHA, LEJOS DE VENTANAS LATERALES) -->
+      <div class="georis-map-controls" title="Controles de Zoom del Mapa" role="toolbar" aria-label="Controles de navegación del mapa">
+        <span class="map-ctrl-label">MAPA</span>
+        <button class="georis-ctrl-btn" onclick="window.app.mapManager.home()" title="Centrar en Nuevo Hospital de Apoyo Huarmey" aria-label="Centrar en Nuevo Hospital de Apoyo Huarmey">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 10L12 3L21 10V20C21 20.5 20.5 21 20 21H15V14H9V21H4C3.5 21 3 20.5 3 20V10Z" fill="#202124"/></svg>
+        </button>
+        <button class="georis-ctrl-btn" onclick="window.app.mapManager.zoomIn()" title="Acercar vista del mapa" aria-label="Acercar mapa">+</button>
+        <button class="georis-ctrl-btn" onclick="window.app.mapManager.zoomOut()" title="Alejar vista del mapa" aria-label="Alejar mapa">−</button>
+      </div>
+
+      <!-- PESTAÑA LATERAL DERECHA (HANDLE DIRECTO PARA VER/OCULTAR LISTA DE PACIENTES) -->
+      <button id="right-drawer-handle" data-permiso="verPacientes" class="drawer-edge-handle handle-right" onclick="window.app.toggleHeartsPanel()" title="Mostrar / Ocultar Padrón de Pacientes HEARTS" aria-expanded="false" aria-controls="hearts-panel" aria-label="Mostrar u ocultar padrón de pacientes HEARTS">
+        <span id="right-handle-chevron" class="handle-chevron">❮</span>
+        <span class="handle-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M20.8 4.6C19.8 3.6 18.5 3 17 3C15 3 13.4 4.1 12 5.6C10.6 4.1 9 3 7 3C5.5 3 4.2 3.6 3.2 4.6C1.1 6.8 1.1 10.2 3.2 12.4L12 21.4L20.8 12.4C22.9 10.2 22.9 6.8 20.8 4.6Z" fill="#FCE8E6" stroke="#D93025" stroke-width="2"/><path d="M7 12H9.5L11 8L13 16L14.5 12H17" stroke="#D93025" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="handle-text">Padrón HEARTS</span>
+      </button>
+
+      <!-- PANEL LATERAL DERECHO: INICIA CONTRAÍDO (SE ABRE AL HACER CLIC EN UN NÚMERO KPI O EN LA PESTAÑA) -->
+      <aside id="hearts-panel" data-permiso="verPacientes" class="hearts-panel collapsed">
+        <div class="hearts-panel-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20.8 4.6C19.8 3.6 18.5 3 17 3C15 3 13.4 4.1 12 5.6C10.6 4.1 9 3 7 3C5.5 3 4.2 3.6 3.2 4.6C1.1 6.8 1.1 10.2 3.2 12.4L12 21.4L20.8 12.4C22.9 10.2 22.9 6.8 20.8 4.6Z" fill="#FCE8E6" stroke="#D93025" stroke-width="2"/><path d="M7 12H9.5L11 8L13 16L14.5 12H17" stroke="#D93025" stroke-width="2" stroke-linecap="round"/></svg>
+            <div>
+              <div style="font-weight:700; font-size:14.5px; letter-spacing:-0.1px;">PADRÓN NOMINAL HEARTS</div>
+              <div id="patient-count-subtitle" style="font-size:var(--font-xs); color:var(--text-secondary); font-weight:500;">Cargando pacientes...</div>
+            </div>
+          </div>
+          <button class="panel-close-btn" onclick="window.app.toggleHeartsPanel(false)" title="Ocultar lista de pacientes">Ocultar ❯</button>
+        </div>
+
+        <!-- Pestañas del Panel -->
+        <div class="hearts-panel-tabs">
+          <button id="tab-btn-pacientes" class="hearts-tab-btn active" onclick="window.app.switchHeartsTab('pacientes')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M9 2H15C15.5 2 16 2.5 16 3V4.5H8V3C8 2.5 8.5 2 9 2Z" fill="#1A73E8"/><rect x="4.5" y="4.5" width="15" height="17" rx="2" stroke="#1A73E8" stroke-width="2"/><path d="M8.5 9.5H15.5M8.5 13H15.5M8.5 16.5H12" stroke="#5F6368" stroke-width="1.8" stroke-linecap="round"/></svg> Lista de Pacientes
+          </button>
+          <button id="tab-btn-ingesta" data-permiso="escribir" class="hearts-tab-btn" onclick="window.app.switchHeartsTab('ingesta')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#1E8E3E" stroke-width="2"/><path d="M8.5 15.5L11.5 18.5M11.5 18.5L14.5 15.5M11.5 18.5V12" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/></svg> Subir Excel
+          </button>
+        </div>
+
+        <!-- PESTAÑA 1: LISTA ÁGIL DE PACIENTES -->
+        <div id="tab-pacientes" class="hearts-tab-pane active-pane">
+          <!-- Barra de Filtros Compacta -->
+          <div class="hearts-filters-bar">
+            <div class="filter-chips-wrap">
+              <button class="filter-chip active" data-filter-diag="ALL">Todos</button>
+              <button class="filter-chip chip-hta" data-filter-diag="I10">HTA (I10)</button>
+              <button class="filter-chip chip-dm" data-filter-diag="E11">DM2 (E11)</button>
+              <button class="filter-chip chip-green" data-filter-semaforo="green">Meta</button>
+              <button class="filter-chip chip-yellow" data-filter-semaforo="yellow">Próximos</button>
+              <button class="filter-chip chip-red" data-filter-semaforo="red">Vencidos</button>
+              <button class="filter-chip chip-purple" data-filter-semaforo="purple">HOSIX</button>
+            </div>
+            <div class="filter-Status-row" style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
+              <span id="filter-active-label" class="filter-count-txt">614 pacientes</span>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <button id="btn-export-padron" type="button" class="btn-export-mini" title="Descargar Padrón de Pacientes en Excel (.xlsx)" onclick="window.app.exportarPadronExcel()" style="background:#1E8E3E; color:#ffffff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#FFFFFF" stroke-width="2"/><path d="M14 2V8H20" stroke="#FFFFFF" stroke-width="2"/><path d="M8 13H16M8 17H16M10 9H8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/></svg> Exportar Excel
+                </button>
+                <button id="btn-export-precitas" data-permiso="escribir" class="btn-export-mini" title="Descargar CSV de Pre-citas para Admisión HOSIX">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Pre-citas
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Único Contenedor Scrollable de Pacientes -->
+          <div id="patient-list" class="patient-list-container">
+            <!-- Renderizado dinámico ágil desde main.js -->
+          </div>
+        </div>
+
+        <!-- PESTAÑA 2: INGESTA DE ARCHIVOS (PADRÓN EXCEL / HOSIX / GALENOS / FHIR) -->
+        <div id="tab-ingesta" data-permiso="escribir" class="hearts-tab-pane" style="display:none; padding:14px; overflow-y:auto;">
+          <input type="file" id="hosix-file-input" accept=".xlsx,.xls,.csv,.txt" style="display:none;">
+          <div class="upload-zone" id="upload-dropzone">
+            <div style="margin-bottom: 8px;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#1E8E3E" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2V8H20" stroke="#1E8E3E" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 18V12M12 12L9.5 14.5M12 12L14.5 14.5" stroke="#1A73E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="upload-title">Arrastre aquí su archivo Excel (.xlsx, .xls) o CSV</div>
+            <div class="upload-subtitle">Auditoría en pantalla, detección de inconsistencias y corrección en caliente</div>
+          </div>
+
+          <button type="button" id="btn-browse-excel" style="width:100%; margin-top:8px; margin-bottom:12px; padding:9px 14px; background:#1A73E8; color:#ffffff; font-weight:700; font-size:12.5px; border-radius:8px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 19C22 19.5304 21.7893 20.0391 21.4142 20.4142C21.0391 20.7893 20.5304 21 20 21H4C3.46957 21 2.96086 20.7893 2.58579 20.4142C2.21071 20.0391 2 19.5304 2 19V5C2 4.46957 2.21071 3.96086 2.58579 3.58579C2.96086 3.21071 3.46957 3 4 3H9L11 6H20C20.5304 6 21.0391 6.21071 21.4142 6.58579C21.7893 6.96086 22 7.46957 22 8V19Z" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/></svg> Seleccionar Archivo Excel desde su equipo
+          </button>
+
+          <div style="background:#eff6ff; border: 1px solid #bfdbfe; border-radius:6px; padding:12px; font-size:12px; color:#1e40af; margin-bottom:12px;">
+            <strong>⚡ Auditoría Interactiva en Pantalla (Padrón Estandarizado):</strong><br>
+            Al cargar el Excel oficial, se abre la <strong>hoja de cálculo interactiva</strong> con las 76 columnas normativas. Las celdas con observaciones se marcan visualmente en rojo para corregirlas directamente en la ventana. La carga al sistema se habilita únicamente cuando el archivo esté <strong>al 100% validado</strong>.
+          </div>
+
+          <div style="font-size:var(--font-xs); color:var(--text-secondary); line-height:var(--lh-normal);">
+            <strong>Formatos compatibles y estándares integrados:</strong><br>
+            • <strong>Padrón Estandarizado:</strong> Padrón Nominal Huarmey (DS 021-2025-SA, Ficha 39, Vía HEARTS, SIS IP02-IP04)<br>
+            • <strong>Sistemas Hospitalarios HCE:</strong> HOSIX (SIVSA), Galenos (MINSA) o Pakamuros Soft
+          </div>
+        </div>
+
+      </aside>
+
+        </section>
+
+        <!-- VISTA 2: TABLERO DE INDICADORES Y DASHBOARDS (Capítulo Analítico) -->
+        <section id="view-dashboard" class="app-view" style="display:none;" aria-label="Tablero de Indicadores y Dashboards">
+          <div class="dash-header-wrap">
+            <div class="dash-title-group">
+              <h2>Tablero Territorial de Indicadores HEARTS</h2>
+              <p>Seguimiento Epidemiológico, Cobertura y Metas de Control Clínico • Red Integrada de Salud Pacífico Sur (N° 156)</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span class="dash-period-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#1A73E8" stroke-width="2"/><path d="M16 2V6M8 2V6M3 10H21" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/></svg>
+                Período Octubre 2026
+              </span>
+              <button class="georis-tool-btn" onclick="window.app.exportarPadronExcel()" title="Descargar Padrón Completo en Excel (.xlsx)" style="background:#1E8E3E; color:#ffffff; border-color:#1E8E3E; font-weight:600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#FFFFFF" stroke-width="2"/><path d="M14 2V8H20" stroke="#FFFFFF" stroke-width="2"/><path d="M8 13H16M8 17H16M10 9H8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/></svg>
+                Exportar Padrón Excel
+              </button>
+              <button class="georis-tool-btn" onclick="window.app.renderDashboard()" title="Actualizar indicadores">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M23 4V10H17M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9A9 9 0 0 1 18.36 5.64L23 10M1 14L5.64 18.36A9 9 0 0 0 20.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Actualizar
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Tarjetas Métricas Principales (Hero KPI Cards) -->
+          <div class="kpi-hero-grid">
+            <div class="kpi-hero-card">
+              <div class="kpi-hero-header">
+                <span class="kpi-hero-title">Población Crónica Activa</span>
+                <span class="kpi-hero-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21" stroke="#1A73E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="7" r="4" stroke="#1A73E8" stroke-width="2"/><path d="M23 21V19C22.9986 17.2 21.6 15.6 19.8 15.2M16 3.3C17.5 3.6 18.5 5 18.5 7C18.5 9 17.5 10.4 16 10.7" stroke="#5F6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+              <div class="kpi-hero-value" id="dash-val-total">0</div>
+              <div class="kpi-hero-footer">
+                <span>Pacientes con seguimiento nominal continuo</span>
+              </div>
+            </div>
+
+            <div class="kpi-hero-card">
+              <div class="kpi-hero-header">
+                <span class="kpi-hero-title">Control Clínico en Meta</span>
+                <span class="kpi-hero-icon" style="background:#e6f4ea; color:#137333;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#E6F4EA" stroke="#1E8E3E" stroke-width="2"/><path d="M8 12L11 15L16 9" stroke="#1E8E3E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+              <div class="kpi-hero-value" id="dash-val-control" style="color:#137333;">0%</div>
+              <div class="kpi-hero-footer">
+                <span id="dash-foot-control">PA &lt; 140/90 mmHg (última medición, HEARTS)</span>
+              </div>
+            </div>
+
+            <div class="kpi-hero-card">
+              <div class="kpi-hero-header">
+                <span class="kpi-hero-title">Alertas de Deserción</span>
+                <span class="kpi-hero-icon" style="background:#fce8e6; color:#c5221f;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L1 21H23L12 2Z" fill="#FCE8E6" stroke="#D93025" stroke-width="2" stroke-linejoin="round"/><path d="M12 9V14M12 17.5V18" stroke="#D93025" stroke-width="2" stroke-linecap="round"/></svg>
+                </span>
+              </div>
+              <div class="kpi-hero-value" id="dash-val-desercion" style="color:#c5221f;">0</div>
+              <div class="kpi-hero-footer">
+                <span>Cita vencida o sin control &gt; 30 días</span>
+              </div>
+            </div>
+
+            <div class="kpi-hero-card">
+              <div class="kpi-hero-header">
+                <span class="kpi-hero-title">Próximos a Control</span>
+                <span class="kpi-hero-icon" style="background:#fef7e0; color:#b06000;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FEF7E0" stroke="#F29900" stroke-width="2"/><path d="M12 6V12L16 14" stroke="#F29900" stroke-width="2" stroke-linecap="round"/></svg>
+                </span>
+              </div>
+              <div class="kpi-hero-value" id="dash-val-proximos" style="color:#b06000;">0</div>
+              <div class="kpi-hero-footer">
+                <span>Cita programada en los próximos 7 días</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paneles de Análisis Clínico y Epidemiológico -->
+          <div class="dash-analytics-grid">
+            <!-- Panel A: Estado Semafórico HEARTS -->
+            <div class="dash-panel-card">
+              <div class="dash-panel-title">
+                <span style="display:flex; align-items:center; gap:8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="13" width="4.5" height="8" rx="1.5" fill="#1A73E8"/><rect x="9.75" y="8" width="4.5" height="13" rx="1.5" fill="#9334E6"/><rect x="16.5" y="3" width="4.5" height="18" rx="1.5" fill="#1E8E3E"/><path d="M3 11L9.5 5.5L14.5 9.5L21 3" stroke="#F29900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Distribución del Semáforo HEARTS
+                </span>
+                <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">Semáforo de vigencia de la cita: verde, próxima a más de 7 días; amarillo, a 7 días o menos; rojo, vencida. No mide la meta de presión.</span>
+              </div>
+              <div class="hearts-progress-bar-wrap">
+                <div class="hearts-segmented-bar" id="dash-hearts-bar">
+                  <div class="hearts-bar-segment seg-green" id="bar-seg-green" style="width:0%;"></div>
+                  <div class="hearts-bar-segment seg-yellow" id="bar-seg-yellow" style="width:0%;"></div>
+                  <div class="hearts-bar-segment seg-red" id="bar-seg-red" style="width:0%;"></div>
+                  <div class="hearts-bar-segment seg-purple" id="bar-seg-purple" style="width:0%;"></div>
+                  <div class="hearts-bar-segment seg-black" id="bar-seg-black" style="width:0%;"></div>
+                </div>
+                <div class="hearts-bar-legend">
+                  <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:var(--hearts-green);"></span> Cita vigente: <strong id="dash-count-green">0</strong></div>
+                  <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:var(--hearts-yellow);"></span> Próximo: <strong id="dash-count-yellow">0</strong></div>
+                  <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:var(--hearts-red);"></span> Deserción: <strong id="dash-count-red">0</strong></div>
+                  <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:var(--hearts-purple);"></span> HOSIX: <strong id="dash-count-purple">0</strong></div>
+                  <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:#202124;"></span> Fallecidos: <strong id="dash-count-black">0</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel B: Diagnósticos y Comorbilidades -->
+            <div class="dash-panel-card">
+              <div class="dash-panel-title">
+                <span style="display:flex; align-items:center; gap:8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 3V8C4 10.2091 5.79086 12 8 12C10.2091 12 12 10.2091 12 8V3M8 12V15C8 17.2091 9.79086 19 12 19H14C16.2091 19 18 17.2091 18 15V14" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="12" r="3" fill="#E8F0FE" stroke="#1A73E8" stroke-width="2"/><circle cx="4" cy="3" r="1.5" fill="#1A73E8"/><circle cx="12" cy="3" r="1.5" fill="#1A73E8"/></svg>
+                  Patologías y Comorbilidades en Seguimiento
+                </span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;" id="dash-pathology-list">
+                <!-- Rellenado dinámico desde main.js -->
+              </div>
+            </div>
+
+            <!-- Panel B2: Indicadores del convenio SIS y de HEARTS (A8) -->
+            <div class="dash-panel-card full-width" id="panel-indicadores-convenio">
+              <div class="dash-panel-title">
+                <span>Indicadores del convenio SIS–GORE Áncash 2026 y de HEARTS</span>
+                <button type="button" class="georis-tool-btn" onclick="window.app.loadIndicadoresConvenio()" title="Volver a calcular los indicadores">Actualizar</button>
+              </div>
+              <p class="dash-nota" id="ind-periodo">Calculando…</p>
+              <div style="overflow-x:auto;">
+                <table class="dash-table" id="ind-convenio-table">
+                  <thead>
+                    <tr>
+                      <th>Indicador</th>
+                      <th>Numerador</th>
+                      <th>Denominador</th>
+                      <th>%</th>
+                      <th>Meta 2026</th>
+                      <th>Fuente</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ind-convenio-tbody"></tbody>
+                </table>
+              </div>
+              <div class="dash-panel-title" style="margin-top:16px;"><span>Por establecimiento</span></div>
+              <div style="overflow-x:auto;">
+                <table class="dash-table" id="ind-est-table">
+                  <thead>
+                    <tr>
+                      <th>Establecimiento</th>
+                      <th>Categoría</th>
+                      <th>IP02 (HbA1c)</th>
+                      <th>IP03 (microalbuminuria y creatinina)</th>
+                      <th>IP04 (hipertensos en meta)</th>
+                      <th>Control HEARTS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ind-est-tbody"></tbody>
+                </table>
+              </div>
+              <p class="dash-nota">Cada cifra sale de los registros del prototipo, no de la base del SIS. Un dato sin fecha dentro del periodo no cuenta. Las presiones mensuales del padrón no traen día: dos controles cuentan si caen en meses distintos. El IP02 y el IP03 se miden solo en establecimientos I-3 e I-4; en el hospital son seguimiento, no meta.</p>
+            </div>
+
+            <!-- Panel C: Cobertura por IPRESS de la Microrred Huarmey -->
+            <div class="dash-panel-card full-width">
+              <div class="dash-panel-title">
+                <span style="display:flex; align-items:center; gap:8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" fill="#F3E8FD" stroke="#9334E6" stroke-width="2"/><path d="M12 8V16M8 12H16" stroke="#9334E6" stroke-width="2.5" stroke-linecap="round"/></svg>
+                  Monitoreo Territorial por Establecimiento de Salud (Microrred Huarmey)
+                </span>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="dash-table" id="dash-ipress-table">
+                  <thead>
+                    <tr>
+                      <th>Establecimiento IPRESS</th>
+                      <th>Categoría</th>
+                      <th>Total Empadronados</th>
+                      <th>Con la última presión en meta</th>
+                      <th>En Deserción</th>
+                      <th>% con la última presión en meta</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dash-ipress-tbody">
+                    <!-- Rellenado dinámico desde main.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- BARRA DE ESTADO INFERIOR -->
+    <footer class="georis-statusbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span id="coords-display">-78.15480 -10.04780 Grados | Zoom: 15</span>
+        <span class="hide-mobile">|</span>
+        <span class="hide-mobile">Escala: Áncash / RIS Pacífico Sur (Nº 156)</span>
+      </div>
+      <div class="hide-mobile">
+        <span>Nuevo Hospital de Apoyo Huarmey (II-1) • MÁXIME Consultoría en Salud</span>
+      </div>
+    </footer>
+
+    <!-- 3. BARRA DE NAVEGACIÓN MÓVIL (Táctil para Smartphones Android) -->
+    <nav class="mobile-nav-bar">
+      <button class="mobile-nav-item active" onclick="window.app.closeAllDrawers(); this.parentElement.querySelectorAll('.mobile-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+        <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 18L3 15.5V3.5L9 6L15 3.5L21 6V18L15 15.5L9 18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6V18M15 3.5V15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>Mapa</span>
+      </button>
+      <button class="mobile-nav-item" data-permiso="verPacientes" onclick="window.app.toggleHeartsPanel(true); window.app.switchHeartsTab('pacientes'); this.parentElement.querySelectorAll('.mobile-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+        <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 2H15C15.5523 2 16 2.44772 16 3V4.5H8V3C8 2.44772 8.44772 2 9 2Z" fill="currentColor"/><rect x="4.5" y="4.5" width="15" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8.5 9.5H15.5M8.5 13H15.5M8.5 16.5H12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <span>Pacientes</span>
+      </button>
+      <button class="mobile-nav-item" data-permiso="escribir" onclick="window.app.toggleHeartsPanel(true); window.app.switchHeartsTab('ingesta'); this.parentElement.querySelectorAll('.mobile-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+        <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 15.5L11.5 18.5M11.5 18.5L14.5 15.5M11.5 18.5V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>Ingesta</span>
+      </button>
+      <button class="mobile-nav-item" onclick="window.app.toggleLeftSidebar(true); this.parentElement.querySelectorAll('.mobile-nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+        <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7.5L12 13L22 7.5L12 2ZM2 12.5L12 18L22 12.5M2 17.5L12 23L22 17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>Capas</span>
+      </button>
+      <button id="btn-usuarios-mobile" type="button" class="mobile-nav-item perm-hidden" data-permiso="gestionarUsuarios">
+        <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21V19C22.9986 17.2 21.6 15.6 19.8 15.2M16 3.3C17.5 3.6 18.5 5 18.5 7C18.5 9 17.5 10.4 16 10.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>Usuarios</span>
+      </button>
+      <button id="btn-logout-mobile" type="button" class="mobile-nav-item">
+        <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>Salir</span>
+      </button>
+    </nav>
+
+    <!-- 4. MODAL: GENERACIÓN DE PRE-CITA PARA HOSIX -->
+    <div id="modal-precita" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-precita-title">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span id="modal-precita-title">GENERAR PRE-CITA PARA HOSIX</span>
+          <button type="button" class="btn-close-accessible" aria-label="Cerrar modal de pre-cita" onclick="document.getElementById('modal-precita').classList.remove('active')">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom:12px; font-size:var(--font-base);">Se generará una orden de pre-reserva de cita para el servicio de Admisión del Hospital II-1 Huarmey:</p>
+          <div style="background:var(--slate-50); padding:12px 14px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); margin-bottom:14px; font-size:var(--font-sm);">
+            <div><strong>DNI:</strong> <span id="modal-precita-dni"></span></div>
+            <div><strong>Paciente:</strong> <span id="modal-precita-paciente"></span></div>
+            <div><strong>Diagnóstico:</strong> <span id="modal-precita-diag"></span></div>
+          </div>
+          <label for="modal-precita-fecha" style="display:block; font-size:var(--font-xs); font-weight:700; margin-bottom:4px; color:var(--text-main);">Fecha Sugerida de Cita:</label>
+          <input type="date" id="modal-precita-fecha" class="georis-select" style="margin-bottom:14px;">
+          <label for="modal-precita-consultorio" style="display:block; font-size:var(--font-xs); font-weight:700; margin-bottom:4px; color:var(--text-main);">Consultorio Destino:</label>
+          <select id="modal-precita-consultorio" class="georis-select">
+            <option value="Consultorio de Crónicos / Medicina Interna">Consultorio de Crónicos / Medicina Interna</option>
+            <option value="Medicina Familiar">Medicina Familiar</option>
+            <option value="Telemonitoreo Crónicos">Telemonitoreo Crónicos</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-precita').classList.remove('active')">Cancelar</button>
+          <button class="btn-mini btn-precita" onclick="window.app.confirmarPreCita()">Confirmar y Enviar a Admisión</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4b. MODAL: CONSENTIMIENTO PARA RECORDATORIOS POR WHATSAPP (Ley N° 29733) -->
+    <div id="modal-consentimiento" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-consentimiento-title">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span id="modal-consentimiento-title">CONSENTIMIENTO PARA RECORDATORIOS POR WHATSAPP</span>
+          <button type="button" class="btn-close-accessible" aria-label="Cerrar modal de consentimiento" onclick="window.app.cerrarModalConsentimiento()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p id="modal-consentimiento-estado" style="margin-bottom:12px; font-size:var(--font-base);"></p>
+          <div style="background:var(--slate-50); padding:12px 14px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); margin-bottom:14px; font-size:var(--font-sm);">
+            <div><strong>DNI:</strong> <span id="modal-consentimiento-dni"></span></div>
+            <div><strong>Paciente:</strong> <span id="modal-consentimiento-paciente"></span></div>
+          </div>
+          <p style="font-size:var(--font-sm);">El mensaje solo recuerda la fecha y el lugar del control; no menciona el diagnóstico ni el tratamiento. Registre el consentimiento solo si el paciente lo autorizó.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-mini btn-ubicar" onclick="window.app.cerrarModalConsentimiento()">Cancelar</button>
+          <button class="btn-mini btn-precita" onclick="window.app.registrarConsentimiento('No')">El paciente no autoriza</button>
+          <button class="btn-mini btn-whatsapp" onclick="window.app.registrarConsentimiento('Sí, firmado')">Registrar consentimiento y enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. CONTENEDOR TOAST (NOTIFICACIONES DINÁMICAS) -->
+    <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
+
+  </div>
+
+  <!-- 6. PANTALLA DE ACCESO (T-03b): obligatoria; sin sesión la aplicación queda inactiva y sin datos -->
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="login-titulo">
+    <form id="login-form" class="login-box" autocomplete="on" novalidate>
+      <img src="assets/images/logo_maxime.png" alt="MÁXIME Consultoría en Salud" class="login-logo">
+      <h1 id="login-titulo" class="login-title">Acceso al sistema</h1>
+      <p class="login-sub">Sistema de Manejo Territorial de Crónicos · Hospital II-1 Huarmey</p>
+
+      <label for="login-username" class="login-label">Usuario</label>
+      <input id="login-username" name="username" type="text" class="login-input" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="32" required>
+
+      <label for="login-password" class="login-label">Clave</label>
+      <div class="login-pass-row">
+        <input id="login-password" name="password" type="password" class="login-input" autocomplete="current-password" maxlength="128" required>
+        <button id="login-ver-clave" type="button" class="login-ver">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#5F6368" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="#5F6368" stroke-width="2"/></svg>
+          Mostrar
+        </button>
+      </div>
+
+      <div id="login-error" class="login-error" role="alert" aria-live="assertive"></div>
+      <button id="login-submit" type="submit" class="login-submit">Ingresar</button>
+      <p class="login-nota">Si no tiene usuario, solicítelo al Administrador del sistema. El acceso queda registrado.</p>
+    </form>
+  </div>
+
+  <!-- 7. MODAL DEL ADMINISTRADOR: REGISTRO Y GESTIÓN DE USUARIOS -->
+  <div id="modal-usuarios" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="usuarios-titulo">
+    <div class="modal-box usuarios-modal">
+      <div class="modal-header">
+        <span id="usuarios-titulo">USUARIOS DEL SISTEMA</span>
+        <button id="usuarios-cerrar" type="button" class="btn-close-accessible" title="Cerrar" aria-label="Cerrar modal de gestión de usuarios">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="usuarios-msg" class="usuarios-msg" role="status" aria-live="polite"></div>
+
+        <h3 class="usuarios-h">Registrar nuevo usuario</h3>
+        <form id="form-nuevo-usuario" class="usuarios-form" autocomplete="off" novalidate>
+          <div class="usuarios-grid">
+            <div>
+              <label for="nuevo-usuario-login" class="login-label">Usuario (para ingresar)</label>
+              <input id="nuevo-usuario-login" type="text" class="login-input" maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ej.: jperez">
+            </div>
+            <div>
+              <label for="nuevo-usuario-nombre" class="login-label">Nombre completo</label>
+              <input id="nuevo-usuario-nombre" type="text" class="login-input" maxlength="120" autocomplete="off">
+            </div>
+            <div>
+              <label for="nuevo-usuario-rol" class="login-label">Rol</label>
+              <select id="nuevo-usuario-rol" class="login-input">
+                <option value="">-- Seleccione --</option>
+                <option value="ADMIN">Administrador (control total, todas las redes)</option>
+                <option value="COORDINADOR">Coordinador (sube y edita información de su red)</option>
+                <option value="DIRECTOR">Director (solo dashboard de su red)</option>
+              </select>
+            </div>
+            <div id="nuevo-usuario-establecimiento-wrap">
+              <label for="nuevo-usuario-establecimiento" class="login-label">Establecimiento (opcional)</label>
+              <select id="nuevo-usuario-establecimiento" class="login-input">
+                <option value="">Todos los de su red</option>
+              </select>
+              <small style="display:block; margin-top:4px; color:var(--text-secondary);">Si elige uno, el usuario solo verá y registrará pacientes de ese establecimiento.</small>
+            </div>
+            <div id="nuevo-usuario-red-wrap">
+              <label for="nuevo-usuario-red" class="login-label">Red (RIS) asignada</label>
+              <select id="nuevo-usuario-red" class="login-input">
+                <option value="">-- Seleccione la red (RIS) --</option>
+              </select>
+            </div>
+            <div>
+              <label for="nuevo-usuario-clave" class="login-label">Clave inicial (mínimo 10 caracteres)</label>
+              <input id="nuevo-usuario-clave" type="password" class="login-input" maxlength="128" autocomplete="new-password">
+            </div>
+          </div>
+          <div style="text-align:right; margin-top:10px;">
+            <button id="nuevo-usuario-guardar" type="submit" class="btn-mini btn-precita">Registrar usuario</button>
+          </div>
+        </form>
+
+        <div id="usuarios-clave-box" class="usuarios-clave-box" style="display:none;">
+          <strong id="usuarios-clave-titulo">Nueva clave</strong>
+          <input id="usuarios-clave-nueva" type="password" class="login-input" maxlength="128" autocomplete="new-password" placeholder="Mínimo 10 caracteres">
+          <div style="text-align:right; margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
+            <button id="usuarios-clave-cancelar" type="button" class="btn-mini" style="background:#e2e8f0; color:#334155;">Cancelar</button>
+            <button id="usuarios-clave-guardar" type="button" class="btn-mini btn-precita">Guardar clave</button>
+          </div>
+        </div>
+
+        <h3 class="usuarios-h">Usuarios registrados</h3>
+        <div id="usuarios-lista" class="usuarios-lista"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuración Centralizada de Endpoints y Entornos -->
+  <script src="js/config.js?v=20261029_a8f"></script>
+  <script src="js/utils/fechaLima.js?v=20261029_a8f"></script>
+
+  <!-- Librerías GIS Open Source (Alojadas Localmente) -->
+  <script src="libs/leaflet.js"></script>
+
+  <!-- Datos Cartográficos Oficiales GeoRIS (MINSA) y Catastro Urbano Open Source -->
+  <script src="data/georis/georisDataBundle.js?v=20261021_v18"></script>
+  <script src="data/georis/huarmeyCadastreBundle.js?v=20261021_v18"></script>
+
+  <!-- Módulos de Georreferenciación, Datos y Reglas Clínicas -->
+  <script src="js/map/establecimientos.js?v=20261026_v21"></script>
+  <script src="js/map/georisAncashLayers.js?v=20261026_v21"></script>
+  <script src="js/map/ancashGeocoder.js?v=20261026_v21"></script>
+  <script src="js/map/mapManager.js?v=20261021_v18"></script>
+  <script src="js/auth/session.js?v=20261022_v20"></script>
+  <script src="js/auth/authUi.js?v=20261022_v20"></script>
+  <script src="js/clinical/semaforo.js?v=20261021_v18"></script>
+  <script src="js/clinical/heartsEngine.js?v=20261021_v18"></script>
+  <script src="js/clinical/alertsManager.js?v=20261021_v18"></script>
+  <script src="js/clinical/whatsappNotifier.js?v=20261029_a8f"></script>
+  <script src="js/clinical/indicadoresConvenio.js?v=20261029_a8f"></script>
+  <script src="js/data/hosixParser.js?v=20261021_v18"></script>
+
+  
+  <!-- Librerías de Hojas de Cálculo y Auditoría Local-First -->
+  <script src="libs/xlsx.full.min.js"></script>
+  <script src="js/data/padronSchema.js?v=20261029_a8f"></script>
+  <script src="js/data/padronExcelParser.js?v=20261029_a8f"></script>
+  <script src="js/data/padronPlantillaV4.js?v=20261029_a8f"></script>
+  <script src="js/data/padronExportV4.js?v=20261029_a8f"></script>
+  <script src="js/clinical/padronCalculadora.js?v=20261027_v6"></script>
+  <!-- UI Modals y Componentes Visuales -->
+  <script src="js/ui/icons.js?v=20261027_v6"></script>
+  <script src="js/ui/padronGridModal.js?v=20261029_a8f"></script>
+  <script src="js/ui/registroClinicoModal.js?v=20261029_a8f"></script>
+
+  <!-- Controlador Principal -->
+  <script src="js/main.js?v=20261029_a8f"></script>
+
+</body>
+</html>

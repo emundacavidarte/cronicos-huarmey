@@ -1,0 +1,506 @@
+/**
+ * padron-grid.css
+ * Estilos para el Editor y Auditor Interactivo de Hoja de Cálculo del Padrón Huarmey (v4)
+ * Diseño armonizado con la paleta pastel, cabeceras congeladas (Freeze Panes) y celdas reactivas.
+ */
+
+/* 1. Modal Overlay de Pantalla Completa */
+.padron-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: padronFadeIn 0.2s ease-out;
+}
+
+.padron-modal-overlay.active {
+  display: flex;
+}
+
+@keyframes padronFadeIn {
+  from { opacity: 0; transform: scale(0.99); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 2. Caja Principal del Modal */
+.padron-modal-box {
+  width: 97vw;
+  height: 94vh;
+  max-width: 1800px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+}
+
+/* 3. Cabecera */
+.padron-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.padron-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.padron-title-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.padron-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.padron-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.padron-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.padron-score-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.padron-score-badge.score-100 {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.padron-score-badge.score-warn {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.padron-score-badge.score-err {
+  background: #fff1f2;
+  color: #9f1239;
+  border-color: #fecdd3;
+}
+
+/* 4. Barra de Herramientas y Filtros */
+.padron-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.padron-toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.padron-tool-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.padron-tool-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.padron-tool-btn.active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.padron-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 10px;
+}
+
+.padron-search-box input {
+  border: none;
+  outline: none;
+  font-size: 12px;
+  width: 220px;
+  color: #1e293b;
+}
+
+.padron-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.padron-action-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.padron-action-btn:hover {
+  background: #e2e8f0;
+}
+
+/* 4b. Panel de Navegación Rápida de Inconsistencias (Clic para saltar) */
+.padron-errors-panel {
+  background: #fff5f5;
+  border-bottom: 2px solid #fecdd3;
+  padding: 8px 20px;
+  max-height: 130px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.padron-errors-panel-header {
+  margin-bottom: 6px;
+}
+
+.padron-errors-pills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.padron-error-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.1);
+}
+
+.padron-error-pill:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+}
+
+.pill-row-num {
+  background: #ef4444;
+  color: #ffffff;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.pill-col-name {
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.pill-err-text {
+  color: #475569;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-jump-icon {
+  font-weight: 700;
+  color: #2563eb;
+  margin-left: 4px;
+}
+
+/* Animación de pulso al saltar a la celda observada */
+@keyframes cellPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+  50% { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.3); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.cell-pulse {
+  animation: cellPulse 0.8s ease-in-out 2;
+  z-index: 15 !important;
+}
+
+/* 5. Contenedor de Hoja de Cálculo (Scrollable Grid) */
+.padron-grid-wrapper {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #ffffff;
+}
+
+.padron-grid-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: #1e293b;
+}
+
+/* Bordes y Celdas Generales */
+.padron-grid-table th,
+.padron-grid-table td {
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+/* Cabeceras Fijas (Sticky Top) */
+.padron-grid-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.padron-grid-table thead tr:nth-child(2) th {
+  top: 26px; /* Altura de la primera fila de bloques */
+  z-index: 20;
+}
+
+/* Columnas Congeladas a la Izquierda (Freeze Panes) */
+.th-freeze-col,
+.td-freeze-col {
+  position: sticky !important;
+  background: #ffffff;
+  z-index: 10;
+}
+
+.th-freeze-col {
+  z-index: 30 !important;
+}
+
+/* Posiciones exactas de las columnas fijas */
+.th-col-num, .td-col-num {
+  left: 0;
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+  background: #f8fafc !important;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.th-col-dni, .td-col-dni {
+  left: 36px;
+  width: 95px;
+  min-width: 95px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+}
+
+.th-col-nombre, .td-col-nombre {
+  left: 131px;
+  width: 240px;
+  min-width: 240px;
+  font-weight: 600;
+  box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+}
+
+.th-col-action, .td-col-action {
+  width: 44px;
+  min-width: 44px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.btn-del-row {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 13px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.btn-del-row:hover {
+  opacity: 1;
+  background: #fee2e2;
+}
+
+/* 6. Estilos de Celdas Editables y Celdas con Inconsistencias */
+.editable-cell {
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.editable-cell:hover {
+  background-color: #f1f5f9;
+}
+
+.cell-empty {
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+/* Celda con Error (Resaltado Rojo Pastel) */
+.cell-error {
+  background-color: #fff1f2 !important;
+  color: #9f1239 !important;
+  outline: 2px solid #f43f5e;
+  outline-offset: -2px;
+  font-weight: 600;
+}
+
+.cell-error-icon {
+  margin-left: 4px;
+  font-size: 11px;
+  vertical-align: middle;
+}
+
+.row-has-errors {
+  background-color: #fffaf0;
+}
+
+/* Input y Select Inline dentro de la Celda */
+.grid-inline-input,
+.grid-inline-select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 3px 6px;
+  border: 2px solid #3b82f6;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-family: inherit;
+  outline: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.grid-inline-select {
+  max-width: 300px;
+}
+
+.padron-empty-msg {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* 7. Pie del Modal */
+.padron-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.padron-status-msg {
+  font-size: 12.5px;
+  color: #334155;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.padron-footer-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.padron-btn-cancel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.padron-btn-cancel:hover {
+  background: #f1f5f9;
+}
+
+.padron-btn-submit {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.padron-btn-submit.disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.padron-btn-submit.enabled {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #059669;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
+}
+
+.padron-btn-submit.enabled:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}

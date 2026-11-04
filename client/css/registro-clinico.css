@@ -1,0 +1,473 @@
+/**
+ * registro-clinico.css
+ * Estilos para el Formulario de Registro Clínico en Línea
+ * Basado en el estándar oficial del Padrón Estandarizado - Huarmey
+ */
+
+.reg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeInModal 0.2s ease-out;
+}
+
+.reg-modal-overlay.active {
+  display: flex;
+}
+
+.reg-modal-box {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  width: 95vw;
+  max-width: 1280px;
+  height: 92vh;
+  max-height: 880px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+}
+
+/* 1. Header */
+.reg-modal-header {
+  background: #ffffff;
+  color: #202124;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #dadce0;
+}
+
+.reg-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reg-header-icon {
+  font-size: 20px;
+  background: #e8f0fe;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #d2e3fc;
+  color: #1967d2;
+}
+
+.reg-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0;
+  color: #202124;
+}
+
+.reg-subtitle {
+  font-size: 12px;
+  color: #5f6368;
+  margin-top: 2px;
+}
+
+.reg-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 2. Cuerpo en Dos Columnas */
+.reg-modal-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+/* Columna Izquierda: Formulario Scrollable */
+.reg-form-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+/* Columna Derecha: Tarjeta Clínica Viva (Sticky Summary) */
+.reg-sidebar-container {
+  width: 360px;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.03);
+}
+
+/* 3. Barra Superior de DNI y Precarga */
+.reg-dni-search-card {
+  background: #ffffff;
+  border: 2px solid #0284c7;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1);
+}
+
+.reg-dni-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reg-dni-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reg-dni-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.reg-dni-input {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 8px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.reg-dni-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+}
+
+.reg-dni-btn-search {
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 700;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  transition: background 0.15s ease;
+}
+
+.reg-dni-btn-search:hover {
+  background: #0369a1;
+}
+
+/* Notificaciones de DNI (Paciente encontrado / Paciente nuevo) */
+.reg-dni-status-alert {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeIn 0.25s ease;
+}
+
+.reg-alert-found {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+}
+
+.reg-alert-new {
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
+}
+
+.reg-alert-warn {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+/* 4. Bloques Temáticos de Formulario */
+.reg-section {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.reg-section-header {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.reg-section-body {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px 16px;
+}
+
+/* Campos de entrada */
+.reg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reg-field.col-span-2 {
+  grid-column: span 2;
+}
+
+.reg-field.col-span-3 {
+  grid-column: span 3;
+}
+
+.reg-field.col-span-full {
+  grid-column: 1 / -1;
+}
+
+.reg-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reg-label .req {
+  color: #dc2626;
+}
+
+.reg-input, .reg-select {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1e293b;
+  outline: none;
+  background: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.reg-input:focus, .reg-select:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.reg-input[readonly] {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+/* Medicación Precargada Banner */
+.reg-med-precarga-box {
+  grid-column: 1 / -1;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #5b21b6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Destacado de Sección de Atención de Hoy */
+.reg-section.highlight-today {
+  border: 2px solid #16a34a;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.12);
+}
+
+.reg-section.highlight-today .reg-section-header {
+  background: #dcfce7 !important;
+  color: #14532d !important;
+}
+
+/* 5. Tarjeta Clínica Viva (Sidebar Derecho) */
+.reg-live-panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.reg-live-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.reg-live-metric-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metric-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.metric-sub {
+  font-size: 11.5px;
+  color: #475569;
+}
+
+/* Semáforo Pill */
+.reg-semaforo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.reg-sem-verde { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.reg-sem-amarillo { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+.reg-sem-rojo { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.reg-sem-negro { background: #334155; color: #ffffff; border: 1px solid #1e293b; }
+.reg-sem-gris { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+/* Caja de "Qué le falta" */
+.reg-faltantes-box {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.reg-faltantes-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #9f1239;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reg-faltantes-text {
+  font-size: 11.5px;
+  color: #be123c;
+  line-height: 1.4;
+}
+
+/* 6. Footer de Acciones */
+.reg-sidebar-footer {
+  padding: 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reg-btn-save {
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);
+}
+
+.reg-btn-save:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.reg-btn-cancel {
+  background: #ffffff;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.reg-btn-cancel:hover {
+  background: #f1f5f9;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .reg-modal-body {
+    flex-direction: column;
+  }
+  .reg-sidebar-container {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+  }
+}

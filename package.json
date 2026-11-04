@@ -1,0 +1,29 @@
+{
+  "name": "cronicos-huarmey",
+  "version": "3.0.0",
+  "description": "Sistema Territorial de Monitoreo de Pacientes Crónicos - Hospital II-1 Huarmey (RIS Pacífico Sur)",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js",
+    "test": "npm --prefix server test"
+  },
+  "keywords": [
+    "hl7",
+    "fhir",
+    "minsa",
+    "georis",
+    "huarmey",
+    "cronicos",
+    "hearts"
+  ],
+  "author": "Hospital de Apoyo Huarmey - Red Pacífico Sur",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

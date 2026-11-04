@@ -1,0 +1,1614 @@
+/**
+ * components.css
+ * Componentes de Interfaz Institucional Premium: MÁXIME Salud Digital & GeoRIS MINSA
+ * Sistema Semafórico HEARTS Oficial, Fichas Clínicas, KPI Cards, Pines Cartográficos y Modales
+ * Diseñado con criterios de accesibilidad WCAG 2.1 AA/AAA y diseño centrado en el usuario (ISO 9241-210)
+ * Cero micro-fuentes (mínimo 12px), objetivos táctiles >= 36-44px y contraste cromático >= 4.5:1
+ */
+
+/* ==========================================================================
+   1. PINES CARTOGRÁFICOS EN EL MAPA (Burbujas Circulares HD con Iconos Blancos)
+   ========================================================================== */
+.custom-map-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Pin de Paciente HEARTS (Círculo nítido con corazón blanco en SVG) */
+.pin-patient-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.pin-patient-avatar {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(11, 30, 63, 0.35) !important;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+}
+
+.pin-patient-avatar:hover {
+  transform: scale(1.25) !important;
+  z-index: 9999 !important;
+}
+
+.pin-patient-avatar svg {
+  width: 12px !important;
+  height: 12px !important;
+  fill: #FFFFFF !important;
+  display: block !important;
+}
+
+/* Pin del Hospital de Referencia (Huarmey II-1 / Casma / Chimbote) */
+.pin-hospital-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.pin-hospital-badge {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: #0284C7 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 2.5px solid #FFFFFF !important;
+  box-shadow: 0 3px 10px rgba(11, 30, 63, 0.40) !important;
+  transition: transform 0.16s ease !important;
+  cursor: pointer !important;
+}
+
+.pin-hospital-badge.is-huarmey {
+  background: #DC2626 !important; /* Rojo hospitalario oficial para Nuevo Hospital Huarmey */
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.50) !important;
+}
+
+.pin-hospital-badge:hover {
+  transform: scale(1.18) !important;
+}
+
+.pin-hospital-badge svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: #FFFFFF !important;
+  display: block !important;
+}
+
+/* Pin de Cabecera de Zona Sanitaria (Centros de Salud I-3 / I-4) */
+.pin-zona-badge {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: #D97706 !important; /* Ámbar sanitario */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.40) !important;
+  cursor: pointer !important;
+}
+
+.pin-zona-badge svg {
+  width: 14px !important;
+  height: 14px !important;
+  fill: #FFFFFF !important;
+  display: block !important;
+}
+
+/* Pin de Puerta de Entrada (Postas Médicas I-1 / I-2) */
+.pin-puerta-badge {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: #0284C7 !important; /* Azul GeoRIS */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35) !important;
+  cursor: pointer !important;
+}
+
+.pin-puerta-badge svg {
+  width: 12px !important;
+  height: 12px !important;
+  fill: #FFFFFF !important;
+  display: block !important;
+}
+
+/* ==========================================================================
+   2. BADGES Y ETIQUETAS DEL SEMÁFORO HEARTS INSTITUCIONAL
+   ========================================================================== */
+.badge-semaforo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.semaforo-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.badge-green {
+  background-color: var(--hearts-green-bg);
+  color: var(--hearts-green-text);
+  border-color: var(--hearts-green-border);
+}
+
+.badge-yellow {
+  background-color: var(--hearts-yellow-bg);
+  color: var(--hearts-yellow-text);
+  border-color: var(--hearts-yellow-border);
+}
+
+.badge-red {
+  background-color: var(--hearts-red-bg);
+  color: var(--hearts-red-text);
+  border-color: var(--hearts-red-border);
+}
+
+.badge-gray {
+  background-color: var(--hearts-gray-bg);
+  color: var(--hearts-gray-text);
+  border-color: var(--hearts-gray-border);
+}
+
+.badge-purple {
+  background-color: var(--hearts-purple-bg);
+  color: var(--hearts-purple-text);
+  border-color: var(--hearts-purple-border);
+}
+
+/* Diagnósticos CIE-10 Sobrios */
+.badge-diag {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--slate-100);
+  color: var(--slate-800);
+  border: 1px solid var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-i10,
+[class*="badge-i1"] {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border-color: #BFDBFE;
+}
+
+.badge-e11,
+[class*="badge-e1"] {
+  background: var(--hearts-yellow-bg);
+  color: var(--hearts-yellow-text);
+  border-color: var(--hearts-yellow-border);
+}
+
+[class*="badge-n18"] {
+  background: #FDF2F8;
+  color: #9D174D;
+  border-color: #FBCFE8;
+}
+
+[class*="badge-e78"] {
+  background: var(--hearts-purple-bg);
+  color: var(--hearts-purple-text);
+  border-color: var(--hearts-purple-border);
+}
+
+.badge-hosix-mini {
+  background: var(--hearts-purple);
+  color: #FFFFFF;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   3. SELECTORES Y CAMPOS DE FORMULARIO
+   ========================================================================== */
+.georis-select {
+  width: 100%;
+  height: var(--target-min-desktop);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  margin-top: var(--space-1);
+}
+
+.georis-select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.ux-field-label {
+  display: block;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
+  margin-top: var(--space-2);
+}
+
+/* Acordeón Ergonómico con Foco Accesible */
+.ux-accordion {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  background: #FFFFFF;
+  overflow: hidden;
+  transition: all 0.16s ease;
+}
+
+.ux-accordion-summary {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: var(--text-main);
+  background: var(--slate-50);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.ux-accordion-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ux-accordion-summary:after {
+  content: '▾';
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.ux-accordion[open] > .ux-accordion-summary:after {
+  transform: rotate(180deg);
+}
+
+.ux-accordion-body {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* ==========================================================================
+   4. TARJETAS DE INDICADORES (KPI CARDS INSTITUCIONALES)
+   ========================================================================== */
+.kpi-card {
+  height: 36px;
+  padding: 0 var(--space-3);
+  background: #FFFFFF;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.kpi-card:hover {
+  border-color: var(--slate-400);
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-1px);
+}
+
+.kpi-card.kpi-green {
+  background: var(--hearts-green-bg);
+  border-color: var(--hearts-green-border);
+  color: var(--hearts-green-text);
+}
+
+.kpi-card.kpi-yellow {
+  background: var(--hearts-yellow-bg);
+  border-color: var(--hearts-yellow-border);
+  color: var(--hearts-yellow-text);
+}
+
+.kpi-card.kpi-red {
+  background: var(--hearts-red-bg);
+  border-color: var(--hearts-red-border);
+  color: var(--hearts-red-text);
+}
+
+.kpi-card.kpi-purple {
+  background: var(--hearts-purple-bg);
+  border-color: var(--hearts-purple-border);
+  color: var(--hearts-purple-text);
+}
+
+.kpi-card.active {
+  box-shadow: 0 0 0 2px var(--maxime-navy);
+}
+
+.kpi-val {
+  font-size: var(--font-sm);
+  font-weight: 800;
+  line-height: var(--lh-tight);
+}
+
+.kpi-label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* ==========================================================================
+   5. CHIPS DE FILTRO Y BOTONES DE ACCIÓN
+   ========================================================================== */
+.filter-chip {
+  height: 30px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  background: var(--slate-100);
+  border-color: var(--slate-400);
+  color: var(--text-main);
+}
+
+.filter-chip.active {
+  background: var(--maxime-navy) !important;
+  color: #FFFFFF !important;
+  border-color: var(--maxime-navy) !important;
+}
+
+.filter-chip.chip-green {
+  background: var(--hearts-green-bg);
+  color: var(--hearts-green-text);
+  border-color: var(--hearts-green-border);
+}
+
+.filter-chip.chip-yellow {
+  background: var(--hearts-yellow-bg);
+  color: var(--hearts-yellow-text);
+  border-color: var(--hearts-yellow-border);
+}
+
+.filter-chip.chip-red {
+  background: var(--hearts-red-bg);
+  color: var(--hearts-red-text);
+  border-color: var(--hearts-red-border);
+}
+
+.filter-chip.chip-purple {
+  background: var(--hearts-purple-bg);
+  color: var(--hearts-purple-text);
+  border-color: var(--hearts-purple-border);
+}
+
+.filter-chip.chip-hta {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border-color: #BFDBFE;
+}
+
+.filter-chip.chip-dm {
+  background: var(--hearts-yellow-bg);
+  color: var(--hearts-yellow-text);
+  border-color: var(--hearts-yellow-border);
+}
+
+/* ==========================================================================
+   6. LISTA DE PACIENTES Y TARJETAS CLÍNICAS INSTITUCIONALES
+   ========================================================================== */
+.patient-list-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4) var(--space-6);
+}
+
+.patient-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--slate-400);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  box-shadow: var(--shadow-xs);
+  flex-shrink: 0;
+}
+
+.patient-card:hover {
+  background: #FFFFFF;
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.patient-card.border-green { border-left-color: var(--hearts-green); }
+.patient-card.border-yellow { border-left-color: var(--hearts-yellow); }
+.patient-card.border-red { border-left-color: var(--hearts-red); }
+.patient-card.border-purple { border-left-color: var(--hearts-purple); }
+.patient-card.border-gray { border-left-color: var(--slate-400); }
+
+.patient-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.patient-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.patient-name {
+  font-size: var(--font-base);
+  font-weight: 800;
+  color: var(--maxime-navy);
+  line-height: var(--lh-snug);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.patient-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.pcard-compact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  background: var(--slate-50);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.pcard-demo-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pcard-cell-lbl {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+  line-height: var(--lh-tight);
+}
+
+.pcard-cell-val {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pcard-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pcard-address {
+  flex: 1;
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--lh-tight);
+}
+
+.patient-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  flex-shrink: 0;
+}
+
+/* Botones de Tarjeta Clínicos */
+.btn-mini {
+  height: 34px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  transition: all 0.16s ease;
+  user-select: none;
+}
+
+.btn-mini:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-mini:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-whatsapp {
+  background: #059669;
+  color: #FFFFFF;
+  border-color: #059669;
+}
+
+.btn-whatsapp:hover:not(:disabled) {
+  background: #047857;
+  border-color: #047857;
+}
+
+.btn-precita {
+  background: var(--maxime-navy);
+  color: #FFFFFF;
+  border-color: var(--maxime-navy);
+}
+
+.btn-precita:hover:not(:disabled) {
+  background: var(--maxime-navy-light);
+  border-color: var(--maxime-navy-light);
+}
+
+.btn-ubicar {
+  background: #FFFFFF;
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+
+.btn-ubicar:hover:not(:disabled) {
+  background: var(--slate-100);
+  border-color: var(--slate-400);
+  color: var(--text-main);
+}
+
+/* ==========================================================================
+   7. LISTA DE CAPAS ESTILO GEORIS & ZONA DE CARGA
+   ========================================================================== */
+.georis-layer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--slate-100);
+  font-size: var(--font-sm);
+  min-height: 40px;
+}
+
+.georis-layer-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.georis-layer-label input[type="checkbox"] {
+  accent-color: var(--georis-cyan);
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.georis-layer-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.legend-mini-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.legend-mini-badge.badge-hosp {
+  background: var(--hearts-red-bg);
+  border: 1px solid var(--hearts-red-border);
+  color: var(--hearts-red-text);
+}
+
+.legend-mini-badge.badge-zona {
+  background: var(--hearts-yellow-bg);
+  border: 1px solid var(--hearts-yellow-border);
+  color: var(--hearts-yellow-text);
+}
+
+.legend-mini-badge.badge-puerta {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1E40AF;
+}
+
+.legend-mini-badge.badge-paciente {
+  background: var(--hearts-green-bg);
+  border: 1px solid var(--hearts-green-border);
+  color: var(--hearts-green-text);
+}
+
+.upload-zone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  background: var(--slate-50);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: var(--space-3);
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--georis-cyan);
+  background: #F0F9FF;
+}
+
+.upload-title {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--maxime-navy);
+  margin-bottom: var(--space-1);
+}
+
+.upload-subtitle {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   8. MODALES Y DIÁLOGOS CLÍNICOS
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--surface-overlay);
+  backdrop-filter: blur(4px);
+  z-index: 1500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 500px;
+  overflow: hidden;
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border-strong);
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  background: var(--maxime-navy);
+  color: #FFFFFF;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-base);
+  font-weight: 800;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--georis-cyan);
+}
+
+.btn-close-accessible,
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.btn-close-accessible:hover,
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.modal-body {
+  padding: var(--space-4);
+  font-size: var(--font-base);
+  color: var(--text-main);
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: var(--space-3) var(--space-4);
+  background: var(--slate-50);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ==========================================================================
+   9. FICHA CLÍNICA HEARTS MINSA / OPS (Diseño Hospitalario Ejecutivo)
+   ========================================================================== */
+.modal-box.hearts-ficha-modal {
+  max-width: 1040px;
+  width: 96%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 32px rgba(60, 64, 67, 0.2);
+}
+
+.hearts-ficha-header {
+  background: #FFFFFF;
+  color: var(--text-main);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.hearts-ficha-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hearts-ficha-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--google-blue);
+  text-transform: uppercase;
+}
+
+.hearts-ficha-main-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hearts-padron-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--google-blue-text);
+  background: var(--google-blue-surface);
+  border: 1px solid #D2E3FC;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+
+.hearts-close-btn {
+  background: var(--slate-100);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.hearts-close-btn:hover {
+  background: var(--slate-200);
+  color: var(--text-main);
+}
+
+.hearts-ficha-body {
+  padding: var(--space-4) var(--space-5);
+  background: var(--slate-50);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.hearts-patient-banner {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--shadow-xs);
+}
+
+.hearts-patient-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.hearts-patient-identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.hearts-patient-name {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  color: var(--maxime-navy);
+  line-height: var(--lh-tight);
+  margin: 0;
+}
+
+.hearts-diag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  align-items: center;
+}
+
+.hearts-status-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.hearts-demo-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.hearts-demo-grid-4 {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1.2fr 1.2fr;
+  gap: var(--space-2);
+}
+
+.hearts-id-item {
+  background: var(--slate-50);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hearts-id-label {
+  display: block;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.hearts-id-val {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: var(--lh-tight);
+}
+
+.hearts-clinical-columns {
+  display: grid;
+  grid-template-columns: 1fr 1.12fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.hearts-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hearts-section {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+
+.hearts-section-header {
+  background: #FFFFFF;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--georis-cyan);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hearts-sec-title {
+  font-size: var(--font-sm);
+  font-weight: 800;
+  color: var(--maxime-navy);
+  letter-spacing: 0.2px;
+}
+
+.hearts-sec-tag {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  font-weight: 700;
+  background: var(--slate-100);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.hearts-section-body {
+  padding: var(--space-3) var(--space-4);
+}
+
+.hearts-sub-label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: var(--space-1-5);
+}
+
+.hearts-pa-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--slate-50);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.hearts-pa-hero.pa-ok {
+  background: var(--hearts-green-bg);
+  border-color: var(--hearts-green-border);
+}
+
+.hearts-pa-hero.pa-alert {
+  background: var(--hearts-red-bg);
+  border-color: var(--hearts-red-border);
+}
+
+.hearts-pa-val-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.hearts-pa-val {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: var(--lh-tight);
+}
+
+.hearts-pa-unit {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.hearts-pa-badge {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.hearts-pa-badge.ok {
+  background: var(--hearts-green);
+  color: #FFFFFF;
+}
+
+.hearts-pa-badge.alert {
+  background: var(--hearts-red);
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   ÍCONOS VECTORIALES SVG GLOBALES
+   ========================================================================== */
+.svg-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform 0.16s ease;
+}
+
+/* ==========================================================================
+   HISTÓRICO CLÍNICO Y EVOLUCIÓN LONGITUDINAL HEARTS
+   ========================================================================== */
+.hearts-quarters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.hearts-quarter-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.16s ease;
+}
+
+.hearts-quarter-card.has-data {
+  border-color: var(--border-strong);
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+}
+
+.hearts-quarter-card.is-target-ok {
+  border-color: var(--hearts-green-border);
+  background: var(--hearts-green-bg);
+}
+
+.hearts-quarter-card.is-target-alert {
+  border-color: var(--hearts-red-border);
+  background: var(--hearts-red-bg);
+}
+
+.quarter-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.quarter-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.quarter-val.blank {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.quarter-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.quarter-badge.badge-ok {
+  background: var(--hearts-green);
+  color: #FFFFFF;
+}
+
+.quarter-badge.badge-alert {
+  background: var(--hearts-red);
+  color: #FFFFFF;
+}
+
+.quarter-badge.badge-empty {
+  background: var(--slate-100);
+  color: var(--text-muted);
+}
+
+/* Timeline Vertical de Histórico */
+.hearts-timeline {
+  position: relative;
+  padding-left: 28px;
+  margin: 12px 0 16px;
+}
+
+.hearts-timeline::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 10px;
+  width: 2px;
+  background: var(--border-strong);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -28px;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+}
+
+.timeline-dot.dot-green {
+  border-color: var(--hearts-green);
+  background: var(--hearts-green-bg);
+}
+
+.timeline-dot.dot-yellow {
+  border-color: var(--hearts-yellow);
+  background: var(--hearts-yellow-bg);
+}
+
+.timeline-dot.dot-red {
+  border-color: var(--hearts-red);
+  background: var(--hearts-red-bg);
+}
+
+.timeline-dot.dot-blue {
+  border-color: var(--google-blue);
+  background: var(--google-blue-surface);
+}
+
+.timeline-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeline-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timeline-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-card-date {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.timeline-card-body {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.timeline-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   10. ACCESO (LOGIN) Y GESTIÓN DE USUARIOS
+   ========================================================================== */
+.perm-hidden {
+  display: none !important;
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(11, 30, 63, 0.75);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+
+.login-overlay.active {
+  display: flex;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border-strong);
+}
+
+.login-logo {
+  display: block;
+  height: 44px;
+  width: auto;
+  margin: 0 auto var(--space-3);
+}
+
+.login-title {
+  margin: 0;
+  text-align: center;
+  font-size: var(--font-lg);
+  font-weight: 800;
+  color: var(--maxime-navy);
+}
+
+.login-sub {
+  margin: var(--space-1) 0 var(--space-4);
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.login-label {
+  display: block;
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.login-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-base);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #FFFFFF;
+  color: var(--text-main);
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.18);
+}
+
+.login-pass-row {
+  display: flex;
+  gap: var(--space-1-5);
+  align-items: stretch;
+}
+
+.login-ver {
+  flex-shrink: 0;
+  padding: 0 var(--space-3);
+  height: 42px;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--slate-100);
+  color: var(--slate-800);
+  cursor: pointer;
+}
+
+.login-error {
+  min-height: 20px;
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--hearts-red-text);
+}
+
+.login-submit {
+  width: 100%;
+  margin-top: var(--space-2);
+  height: 44px;
+  font-size: var(--font-base);
+  font-weight: 800;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--maxime-navy);
+  color: #FFFFFF;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: var(--maxime-navy-light);
+}
+
+.login-nota {
+  margin: var(--space-3) 0 0;
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.usuarios-modal {
+  max-width: 700px;
+}
+
+.usuarios-h {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--font-base);
+  font-weight: 800;
+  color: var(--maxime-navy);
+}
+
+.usuarios-h:first-of-type {
+  margin-top: 0;
+}
+
+.usuarios-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2) var(--space-3);
+}
+
+.usuarios-msg {
+  margin-bottom: var(--space-3);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.usuarios-msg.ok {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--hearts-green-bg);
+  color: var(--hearts-green-text);
+  border: 1px solid var(--hearts-green-border);
+}
+
+.usuarios-msg.error {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--hearts-red-bg);
+  color: var(--hearts-red-text);
+  border: 1px solid var(--hearts-red-border);
+}
+
+.usuarios-clave-box {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--slate-50);
+}
+
+.usuarios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.usuarios-vacio {
+  padding: var(--space-4);
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.usuario-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: #FFFFFF;
+}
+
+.usuario-fila.inactivo {
+  opacity: 0.65;
+  background: var(--slate-100);
+}
+
+.usuario-nombre {
+  font-size: var(--font-base);
+  font-weight: 700;
+}
+
+.usuario-login {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.usuario-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.usuario-rol {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  background: #EFF6FF;
+  color: #1E40AF;
+}
+
+.usuario-rol.rol-ADMIN {
+  background: var(--hearts-red-bg);
+  color: var(--hearts-red-text);
+}
+
+.usuario-rol.rol-DIRECTOR {
+  background: var(--hearts-yellow-bg);
+  color: var(--hearts-yellow-text);
+}
+
+.usuario-acciones {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   11. TARJETA INSPECTOR DE REFERENCIA Y HOSPITAL
+   ========================================================================== */
+.reference-inspector-card {
+  position: fixed;
+  bottom: 40px;
+  left: 20px;
+  width: 360px;
+  max-width: calc(100vw - 40px);
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  z-index: 1200;
+  overflow: hidden;
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ref-card-header {
+  background: var(--maxime-navy);
+  color: #FFFFFF;
+  border-bottom: 2px solid var(--georis-cyan);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-xs);
+  font-weight: 800;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ref-card-body {
+  padding: var(--space-3);
+  font-size: var(--font-xs);
+  color: var(--text-main);
+  line-height: var(--lh-normal);
+}
+
+.timeline-vacio {
+  padding: 8px 0 8px 2px;
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.dash-nota {
+  margin: 6px 0 10px;
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+/* El aviso de consentimiento puede abrirse encima de la ficha del paciente (misma capa que la ficha, que se crea después) */
+#modal-consentimiento {
+  z-index: 1600;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "MÁXIME Salud Digital - Manejo Territorial de Crónicos",
+  "short_name": "MÁXIME Crónicos",
+  "description": "Sistema de Inteligencia Territorial de Pacientes Crónicos (HL7 FHIR & GeoRIS) - Hospital II-1 Huarmey",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0F234D",
+  "theme_color": "#0F234D",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/images/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/images/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
