@@ -197,12 +197,15 @@ async function main() {
     assert.strictEqual(scope.filterEstablishments(COORD_CS, todos).length, 0);
   });
 
-  await test('etagFor: cambia con el rol y la red, igual para el mismo rol y red', () => {
+  await test('etagFor: cambia con el usuario y su alcance (F2-06), igual para el mismo usuario', () => {
     const base = 'W/"cronicos-v1-3"';
     assert.strictEqual(scope.etagFor(ADMIN, base), base);
     assert.notStrictEqual(scope.etagFor(COORD_PS, base), base);
     assert.notStrictEqual(scope.etagFor(COORD_PS, base), scope.etagFor(COORD_CS, base));
-    assert.strictEqual(scope.etagFor(COORD_PS, base), scope.etagFor({ role: 'COORDINADOR', red: 'Pacífico Sur' }, base));
+    assert.strictEqual(scope.etagFor(COORD_PS, base), scope.etagFor(Object.assign({}, COORD_PS), base));
+    // Dos usuarios de la misma red y rol, con distinto establecimiento, no comparten ETag (antes sí: 304 cruzado)
+    const otroDeLaRed = Object.assign({}, COORD_PS, { username: 'otro.coord', establecimiento_id: '00001744' });
+    assert.notStrictEqual(scope.etagFor(COORD_PS, base), scope.etagFor(otroDeLaRed, base));
     assert.ok(/^W\/".*"$/.test(scope.etagFor(COORD_PS, base)));
   });
 
@@ -269,7 +272,11 @@ async function main() {
     withEnv({ NODE_ENV: 'production', AUTH_SECRET: 'corto' }, () => {
       assert.throws(() => auth.checkConfig(), /AUTH_SECRET/);
     });
+    // F2-01: un secreto de un solo carácter repetido ya no se acepta; uno variado sí
     withEnv({ NODE_ENV: 'production', AUTH_SECRET: 'x'.repeat(40) }, () => {
+      assert.throws(() => auth.checkConfig(), /AUTH_SECRET/);
+    });
+    withEnv({ NODE_ENV: 'production', AUTH_SECRET: 'f2-q7Wm2Kx9Lp4Rt8Vz1Nc6Hb3Jd5Fs0Gy-prueba' }, () => {
       assert.doesNotThrow(() => auth.checkConfig());
     });
   });

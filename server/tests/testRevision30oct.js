@@ -131,11 +131,11 @@ async function main() {
       assert.deepStrictEqual(Object.keys(ind.por_establecimiento), [LAVICTORIA]);
     });
 
-    await step('no puede escribir ni leer eventos de otro establecimiento ni registrar pacientes en otro (403)', async () => {
+    await step('no puede escribir ni leer eventos de otro establecimiento (404, sin revelar que existe: F2-04) ni registrar pacientes en otro (403)', async () => {
       const ajeno = 'pac-00001741-94000002';
-      assert.strictEqual((await call('GET', `/api/patients/${ajeno}/eventos`, { token: coordA })).status, 403);
-      assert.strictEqual((await call('POST', `/api/patients/${ajeno}/eventos`, { token: coordA, body: { tipo: 'control', fecha: '2026-05-01' } })).status, 403);
-      assert.strictEqual((await call('PUT', `/api/patients/${ajeno}/consentimiento`, { token: coordA, body: { consentimiento: 'No' } })).status, 403);
+      assert.strictEqual((await call('GET', `/api/patients/${ajeno}/eventos`, { token: coordA })).status, 404);
+      assert.strictEqual((await call('POST', `/api/patients/${ajeno}/eventos`, { token: coordA, body: { tipo: 'control', fecha: '2026-05-01' } })).status, 404);
+      assert.strictEqual((await call('PUT', `/api/patients/${ajeno}/consentimiento`, { token: coordA, body: { consentimiento: 'No' } })).status, 404);
       const nuevo = await call('POST', '/api/padron/importar-lote', { token: coordA, body: lote('94000003', { establecimiento_control: 'Hospital de Apoyo Huarmey (00001741, II-1)' }) });
       assert.strictEqual(nuevo.status, 403, nuevo.text);
       const propio = await call('POST', '/api/padron/importar-lote', { token: coordA, body: lote('94000004', { establecimiento_control: 'C. S. La Victoria (00001744, I-3)' }) });

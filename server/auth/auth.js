@@ -19,6 +19,7 @@ const SCRYPT_KEYLEN = 64;
 const PASSWORD_MIN = 10;
 const PASSWORD_MAX = 128;
 const USERNAME_REGEX = /^[a-z0-9._-]{3,32}$/;
+const USERNAMES_RESERVADOS = ['__proto__', 'constructor', 'prototype'];
 
 // --- Configuración del secreto de firma ---
 let devSecret = null;
@@ -31,15 +32,8 @@ function getSecret() {
   return devSecret;
 }
 
-/** Con NODE_ENV=production no se arranca sin un AUTH_SECRET de al menos 32 caracteres. */
-function checkConfig() {
-  if (process.env.NODE_ENV === 'production') {
-    const secret = process.env.AUTH_SECRET || '';
-    if (secret.length < 32) {
-      throw new Error('AUTH_SECRET es obligatorio en producción y debe tener al menos 32 caracteres.');
-    }
-  }
-}
+/** Revisión de la configuración de producción (S-01): vive en config.js para poder correrla antes de cargar la base. */
+const { checkConfig } = require('./config');
 
 // --- Claves ---
 function validatePassword(password) {
@@ -110,7 +104,7 @@ function verifyToken(token, nowMs = Date.now()) {
 function normalizeUsername(value) {
   if (typeof value !== 'string') return null;
   const name = value.trim().toLowerCase();
-  return USERNAME_REGEX.test(name) ? name : null;
+  return USERNAME_REGEX.test(name) && !USERNAMES_RESERVADOS.includes(name) ? name : null;
 }
 
 /** Datos del usuario que se pueden mostrar o enviar al cliente (nunca el hash de la clave). */
@@ -182,24 +176,38 @@ function validateNewUser(body) {
   return { value: { username, nombre, role: b.role, red, establecimiento_id, sector_sanitario, password: b.password } };
 }
 
+/** Huella de una orden de ADMIN_RESET (usuario + clave del entorno), firmada con el secreto: no guarda la clave. */
+function resetMarker(username, password) {
+  return crypto.createHmac('sha256', getSecret()).update(`admin-reset|${username}|${password}`).digest('hex');
+}
+
+/**
+ * ADMIN_RESET=true restablece la clave de ADMIN_USER con ADMIN_PASSWORD UNA sola vez por cada clave del entorno (F2-19):
+ * si la variable queda olvidada, los reinicios siguientes no revierten la clave que el ADMIN cambió ni cierran sus sesiones.
+ * Poner una ADMIN_PASSWORD distinta vuelve a aplicar el restablecimiento.
+ */
 async function resetAdmin() {
   const username = normalizeUsername(process.env.ADMIN_USER || 'admin');
   if (!username) throw new Error('ADMIN_USER inválido para ADMIN_RESET.');
   const passwordError = validatePassword(process.env.ADMIN_PASSWORD);
   if (passwordError) throw new Error(`ADMIN_RESET requiere una ADMIN_PASSWORD válida: ${passwordError}`);
 
-  const hash = await hashPassword(process.env.ADMIN_PASSWORD);
   const existing = db.getUserByUsername(username);
   if (existing && existing.role !== 'ADMIN') {
     throw new Error(`ADMIN_RESET: "${username}" existe con el rol ${existing.role}. Use otro nombre en ADMIN_USER.`);
   }
+  const marker = resetMarker(username, process.env.ADMIN_PASSWORD);
+  if (existing && existing.admin_reset_marker === marker) {
+    return { created: false, reset: false, resetYaAplicado: true, username };
+  }
+  const hash = await hashPassword(process.env.ADMIN_PASSWORD);
   if (existing) {
-    db.updateUser(username, { password_hash: hash, activo: true, token_valid_after: Date.now() });
+    db.updateUser(username, { password_hash: hash, activo: true, token_valid_after: Date.now(), admin_reset_marker: marker });
     return { created: false, reset: true, username };
   }
   db.createUser({
     username, nombre: 'ADMINISTRADOR', role: 'ADMIN', red: null,
-    password_hash: hash, activo: true, creado: new Date().toISOString()
+    password_hash: hash, activo: true, creado: new Date().toISOString(), admin_reset_marker: marker
   });
   return { created: true, reset: true, username };
 }

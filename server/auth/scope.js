@@ -12,6 +12,11 @@ const { normalizeRed, sameRed } = require('./redes');
 
 const DEFAULT_ESTABLISHMENT = '00001741';
 
+function normalizarSector(value) {
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2010-\u2015]/g, '-').replace(/\s*-\s*/g, ' - ').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
 function isAdmin(user) {
   return !!user && user.role === 'ADMIN';
 }
@@ -38,11 +43,13 @@ function canSeePatient(user, patient) {
     if (pEst && userEst !== pEst) return false;
   }
 
-  // Ámbito granular por sector sanitario si el usuario lo tiene asignado
+  // Ámbito granular por sector sanitario si el usuario lo tiene asignado. Comparación EXACTA (sin tildes,
+  // mayúsculas ni diferencias de guion o espacios): "Sector 6" ya no ve "Sector 62" ni "Sector I" ve "Sector II" (F2-12).
+  // Un paciente sin sector sigue visible para que se le pueda asignar uno.
   if (user.sector_sanitario || user.sector) {
-    const userSec = String(user.sector_sanitario || user.sector).trim().toLowerCase();
-    const pSec = String(patient.sector_sanitario || patient.sector || '').trim().toLowerCase();
-    if (pSec && !pSec.includes(userSec) && !userSec.includes(pSec)) return false;
+    const userSec = normalizarSector(user.sector_sanitario || user.sector);
+    const pSec = normalizarSector(patient.sector_sanitario || patient.sector || '');
+    if (pSec && pSec !== userSec) return false;
   }
 
   return true;
@@ -63,12 +70,15 @@ function filterEstablishments(user, establishments) {
 }
 
 /**
- * ETag distinto por rol y red: dos usuarios con alcance diferente nunca comparten la misma versión en caché.
+ * ETag distinto por usuario y alcance (rol, red, establecimiento y sector): dos usuarios nunca comparten la misma
+ * versión en caché (F2-06; antes solo rol y red, y dos coordinadores de distinto establecimiento recibían 304).
  * Para ADMIN devuelve el ETag base sin cambios.
  */
 function etagFor(user, baseEtag) {
   if (isAdmin(user)) return baseEtag;
-  const key = user ? `${user.role}|${normalizeRed(user.red) || ''}` : 'sin-usuario';
+  const key = user
+    ? [user.username || '', user.role, normalizeRed(user.red) || '', user.establecimiento_id || '', user.sector_sanitario || ''].join('|')
+    : 'sin-usuario';
   const tag = crypto.createHash('sha256').update(key).digest('hex').slice(0, 8);
   const inner = String(baseEtag).replace(/^W\//, '').replace(/^"|"$/g, '');
   return `W/"${inner}-${tag}"`;
