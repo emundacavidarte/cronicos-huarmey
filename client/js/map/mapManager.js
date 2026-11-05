@@ -41,7 +41,10 @@ const BASEMAP_ALIAS = {
   'Esri Topográfico': 'Google Relieve',
   'OSM Humanitario Salud': 'OSM Humanitario (HOT)'
 };
-const BASEMAP_POR_DEFECTO = 'Google Calles y Vías';
+// Mapa base por defecto: OpenStreetMap (licencia abierta ODbL; uso moderado según la política de mosaicos de la OSMF).
+// Las capas de Google quedan en el selector: se usan sin clave de API, lo que sus condiciones no permiten para uso
+// formal; al contratar la Map Tiles API de Google se reemplazan sus URL por las de la API.
+const BASEMAP_POR_DEFECTO = 'OpenStreetMap';
 const BASEMAP_SATELITE = 'Esri Satélite (World Imagery)';
 
 const HOSPITAL_HUARMEY = [-10.04780, -78.15480];
@@ -130,6 +133,10 @@ class MapManager {
     // 2. Mapas base (nombres que dicen el proveedor real)
     const tilePerfOpts = { maxZoom: 20, updateWhenZooming: false, updateWhenIdle: false, keepBuffer: 4 };
     this.baseLayers = {
+      'OpenStreetMap': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        ...tilePerfOpts, maxNativeZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+      }),
+      // Google (sin clave de API: solo para pruebas hasta contratar la Map Tiles API)
       'Google Calles y Vías': L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=es&x={x}&y={y}&z={z}', {
         ...tilePerfOpts, subdomains: ['0', '1', '2', '3'], maxNativeZoom: 20, attribution: 'Map data &copy; Google'
       }),

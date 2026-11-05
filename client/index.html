@@ -81,7 +81,8 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10" stroke="#5F6368" stroke-width="2"/><path d="M2 12H22M12 2C14.5 4.5 16 8 16 12C16 16 14.5 19.5 12 22C9.5 19.5 8 16 8 12C8 8 9.5 4.5 12 2Z" stroke="#5F6368" stroke-width="1.8"/></svg>
           </span>
           <select id="select-basemap" class="basemap-select" onchange="window.app.setBaseMapGlobal(this.value)">
-            <option value="Google Calles y Vías" selected>Calles y Vías (Google)</option>
+            <option value="OpenStreetMap" selected>OpenStreetMap</option>
+            <option value="Google Calles y Vías">Calles y Vías (Google)</option>
             <option value="Esri World Street Map">Calles (Esri)</option>
             <option value="Google Satélite Híbrido">Satélite + calles (Google)</option>
             <option value="Esri Satélite (World Imagery)">Satélite (Esri)</option>
@@ -256,13 +257,14 @@
           <div style="margin-bottom:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px;">
             <label class="ux-field-label" style="margin-top:0;">Modo de Visualización del Mapa:</label>
             <select id="select-basemap-sidebar" class="georis-select" onchange="window.app.setBaseMapGlobal(this.value)">
-              <option value="Google Calles y Vías" selected>Calles y Sentidos Viales · Google (Por Defecto)</option>
+              <option value="OpenStreetMap" selected>OpenStreetMap (Por Defecto)</option>
+              <option value="Google Calles y Vías">Calles y Sentidos Viales · Google (sin API, pruebas)</option>
               <option value="Esri World Street Map">Calles · Esri World Street Map</option>
-              <option value="Google Satélite Híbrido">Satélite con calles · Google / Maxar</option>
+              <option value="Google Satélite Híbrido">Satélite con calles · Google / Maxar (sin API, pruebas)</option>
               <option value="Esri Satélite (World Imagery)">Satélite · Esri World Imagery</option>
               <option value="Gris Claro (CARTO)">Gris Claro Minimalista · CARTO</option>
               <option value="Modo Noche (CARTO)">Modo Noche / Oscuro · CARTO</option>
-              <option value="Google Relieve">Relieve · Google</option>
+              <option value="Google Relieve">Relieve · Google (sin API, pruebas)</option>
               <option value="OSM Humanitario (HOT)">OSM Humanitario (HOT)</option>
             </select>
           </div>
@@ -899,7 +901,7 @@
   <script src="js/map/establecimientos.js?v=20261105_geo4"></script>
   <script src="js/map/georisAncashLayers.js?v=20261105_geo2"></script>
   <script src="js/map/ancashGeocoder.js?v=20261105_geo4"></script>
-  <script src="js/map/mapManager.js?v=20261105_geo3"></script>
+  <script src="js/map/mapManager.js?v=20261105_geo5"></script>
   <script src="js/auth/session.js?v=20261022_v20"></script>
   <script src="js/auth/authUi.js?v=20261022_v20"></script>
   <script src="js/clinical/semaforo.js?v=20261021_v18"></script>

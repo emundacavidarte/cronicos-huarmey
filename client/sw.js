@@ -4,7 +4,7 @@
  * MÁXIME Salud Digital - Puesta en Marcha de Hospitales (v20: acceso con usuario y clave, T-03b)
  */
 
-const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-geo4';
+const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-geo5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -26,7 +26,7 @@ const ASSETS_TO_CACHE = [
   './js/auth/session.js?v=20261022_v20',
   './js/auth/authUi.js?v=20261022_v20',
   './js/main.js?v=20261105_geo3',
-  './js/map/mapManager.js?v=20261105_geo3',
+  './js/map/mapManager.js?v=20261105_geo5',
   './js/map/geoUbicacion.js?v=20261105_geo3',
   './js/map/establecimientos.js?v=20261105_geo4',
   './js/map/georisAncashLayers.js?v=20261105_geo2',

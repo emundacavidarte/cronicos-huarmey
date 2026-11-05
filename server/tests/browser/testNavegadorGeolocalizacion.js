@@ -53,6 +53,20 @@ function assert(c, m) { if (!c) throw new Error(m || 'assert'); }
 
   await step('carga sin errores de consola', async () => { assert(errores.length === 0, errores.join(' | ')); });
 
+  await step('el mapa base por defecto es OpenStreetMap (los de Google quedan como opción)', async () => {
+    const r = await page.evaluate(() => {
+      const mm = window.app.mapManager;
+      const tiles = [...document.querySelectorAll('#map .leaflet-tile')].map(t => t.src || '');
+      return { cur: mm.currentBaseName, top: document.getElementById('select-basemap').value, side: document.getElementById('select-basemap-sidebar').value,
+        osm: tiles.some(u => u.startsWith('https://tile.openstreetmap.org/')), google: tiles.some(u => /google\.com/.test(u)),
+        opcionesGoogle: [...document.querySelectorAll('#select-basemap option')].filter(o => /^Google/.test(o.value)).length,
+        atribucion: (document.querySelector('.leaflet-control-attribution') || {}).textContent || '' };
+    });
+    assert(r.cur === 'OpenStreetMap' && r.top === 'OpenStreetMap' && r.side === 'OpenStreetMap', JSON.stringify(r));
+    assert(r.osm && !r.google, 'mosaicos: ' + JSON.stringify(r));
+    assert(r.opcionesGoogle === 3 && /OpenStreetMap/.test(r.atribucion), JSON.stringify(r));
+  });
+
   await step('20 pacientes semilla con coordenadas válidas y sector = polígono GeoRIS', async () => {
     const r = await page.evaluate(() => window.app.patients.map(p => {
       const s = window.AncashGeocoder.getSectorFromCoordinates(p.latitud, p.longitud);

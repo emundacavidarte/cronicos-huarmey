@@ -22,8 +22,8 @@ Luego abra su navegador en:
 
 ## 2. Novedades de la Interfaz UI/UX v3.0 y Padrón Estandarizado (v4)
 
-1. **Apertura por Defecto en Calles y Sentidos Viales:**
-   * El mapa inicia automáticamente en el modo **"Calles y Sentidos Viales"** sobre el **Nuevo Hospital de Apoyo Huarmey (II-1)**, mostrando el trazado vial, manzanas y los pacientes crónicos georreferenciados en el territorio.
+1. **Apertura por Defecto en OpenStreetMap:**
+   * El mapa inicia automáticamente con **OpenStreetMap** (licencia abierta) sobre el **Nuevo Hospital de Apoyo Huarmey (II-1)**, mostrando el trazado vial, manzanas y los pacientes crónicos georreferenciados en el territorio.
    * **Modo de desarrollo seguro:** Incluye 10 pacientes sintéticos de demostración que cumplen rigurosamente con la Ley N° 29733 (Protección de Datos Personales).
 2. **Vista Inicial Limpia con Indicadores KPI Flotantes (HUD) Dinámicos:**
    * En la barra flotante superior verá el buscador omnicanal y los contadores en tiempo real:
