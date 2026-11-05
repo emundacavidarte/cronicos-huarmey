@@ -11,6 +11,7 @@ const db = require('../db/database');
 const auth = require('../auth/auth');
 const { RIS, normalizeRed } = require('../auth/redes');
 const { cuerpoJson } = require('../utils/cuerpoJson');
+const correo = require('../utils/correo');
 
 const publicRouter = express.Router();
 const privateRouter = express.Router();
@@ -88,6 +89,85 @@ publicRouter.post('/auth/login', cuerpoJson('10kb'), async (req, res) => {
   }
 });
 
+// --- Contraseña: cambiarla con sesión y recuperarla con un código enviado al correo (decisión de Edward, 05/11/2026) ---
+const MSG_RECUPERAR = 'Si los datos corresponden a un usuario activo con correo registrado, recibirá un código en unos minutos. Revise también la carpeta de spam.';
+const MSG_CODIGO_INVALIDO = 'Código inválido o vencido. Pida uno nuevo si hace falta.';
+
+/** Olvida los bloqueos por intentos fallidos de un usuario (tras restablecer su contraseña). */
+function liberarBloqueos(username) {
+  for (const k of failedLogins.keys()) if (k.endsWith('|' + username)) failedLogins.delete(k);
+}
+
+publicRouter.post('/auth/recuperar', cuerpoJson('10kb'), (req, res) => {
+  if (!correo.configurado()) {
+    return bad(res, 503, 'not-supported', 'La recuperación por correo no está disponible. Pida al Administrador que restablezca su contraseña.');
+  }
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const user = auth.buscarPorUsuarioOCorreo(body.usuario);
+  // La respuesta es la misma exista o no el usuario; el correo se envía en segundo plano (mismo tiempo de respuesta)
+  res.json({ success: true, message: MSG_RECUPERAR });
+  if (!user || user.activo === false || !user.correo) return;
+  const r = auth.prepararCodigo(user);
+  if (r.limitado) return;
+  db.addAuditLog('AUTH', 'RECUPERACION_SOLICITADA', { username: user.username }, { actor: user.username, ip: req.ip || '127.0.0.1' });
+  const texto = `Hola ${user.nombre || user.username}:\n\nSu código para restablecer la contraseña del Sistema de Crónicos Huarmey es: ${r.codigo}\n\n` +
+    `Vence en ${r.minutos} minutos y sirve una sola vez. Escríbalo en la pantalla «¿Olvidó su contraseña?».\n` +
+    'Si usted no lo pidió, ignore este correo: su contraseña no cambió.';
+  const html = `<p>Hola ${escapar(user.nombre || user.username)}:</p><p>Su código para restablecer la contraseña del Sistema de Crónicos Huarmey es:</p>` +
+    `<p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${r.codigo}</p><p>Vence en ${r.minutos} minutos y sirve una sola vez.</p>` +
+    '<p>Si usted no lo pidió, ignore este correo: su contraseña no cambió.</p>';
+  correo.enviar({ para: user.correo, asunto: 'Código para restablecer su contraseña — Crónicos Huarmey', texto, html })
+    .catch(err => console.error(`[CORREO] No se pudo enviar el código de recuperación (${err.message}).`));
+});
+
+publicRouter.post('/auth/restablecer', cuerpoJson('10kb'), async (req, res) => {
+  try {
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const user = auth.buscarPorUsuarioOCorreo(body.usuario);
+    const codigo = typeof body.codigo === 'string' ? body.codigo : '';
+    if (!user || user.activo === false || !auth.verificarCodigo(user, codigo)) return bad(res, 400, 'invalid', MSG_CODIGO_INVALIDO);
+    const error = auth.validatePassword(body.clave_nueva);
+    if (error) return bad(res, 400, 'invalid', error);
+    db.updateUser(user.username, { password_hash: await auth.hashPassword(body.clave_nueva), token_valid_after: Date.now(), recuperacion: null });
+    liberarBloqueos(user.username);
+    db.addAuditLog('AUTH', 'CLAVE_RESTABLECIDA', { username: user.username }, { actor: user.username, ip: req.ip || '127.0.0.1' });
+    res.json({ success: true, message: 'Contraseña restablecida. Ingrese con su nueva contraseña.' });
+  } catch (err) {
+    console.error('Error restableciendo clave:', err.message);
+    bad(res, 500, 'exception', 'No se pudo restablecer la contraseña.');
+  }
+});
+
+privateRouter.post('/auth/cambiar-clave', async (req, res) => {
+  try {
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const user = db.getUserByUsername(req.user.username);
+    const key = loginKey(req, 'cambio:' + req.user.username);
+    if (isLocked(key)) return bad(res, 429, 'throttled', 'Demasiados intentos con la contraseña actual. Intente nuevamente en unos minutos.');
+    if (typeof body.clave_actual !== 'string' || !(await auth.verifyPassword(body.clave_actual, user.password_hash))) {
+      registerFail(key);
+      return bad(res, 400, 'invalid', 'La contraseña actual no es correcta.');
+    }
+    const error = auth.validatePassword(body.clave_nueva);
+    if (error) return bad(res, 400, 'invalid', error);
+    if (body.clave_nueva === body.clave_actual) return bad(res, 400, 'invalid', 'La nueva contraseña debe ser distinta de la actual.');
+    // Cambiar la contraseña cierra las demás sesiones; esta recibe un token nuevo
+    const ahora = Date.now();
+    db.updateUser(user.username, { password_hash: await auth.hashPassword(body.clave_nueva), token_valid_after: ahora, recuperacion: null });
+    failedLogins.delete(key);
+    db.addAuditLog('AUTH', 'CLAVE_CAMBIADA', { username: user.username }, req.auditContext);
+    const firmado = auth.signToken(user.username, ahora + 1);
+    res.json({ success: true, token: firmado.token, token_type: 'Bearer', expires_at: firmado.expires_at, user: auth.publicUser(db.getUserByUsername(user.username)) });
+  } catch (err) {
+    console.error('Error cambiando clave:', err.message);
+    bad(res, 500, 'exception', 'No se pudo cambiar la contraseña.');
+  }
+});
+
+function escapar(t) {
+  return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 privateRouter.get('/auth/me', (req, res) => {
   res.json({ success: true, user: req.user });
 });
@@ -120,10 +200,12 @@ privateRouter.post('/users', auth.requireScope(['ADMIN']), async (req, res) => {
     if (checked.error) return bad(res, 400, 'invalid', checked.error);
     const v = checked.value;
     if (db.getUserByUsername(v.username)) return bad(res, 409, 'duplicate', `El usuario ${v.username} ya existe.`);
+    if (auth.correoEnUso(v.correo, null)) return bad(res, 409, 'duplicate', 'Ese correo ya está registrado para otro usuario.');
 
     const created = db.createUser({
       username: v.username,
       nombre: v.nombre,
+      correo: v.correo,
       role: v.role,
       red: v.red,
       establecimiento_id: v.establecimiento_id,
@@ -179,6 +261,13 @@ privateRouter.patch('/users/:username', auth.requireScope(['ADMIN']), async (req
       if (amb.error) return bad(res, 400, 'invalid', amb.error);
       changes.establecimiento_id = amb.establecimiento_id;
       changes.sector_sanitario = amb.sector_sanitario;
+    }
+
+    if (b.correo !== undefined) {
+      const c = auth.normalizarCorreo(b.correo);
+      if (!c) return bad(res, 400, 'invalid', 'correo debe ser una dirección válida.');
+      if (auth.correoEnUso(c, target.username)) return bad(res, 409, 'duplicate', 'Ese correo ya está registrado para otro usuario.');
+      changes.correo = c;
     }
 
     if (b.activo !== undefined) {

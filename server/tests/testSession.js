@@ -305,7 +305,7 @@ async function main() {
       const crea = await admin.s.authFetch(eps().API_USERS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'dir.prueba', nombre: 'DIRECTOR DE PRUEBA', role: 'DIRECTOR', red: 'PACIFICO SUR', password: 'clave-director-123' })
+        body: JSON.stringify({ username: 'dir.prueba', nombre: 'DIRECTOR DE PRUEBA', correo: 'dir.prueba@prueba.example', role: 'DIRECTOR', red: 'PACIFICO SUR', password: 'clave-director-123' })
       });
       assert.strictEqual(crea.status, 201);
     });

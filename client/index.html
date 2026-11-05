@@ -22,7 +22,7 @@
   <!-- Estilos Temáticos Oficiales MÁXIME Salud Digital y Layout Responsivo -->
   <link rel="stylesheet" href="css/georis-theme.css?v=20261027_v6">
   <link rel="stylesheet" href="css/layout.css?v=20261105_f4">
-  <link rel="stylesheet" href="css/components.css?v=20261029_a8f">
+  <link rel="stylesheet" href="css/components.css?v=20261105_f4c">
   <link rel="stylesheet" href="css/padron-grid.css?v=20261027_v6">
   <link rel="stylesheet" href="css/registro-clinico.css?v=20261027_v6">
 </head>
@@ -106,6 +106,7 @@
             <span id="user-chip-role" class="user-chip-role"></span>
           </span>
         </div>
+        <button id="btn-mi-clave" type="button" data-permiso="sesion" class="georis-tool-btn perm-hidden" title="Cambiar mi contraseña" aria-label="Cambiar mi contraseña" style="border-radius:50%; width:36px; height:36px; padding:0; justify-content:center;">🔑</button>
         <button id="btn-logout" type="button" class="georis-tool-btn" title="Cerrar sesión" style="border-radius:50%; width:36px; height:36px; padding:0; justify-content:center;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M9 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H9" stroke="#5F6368" stroke-width="2" stroke-linecap="round"/><path d="M16 17L21 12M21 12L16 7M21 12H9" stroke="#5F6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -795,11 +796,54 @@
 
       <div id="login-error" class="login-error" role="alert" aria-live="assertive"></div>
       <button id="login-submit" type="submit" class="login-submit">Ingresar</button>
+      <button id="login-olvido" type="button" class="login-link">¿Olvidó su contraseña?</button>
       <p class="login-nota">Si no tiene usuario, solicítelo al Administrador del sistema. El acceso queda registrado.</p>
+    </form>
+
+    <!-- Recuperar la contraseña con un código enviado al correo registrado -->
+    <form id="recuperar-form" class="login-box oculto" autocomplete="off" novalidate aria-labelledby="recuperar-titulo">
+      <img src="assets/images/logo_maxime.png" alt="MÁXIME Consultoría en Salud" class="login-logo">
+      <h1 id="recuperar-titulo" class="login-title">Recuperar contraseña</h1>
+      <div id="recuperar-paso1">
+        <p class="login-sub">Escriba su usuario o su correo. Le enviaremos un código de 6 dígitos al correo registrado.</p>
+        <label for="recuperar-usuario" class="login-label">Usuario o correo</label>
+        <input id="recuperar-usuario" type="text" class="login-input" maxlength="254" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <button id="recuperar-enviar" type="button" class="login-submit">Enviar código</button>
+      </div>
+      <div id="recuperar-paso2" class="oculto">
+        <p class="login-sub">Revise su correo (también la carpeta de spam). El código vence en 15 minutos y sirve una sola vez.</p>
+        <label for="recuperar-codigo" class="login-label">Código de 6 dígitos</label>
+        <input id="recuperar-codigo" type="text" class="login-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+        <label for="recuperar-clave" class="login-label">Nueva contraseña (mínimo 10 caracteres)</label>
+        <input id="recuperar-clave" type="password" class="login-input" maxlength="128" autocomplete="new-password">
+        <label for="recuperar-clave2" class="login-label">Repita la nueva contraseña</label>
+        <input id="recuperar-clave2" type="password" class="login-input" maxlength="128" autocomplete="new-password">
+        <button id="recuperar-restablecer" type="button" class="login-submit">Restablecer contraseña</button>
+        <button id="recuperar-reenviar" type="button" class="login-link">Pedir otro código</button>
+      </div>
+      <div id="recuperar-msg" class="login-error" role="alert" aria-live="assertive"></div>
+      <button id="recuperar-volver" type="button" class="login-link">← Volver al acceso</button>
     </form>
   </div>
 
   <!-- 7. MODAL DEL ADMINISTRADOR: REGISTRO Y GESTIÓN DE USUARIOS -->
+  <div id="modal-mi-clave" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mi-clave-titulo">
+    <div class="modal-box mi-clave-box">
+      <h2 id="mi-clave-titulo" class="usuarios-h">Cambiar mi contraseña</h2>
+      <label for="mi-clave-actual" class="login-label">Contraseña actual</label>
+      <input id="mi-clave-actual" type="password" class="login-input" maxlength="128" autocomplete="current-password">
+      <label for="mi-clave-nueva" class="login-label">Nueva contraseña (mínimo 10 caracteres)</label>
+      <input id="mi-clave-nueva" type="password" class="login-input" maxlength="128" autocomplete="new-password">
+      <label for="mi-clave-nueva2" class="login-label">Repita la nueva contraseña</label>
+      <input id="mi-clave-nueva2" type="password" class="login-input" maxlength="128" autocomplete="new-password">
+      <div id="mi-clave-msg" class="login-error" role="alert" aria-live="assertive"></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+        <button id="mi-clave-cancelar" type="button" class="btn-mini" style="background:#e2e8f0; color:#334155;">Cancelar</button>
+        <button id="mi-clave-guardar" type="button" class="btn-mini btn-precita">Cambiar contraseña</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-usuarios" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="usuarios-titulo">
     <div class="modal-box usuarios-modal">
       <div class="modal-header">
@@ -819,6 +863,10 @@
             <div>
               <label for="nuevo-usuario-nombre" class="login-label">Nombre completo</label>
               <input id="nuevo-usuario-nombre" type="text" class="login-input" maxlength="120" autocomplete="off">
+            </div>
+            <div>
+              <label for="nuevo-usuario-correo" class="login-label">Correo (para recuperar su contraseña)</label>
+              <input id="nuevo-usuario-correo" type="email" class="login-input" maxlength="254" autocomplete="off" placeholder="ej.: jperez@hospital.gob.pe">
             </div>
             <div>
               <label for="nuevo-usuario-rol" class="login-label">Rol</label>
@@ -868,7 +916,7 @@
   </div>
 
   <!-- Configuración Centralizada de Endpoints y Entornos -->
-  <script src="js/config.js?v=20261029_a8f"></script>
+  <script src="js/config.js?v=20261105_f4c"></script>
   <script src="js/utils/fechaLima.js?v=20261029_a8f"></script>
 
   <!-- Librerías GIS Open Source (Alojadas Localmente) -->
@@ -883,8 +931,8 @@
   <script src="js/map/georisAncashLayers.js?v=20261026_v21"></script>
   <script src="js/map/ancashGeocoder.js?v=20261026_v21"></script>
   <script src="js/map/mapManager.js?v=20261021_v18"></script>
-  <script src="js/auth/session.js?v=20261022_v20"></script>
-  <script src="js/auth/authUi.js?v=20261022_v20"></script>
+  <script src="js/auth/session.js?v=20261105_f4c"></script>
+  <script src="js/auth/authUi.js?v=20261105_f4c"></script>
   <script src="js/clinical/semaforo.js?v=20261021_v18"></script>
   <script src="js/clinical/heartsEngine.js?v=20261021_v18"></script>
   <script src="js/clinical/alertsManager.js?v=20261021_v18"></script>

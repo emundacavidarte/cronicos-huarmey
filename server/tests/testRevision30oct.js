@@ -37,7 +37,7 @@ async function call(method, url, { token, body } = {}) {
 
 async function crearUsuario(adminToken, username, role, red, extra = {}) {
   const password = 'clave-de-' + username + '-123';
-  const r = await call('POST', '/api/users', { token: adminToken, body: { username, nombre: 'USUARIO ' + username.toUpperCase(), role, password, red, ...extra } });
+  const r = await call('POST', '/api/users', { token: adminToken, body: { username, nombre: 'USUARIO ' + username.toUpperCase(), correo: username + '@prueba.example', role, password, red, ...extra } });
   if (r.status !== 201) return { r };
   const l = await call('POST', '/api/auth/login', { body: { username, password } });
   assert.strictEqual(l.status, 200, l.text);

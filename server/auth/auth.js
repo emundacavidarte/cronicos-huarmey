@@ -20,6 +20,14 @@ const PASSWORD_MIN = 10;
 const PASSWORD_MAX = 128;
 const USERNAME_REGEX = /^[a-z0-9._-]{3,32}$/;
 const USERNAMES_RESERVADOS = ['__proto__', 'constructor', 'prototype'];
+// Correo del usuario (obligatorio al registrarlo): sirve para recuperar la contraseña con un código
+const CORREO_REGEX = /^[^\s@<>"'(),;:]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+// Recuperación de contraseña: código de 6 dígitos, vigencia, intentos y envíos limitados
+const RECUPERACION_VIGENCIA_MS = Math.max(1000, (parseFloat(process.env.RECUPERACION_VIGENCIA_MIN) || 15) * 60 * 1000);
+const RECUPERACION_MAX_INTENTOS = 5;
+const RECUPERACION_MAX_ENVIOS = 3;          // por ventana de 15 minutos
+const RECUPERACION_VENTANA_MS = 15 * 60 * 1000;
+const RECUPERACION_ESPERA_MS = 60 * 1000;   // entre un envío y el siguiente
 
 // --- Configuración del secreto de firma ---
 let devSecret = null;
@@ -101,6 +109,26 @@ function verifyToken(token, nowMs = Date.now()) {
 }
 
 // --- Usuarios ---
+/** Correo normalizado (minúsculas) o null si no es válido. */
+function normalizarCorreo(value) {
+  if (typeof value !== 'string') return null;
+  const c = value.trim().toLowerCase();
+  return c.length <= 254 && CORREO_REGEX.test(c) ? c : null;
+}
+
+/** Usuario por nombre de usuario o por correo (para «¿Olvidó su contraseña?»). */
+function buscarPorUsuarioOCorreo(valor) {
+  if (typeof valor !== 'string' || !valor.trim()) return null;
+  const v = valor.trim().toLowerCase();
+  if (v.includes('@')) return db.listUsers().find(u => typeof u.correo === 'string' && u.correo === v) || null;
+  const name = normalizeUsername(v);
+  return name ? db.getUserByUsername(name) : null;
+}
+
+function correoEnUso(correo, exceptoUsername) {
+  return db.listUsers().some(u => u.correo === correo && u.username !== exceptoUsername);
+}
+
 function normalizeUsername(value) {
   if (typeof value !== 'string') return null;
   const name = value.trim().toLowerCase();
@@ -114,6 +142,7 @@ function publicUser(u) {
     username: u.username,
     nombre: u.nombre || u.username,
     role: u.role,
+    correo: u.correo || null,
     red: u.role === 'ADMIN' ? null : normalizeRed(u.red),
     establecimiento_id: u.role === 'ADMIN' ? null : (u.establecimiento_id || null),
     sector_sanitario: u.role === 'ADMIN' ? null : (u.sector_sanitario || null),
@@ -158,6 +187,9 @@ function validateNewUser(body) {
   const nombre = typeof b.nombre === 'string' ? b.nombre.trim() : '';
   if (nombre.length < 1 || nombre.length > 120) return { error: 'nombre es obligatorio (máximo 120 caracteres).' };
   if (!ROLES.includes(b.role)) return { error: `role inválido: debe ser uno de ${ROLES.join(', ')}.` };
+  // Decisión de Edward (05/11/2026): el usuario se registra con correo para poder recuperar su contraseña
+  const correo = normalizarCorreo(b.correo);
+  if (!correo) return { error: 'correo es obligatorio y debe ser una dirección válida (sirve para recuperar la contraseña).' };
 
   let red = null;
   if (b.role !== 'ADMIN') {
@@ -173,7 +205,7 @@ function validateNewUser(body) {
   }
   const passwordError = validatePassword(b.password);
   if (passwordError) return { error: passwordError };
-  return { value: { username, nombre, role: b.role, red, establecimiento_id, sector_sanitario, password: b.password } };
+  return { value: { username, nombre, correo, role: b.role, red, establecimiento_id, sector_sanitario, password: b.password } };
 }
 
 /** Huella de una orden de ADMIN_RESET (usuario + clave del entorno), firmada con el secreto: no guarda la clave. */
@@ -201,12 +233,15 @@ async function resetAdmin() {
     return { created: false, reset: false, resetYaAplicado: true, username };
   }
   const hash = await hashPassword(process.env.ADMIN_PASSWORD);
+  const correoAdmin = normalizarCorreo(process.env.ADMIN_EMAIL || '');
   if (existing) {
-    db.updateUser(username, { password_hash: hash, activo: true, token_valid_after: Date.now(), admin_reset_marker: marker });
+    const cambios = { password_hash: hash, activo: true, token_valid_after: Date.now(), admin_reset_marker: marker };
+    if (correoAdmin) cambios.correo = correoAdmin;
+    db.updateUser(username, cambios);
     return { created: false, reset: true, username };
   }
   db.createUser({
-    username, nombre: 'ADMINISTRADOR', role: 'ADMIN', red: null,
+    username, nombre: 'ADMINISTRADOR', role: 'ADMIN', red: null, correo: correoAdmin,
     password_hash: hash, activo: true, creado: new Date().toISOString(), admin_reset_marker: marker
   });
   return { created: true, reset: true, username };
@@ -248,6 +283,7 @@ async function bootstrapAdmin() {
     nombre: 'ADMINISTRADOR',
     role: 'ADMIN',
     red: null,
+    correo: normalizarCorreo(process.env.ADMIN_EMAIL || ''),
     password_hash: await hashPassword(password),
     activo: true,
     creado: new Date().toISOString()
@@ -268,6 +304,43 @@ async function login(username, password) {
   if (!(await verifyPassword(password, user.password_hash))) return null;
   const signed = signToken(user.username);
   return { token: signed.token, token_type: 'Bearer', expires_at: signed.expires_at, user: publicUser(user) };
+}
+
+// --- Recuperación de contraseña por código enviado al correo ---
+function huellaCodigo(username, codigo) {
+  return crypto.createHmac('sha256', getSecret()).update(`recuperar|${username}|${codigo}`).digest('hex');
+}
+
+/**
+ * Prepara un código para el usuario. Devuelve { codigo } o { limitado: true } si ya se pidieron demasiados
+ * (máximo 3 cada 15 minutos y uno por minuto). En el usuario se guarda solo la huella (HMAC), nunca el código.
+ */
+function prepararCodigo(user, ahora = Date.now()) {
+  const previo = user.recuperacion || {};
+  const envios = (Array.isArray(previo.envios) ? previo.envios : []).filter(t => ahora - t < RECUPERACION_VENTANA_MS);
+  if (envios.length >= RECUPERACION_MAX_ENVIOS || (envios.length && ahora - envios[envios.length - 1] < RECUPERACION_ESPERA_MS)) {
+    return { limitado: true };
+  }
+  const codigo = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  db.updateUser(user.username, {
+    recuperacion: { huella: huellaCodigo(user.username, codigo), expira: ahora + RECUPERACION_VIGENCIA_MS, intentos: 0, envios: envios.concat(ahora) }
+  });
+  return { codigo, minutos: Math.round(RECUPERACION_VIGENCIA_MS / 60000) || 1 };
+}
+
+/** Verifica el código (un solo uso, vigencia y 5 intentos). Devuelve true si corresponde; si no, cuenta el intento. */
+function verificarCodigo(user, codigo, ahora = Date.now()) {
+  const r = user && user.recuperacion;
+  if (!r || !r.huella || typeof codigo !== 'string' || !/^\d{6}$/.test(codigo.trim())) return false;
+  if (ahora > r.expira || r.intentos >= RECUPERACION_MAX_INTENTOS) return false;
+  const dado = Buffer.from(huellaCodigo(user.username, codigo.trim()), 'hex');
+  const esperado = Buffer.from(r.huella, 'hex');
+  const ok = dado.length === esperado.length && crypto.timingSafeEqual(dado, esperado);
+  if (!ok) {
+    db.updateUser(user.username, { recuperacion: Object.assign({}, r, { intentos: (r.intentos || 0) + 1 }) });
+    return false;
+  }
+  return true;
 }
 
 // --- Middlewares ---
@@ -329,6 +402,11 @@ module.exports = {
   signToken,
   verifyToken,
   normalizeUsername,
+  normalizarCorreo,
+  buscarPorUsuarioOCorreo,
+  correoEnUso,
+  prepararCodigo,
+  verificarCodigo,
   publicUser,
   validateAmbito,
   validateNewUser,

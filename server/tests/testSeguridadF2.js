@@ -63,7 +63,7 @@ async function login(username, password, extra) {
 
 async function crearUsuario(adminToken, username, role, red, extra) {
   const password = 'clave-de-' + username + '-123';
-  const r = await call('POST', '/api/users', { token: adminToken, body: Object.assign({ username, nombre: 'USUARIO ' + username.toUpperCase(), role, red, password }, extra || {}) });
+  const r = await call('POST', '/api/users', { token: adminToken, body: Object.assign({ username, nombre: 'USUARIO ' + username.toUpperCase(), correo: username + '@prueba.example', role, red, password }, extra || {}) });
   assert.strictEqual(r.status, 201, r.text);
   const l = await login(username, password);
   assert.strictEqual(l.status, 200, l.text);

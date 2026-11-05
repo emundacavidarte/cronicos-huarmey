@@ -219,8 +219,18 @@
 
     cargar();
 
+    /** Tras cambiar la contraseña el servidor entrega un token nuevo (los anteriores quedan cerrados). */
+    function reemplazarToken(token, expiresAt) {
+      if (!session || typeof token !== 'string' || !token || !Number.isFinite(Date.parse(expiresAt))) return false;
+      session.token = token;
+      session.expires_at = expiresAt;
+      guardar();
+      return true;
+    }
+
     return {
       vencioAlCargar: () => vencidaAlCargar,
+      reemplazarToken,
       login,
       logout,
       authFetch,

@@ -40,7 +40,7 @@ async function call(method, url, { token, body } = {}) {
 
 async function crearUsuario(adminToken, username, role, red) {
   const password = 'clave-de-' + username + '-123';
-  const r = await call('POST', '/api/users', { token: adminToken, body: { username, nombre: 'USUARIO ' + username.toUpperCase(), role, password, red } });
+  const r = await call('POST', '/api/users', { token: adminToken, body: { username, nombre: 'USUARIO ' + username.toUpperCase(), correo: username + '@prueba.example', role, password, red } });
   assert.strictEqual(r.status, 201, r.text);
   const l = await call('POST', '/api/auth/login', { body: { username, password } });
   assert.strictEqual(l.status, 200, l.text);

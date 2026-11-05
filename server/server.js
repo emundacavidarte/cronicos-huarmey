@@ -119,7 +119,8 @@ function clientIp(req) {
 }
 
 function rateKeyFor(req) {
-  if (req.method === 'POST' && req.baseUrl === '/api' && req.path === '/auth/login') {
+  // Rutas públicas de acceso (login y recuperación de contraseña): cupo propio de 30 por minuto por IP
+  if (req.method === 'POST' && req.baseUrl === '/api' && ['/auth/login', '/auth/recuperar', '/auth/restablecer'].includes(req.path)) {
     return { key: `ip:${clientIp(req)}:L`, limit: MAX_LOGIN_REQ_PER_MIN };
   }
   const isWrite = req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS';

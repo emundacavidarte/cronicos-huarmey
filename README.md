@@ -46,6 +46,8 @@ Este repositorio contiene **únicamente 20 pacientes sintéticos/simulados** par
    * `DATA_DIR`: carpeta del disco persistente (allí quedan `store.json`, `store.json.bak` y `respaldos/` con una copia diaria; se conservan las últimas `RESPALDOS_DIARIOS`, 14 por defecto).
    * `STORE_KEY` (opcional): 32 bytes aleatorios (`openssl rand -hex 32`) para cifrar los datos en reposo con AES-256-GCM. **Quien la active debe guardarla fuera del servidor: sin ella el padrón cifrado no se puede leer.**
    * `CORS_ORIGINS` (opcional): orígenes autorizados, separados por coma. Vacío = ninguno (la interfaz usa el mismo origen).
+   * `ADMIN_EMAIL` (opcional): correo del administrador inicial.
+   * `MAIL_PROVIDER` (`resend` o `brevo`), `MAIL_API_KEY` y `MAIL_FROM`: envío del código para recuperar la contraseña. Sin ellos, «¿Olvidó su contraseña?» responde que no está disponible y el ADMIN restablece la clave.
    * Ver `.env.example`: el servidor no arranca en producción con valores de ejemplo.
 
 ---

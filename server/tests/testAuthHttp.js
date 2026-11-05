@@ -58,7 +58,7 @@ function bundleFor(dni, orgCode) {
 const dnisOf = list => list.map(p => String(p.dni)).sort();
 
 async function crearUsuario(adminToken, username, role, red) {
-  const body = { username, nombre: 'USUARIO ' + username.toUpperCase(), role, password: 'clave-de-' + username + '-123' };
+  const body = { username, nombre: 'USUARIO ' + username.toUpperCase(), correo: username + '@prueba.example', role, password: 'clave-de-' + username + '-123' };
   if (red) body.red = red;
   const r = await call('POST', '/api/users', { token: adminToken, body });
   assert.strictEqual(r.status, 201, r.text);
@@ -156,7 +156,7 @@ async function main() {
     console.log('T-03a HTTP: usuarios');
 
     await step('ADMIN registra usuarios; COORDINADOR y DIRECTOR exigen una de las 7 RIS', async () => {
-      const base = { nombre: 'PRUEBA', password: 'clave-de-prueba-123' };
+      const base = { nombre: 'PRUEBA', correo: 'prueba.base@prueba.example', password: 'clave-de-prueba-123' };
       const post = body => call('POST', '/api/users', { token: admin, body: { ...base, ...body } });
       assert.strictEqual((await post({ username: 'sinred', role: 'COORDINADOR' })).status, 400);
       assert.strictEqual((await post({ username: 'redmala', role: 'DIRECTOR', red: 'RED INVENTADA' })).status, 400);

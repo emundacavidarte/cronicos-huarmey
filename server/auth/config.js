@@ -15,6 +15,9 @@ const MARCADOR_EJEMPLO = /CAMBIAR/i;
  * en .env.example ni un marcador «CAMBIAR…»; ADMIN_PASSWORD (si está) tampoco puede ser la publicada ni un marcador.
  */
 function checkConfig(env = process.env) {
+  // Proveedor de correo (recuperación de contraseña): si se define, debe estar completo
+  const problemasCorreo = require('../utils/correo').problemasDeConfig(env);
+  if (problemasCorreo.length) throw new Error(problemasCorreo.join(' '));
   if (env.NODE_ENV !== 'production') return;
   const secret = env.AUTH_SECRET || '';
   if (secret.length < 32) {

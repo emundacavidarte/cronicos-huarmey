@@ -184,7 +184,7 @@ async function main() {
   await api(base, 'POST', '/fhir/Bundle', admin, bundleFor('94100001', '00001744'));
   await api(base, 'POST', '/fhir/Bundle', admin, bundleFor('94100002', '00001744'));
   await api(base, 'POST', '/fhir/Bundle', admin, bundleFor('94100003', '99999999'));
-  const nuevo = (u, role, red) => api(base, 'POST', '/api/users', admin, { username: u, nombre: 'PERSONA ' + u.toUpperCase(), role, red, password: 'clave-de-' + u + '-123' });
+  const nuevo = (u, role, red) => api(base, 'POST', '/api/users', admin, { username: u, nombre: 'PERSONA ' + u.toUpperCase(), correo: u + '@prueba.example', role, red, password: 'clave-de-' + u + '-123' });
   await nuevo('coord.ps', 'COORDINADOR', 'PACIFICO SUR');
   await nuevo('coord.cs', 'COORDINADOR', 'CONCHUCOS SUR');
   await nuevo('dir.ps', 'DIRECTOR', 'PACIFICO SUR');

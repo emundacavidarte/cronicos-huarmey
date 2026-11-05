@@ -1615,3 +1615,12 @@
 
 /* Tablero del DIRECTOR: detalle no disponible para su rol (C-03) */
 .dash-no-disponible { padding: 12px; font-size: var(--font-sm, 13px); color: #5F6368; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 6px; }
+
+/* Recuperar y cambiar la contraseña (Fase 4) */
+.oculto { display: none !important; }
+.login-link { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: #1A73E8; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 4px; }
+.login-link:hover { color: #174EA6; }
+.mi-clave-box { max-width: 420px; width: calc(100% - 32px); padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+.usuario-correo { color: #5F6368; font-size: 12px; }
+.usuario-sin-correo { color: #B3261E; font-size: 12px; font-weight: 600; }
+.login-ok { color: #137333 !important; }

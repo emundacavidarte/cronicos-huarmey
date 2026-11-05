@@ -10,6 +10,7 @@
 
   const ROL_TXT = { ADMIN: 'Administrador', COORDINADOR: 'Coordinador', DIRECTOR: 'Director' };
   const USERNAME_RE = /^[a-z0-9._-]{3,32}$/;
+  const CORREO_RE = /^[^\s@<>"'(),;:]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
 
   function byId(id) { return document.getElementById(id); }
 
@@ -62,6 +63,10 @@
 
     function mostrarLogin(mensaje) {
       cerrarUsuarios();
+      cerrarMiClave();
+      volverAlLogin();
+      const errPrevio = byId('login-error');
+      if (errPrevio) errPrevio.classList.remove('login-ok');
       aplicarRol();
       const overlay = byId('login-overlay');
       if (!overlay) return;
@@ -91,6 +96,7 @@
       const us = byId('login-username');
       const pw = byId('login-password');
       const err = byId('login-error');
+      if (err) err.classList.remove('login-ok');
       const btn = byId('login-submit');
       const usuario = (us.value || '').trim();
       const clave = pw.value || '';
@@ -207,9 +213,11 @@
                 ${u.establecimiento_id ? `<span>Establecimiento ${esc(u.establecimiento_id)}</span>` : ''}
                 <span>${activo ? 'Activo' : 'Desactivado'}</span>
               </div>
+              <div>${u.correo ? `<span class="usuario-correo">✉ ${esc(u.correo)}</span>` : '<span class="usuario-sin-correo">Sin correo: no podrá recuperar su contraseña</span>'}</div>
             </div>
             <div class="usuario-acciones">
               <button type="button" class="btn-mini" data-acc="clave" data-user="${esc(u.username)}">🔑 Clave</button>
+              <button type="button" class="btn-mini" data-acc="correo" data-user="${esc(u.username)}">✉ Correo</button>
               <button type="button" class="btn-mini" data-acc="estado" data-user="${esc(u.username)}" ${esYo ? 'disabled title="No puede desactivarse a sí mismo"' : ''}>${activo ? '⏸ Desactivar' : '▶ Activar'}</button>
             </div>
           </div>`;
@@ -282,16 +290,18 @@
       ev.preventDefault();
       const username = byId('nuevo-usuario-login').value.trim().toLowerCase();
       const nombre = byId('nuevo-usuario-nombre').value.trim();
+      const correoNuevo = (byId('nuevo-usuario-correo') ? byId('nuevo-usuario-correo').value : '').trim().toLowerCase();
       const role = byId('nuevo-usuario-rol').value;
       const red = byId('nuevo-usuario-red').value;
       const password = byId('nuevo-usuario-clave').value;
       if (!USERNAME_RE.test(username)) return setMsgUsuarios('Usuario: de 3 a 32 caracteres entre letras minúsculas, números, punto, guion y guion bajo.', false);
       if (!nombre) return setMsgUsuarios('Escriba el nombre completo de la persona.', false);
+      if (!CORREO_RE.test(correoNuevo)) return setMsgUsuarios('Escriba un correo válido: es obligatorio y sirve para recuperar la contraseña.', false);
       if (!role) return setMsgUsuarios('Seleccione el rol.', false);
       if (role !== 'ADMIN' && !red) return setMsgUsuarios('Seleccione la red (RIS) del Coordinador o Director.', false);
       if (password.length < 10) return setMsgUsuarios('La clave debe tener al menos 10 caracteres.', false);
 
-      const body = { username, nombre, role, password };
+      const body = { username, nombre, correo: correoNuevo, role, password };
       if (role !== 'ADMIN') {
         body.red = red;
         const est = byId('nuevo-usuario-establecimiento');
@@ -381,9 +391,131 @@
       if (!u) return;
       if (btn.dataset.acc === 'clave') {
         abrirCambioClave(username);
+      } else if (btn.dataset.acc === 'correo') {
+        const nuevo = window.prompt(`Correo de ${u.nombre} (${username}):`, u.correo || '');
+        if (nuevo === null) return;
+        const c = nuevo.trim().toLowerCase();
+        if (!CORREO_RE.test(c)) { setMsgUsuarios('Escriba un correo válido.', false); return; }
+        modificarUsuario(username, { correo: c }, `Correo de "${username}" actualizado.`);
       } else if (btn.dataset.acc === 'estado') {
         const activar = u.activo === false;
         modificarUsuario(username, { activo: activar }, activar ? `Usuario "${username}" activado.` : `Usuario "${username}" desactivado. Su sesión se cerró.`);
+      }
+    }
+
+    // ---------- Contraseña: recuperar con código por correo y cambiar la propia ----------
+    function msg(id, texto, ok) {
+      const el = byId(id);
+      if (!el) return;
+      el.textContent = texto || '';
+      el.classList.toggle('login-ok', !!ok);
+    }
+
+    async function postPublico(url, cuerpo) {
+      try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo), cache: 'no-store' });
+        let b = null;
+        try { b = await res.json(); } catch (e) { b = null; }
+        const texto = (b && b.issue && b.issue[0] && b.issue[0].diagnostics) || (b && b.message) || '';
+        return { ok: res.ok, status: res.status, texto };
+      } catch (e) {
+        return { ok: false, status: 0, texto: 'No se pudo conectar con el servidor.' };
+      }
+    }
+
+    function mostrarRecuperar() {
+      byId('login-form').classList.add('oculto');
+      byId('recuperar-form').classList.remove('oculto');
+      byId('recuperar-paso1').classList.remove('oculto');
+      byId('recuperar-paso2').classList.add('oculto');
+      ['recuperar-codigo', 'recuperar-clave', 'recuperar-clave2'].forEach(id => { byId(id).value = ''; });
+      const u = byId('login-username');
+      byId('recuperar-usuario').value = u ? u.value : '';
+      msg('recuperar-msg', '');
+      byId('recuperar-usuario').focus();
+    }
+
+    function volverAlLogin(mensaje) {
+      const rec = byId('recuperar-form');
+      if (rec) rec.classList.add('oculto');
+      const form = byId('login-form');
+      if (form) form.classList.remove('oculto');
+      const err = byId('login-error');
+      if (err && mensaje !== undefined) err.textContent = mensaje;
+    }
+
+    async function enviarCodigo() {
+      const usuario = byId('recuperar-usuario').value.trim();
+      if (!usuario) return msg('recuperar-msg', 'Escriba su usuario o su correo.');
+      const btn = byId('recuperar-enviar');
+      btn.disabled = true;
+      const r = await postPublico(endpoints().AUTH_RECUPERAR || '/api/auth/recuperar', { usuario });
+      btn.disabled = false;
+      if (!r.ok) return msg('recuperar-msg', r.texto || `No se pudo pedir el código (código ${r.status}).`);
+      byId('recuperar-paso1').classList.add('oculto');
+      byId('recuperar-paso2').classList.remove('oculto');
+      msg('recuperar-msg', r.texto, true);
+      byId('recuperar-codigo').focus();
+    }
+
+    async function restablecerConCodigo() {
+      const usuario = byId('recuperar-usuario').value.trim();
+      const codigo = byId('recuperar-codigo').value.trim();
+      const clave = byId('recuperar-clave').value;
+      if (!/^\d{6}$/.test(codigo)) return msg('recuperar-msg', 'El código tiene 6 dígitos.');
+      if (clave.length < 10) return msg('recuperar-msg', 'La nueva contraseña debe tener al menos 10 caracteres.');
+      if (clave !== byId('recuperar-clave2').value) return msg('recuperar-msg', 'Las dos contraseñas no coinciden.');
+      const btn = byId('recuperar-restablecer');
+      btn.disabled = true;
+      const r = await postPublico(endpoints().AUTH_RESTABLECER || '/api/auth/restablecer', { usuario, codigo, clave_nueva: clave });
+      btn.disabled = false;
+      if (!r.ok) return msg('recuperar-msg', r.texto || `No se pudo restablecer (código ${r.status}).`);
+      const login = byId('login-username');
+      if (login && !usuario.includes('@')) login.value = usuario;
+      volverAlLogin('Contraseña restablecida. Ingrese con su nueva contraseña.');
+      const err = byId('login-error');
+      if (err) err.classList.add('login-ok');
+      const pw = byId('login-password');
+      if (pw) { pw.value = ''; pw.focus(); }
+    }
+
+    function abrirMiClave() {
+      ['mi-clave-actual', 'mi-clave-nueva', 'mi-clave-nueva2'].forEach(id => { byId(id).value = ''; });
+      msg('mi-clave-msg', '');
+      byId('modal-mi-clave').classList.add('active');
+      byId('mi-clave-actual').focus();
+    }
+
+    function cerrarMiClave() {
+      const m = byId('modal-mi-clave');
+      if (m) m.classList.remove('active');
+    }
+
+    async function guardarMiClave() {
+      const actual = byId('mi-clave-actual').value;
+      const nueva = byId('mi-clave-nueva').value;
+      if (!actual) return msg('mi-clave-msg', 'Escriba su contraseña actual.');
+      if (nueva.length < 10) return msg('mi-clave-msg', 'La nueva contraseña debe tener al menos 10 caracteres.');
+      if (nueva !== byId('mi-clave-nueva2').value) return msg('mi-clave-msg', 'Las dos contraseñas nuevas no coinciden.');
+      if (nueva === actual) return msg('mi-clave-msg', 'La nueva contraseña debe ser distinta de la actual.');
+      const btn = byId('mi-clave-guardar');
+      btn.disabled = true;
+      try {
+        const res = await session.authFetch(endpoints().AUTH_CAMBIAR_CLAVE || '/api/auth/cambiar-clave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clave_actual: actual, clave_nueva: nueva })
+        });
+        if (res.status === 401) return;
+        if (!res.ok) return msg('mi-clave-msg', await leerError(res, 'No se pudo cambiar la contraseña.'));
+        const b = await res.json();
+        session.reemplazarToken(b.token, b.expires_at);
+        msg('mi-clave-msg', 'Contraseña cambiada. Sus otras sesiones se cerraron.', true);
+        setTimeout(cerrarMiClave, 1500);
+      } catch (e) {
+        msg('mi-clave-msg', 'No se pudo conectar con el servidor.');
+      } finally {
+        btn.disabled = false;
       }
     }
 
@@ -413,6 +545,15 @@
       on('usuarios-lista', 'click', clickEnLista);
       on('usuarios-clave-guardar', 'click', guardarCambioClave);
       on('usuarios-clave-cancelar', 'click', cerrarCambioClave);
+      on('login-olvido', 'click', mostrarRecuperar);
+      on('recuperar-volver', 'click', () => volverAlLogin(''));
+      on('recuperar-enviar', 'click', enviarCodigo);
+      on('recuperar-reenviar', 'click', () => { byId('recuperar-paso2').classList.add('oculto'); byId('recuperar-paso1').classList.remove('oculto'); msg('recuperar-msg', ''); });
+      on('recuperar-restablecer', 'click', restablecerConCodigo);
+      on('recuperar-form', 'submit', ev => ev.preventDefault());
+      on('btn-mi-clave', 'click', abrirMiClave);
+      on('mi-clave-cancelar', 'click', cerrarMiClave);
+      on('mi-clave-guardar', 'click', guardarMiClave);
 
       // Al volver a la pestaña o cada minuto: si el token venció, cerrar la sesión sin esperar a la próxima llamada
       document.addEventListener('visibilitychange', () => { if (!document.hidden) session.checkExpiry(); });

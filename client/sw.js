@@ -4,7 +4,7 @@
  * MÁXIME Salud Digital - Puesta en Marcha de Hospitales (v20: acceso con usuario y clave, T-03b)
  */
 
-const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-f4';
+const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-f4c';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -15,7 +15,7 @@ const ASSETS_TO_CACHE = [
   './assets/images/icono-512.png',
   './css/georis-theme.css?v=20261026_premium',
   './css/layout.css?v=20261105_f4',
-  './css/components.css?v=20261029_a8f',
+  './css/components.css?v=20261105_f4c',
   './css/padron-grid.css?v=20261027_v4',
   './css/registro-clinico.css?v=20261027_v4',
   './libs/leaflet.js',
@@ -23,10 +23,10 @@ const ASSETS_TO_CACHE = [
   './libs/xlsx.full.min.js',
   './data/georis/georisDataBundle.js?v=20261021_v18',
   './data/georis/huarmeyCadastreBundle.js?v=20261021_v18',
-  './js/config.js?v=20261029_a8f',
+  './js/config.js?v=20261105_f4c',
   './js/utils/fechaLima.js?v=20261029_a8f',
-  './js/auth/session.js?v=20261022_v20',
-  './js/auth/authUi.js?v=20261022_v20',
+  './js/auth/session.js?v=20261105_f4c',
+  './js/auth/authUi.js?v=20261105_f4c',
   './js/main.js?v=20261029_a8f',
   './js/map/mapManager.js?v=20261021_v18',
   './js/map/establecimientos.js?v=20261026_v21',
