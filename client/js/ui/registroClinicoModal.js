@@ -126,7 +126,6 @@
                           <option value="DNI" selected>DNI</option>
                           <option value="Carné de extranjería">Carné de extranjería</option>
                           <option value="Pasaporte">Pasaporte</option>
-                          <option value="Sin documento">Sin documento</option>
                         </select>
                       </div>
 

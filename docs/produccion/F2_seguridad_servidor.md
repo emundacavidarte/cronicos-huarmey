@@ -215,7 +215,7 @@ Los scripts y sus salidas están en `docs/produccion/evidencia/f2/` (ver su `REA
    - `/api/Bundle`, `/api/Patient/…` y `/api/metadata` dan 404; se usa `/fhir/…`.
    - Las rutas dobles (`/api/api/…`) también dan 404.
 3. **Importación más estricta (400 «Fila N: …»):** DNI que no tiene 8 dígitos con tipo DNI, paciente nuevo sin nombre, fechas imposibles (31/02), campos de más de 4 000 caracteres, `<` o `>` en códigos o diagnósticos.
-4. **Filas «Sin documento»:** el cliente les pone el id `pac-00001741-`, el mismo para todas, y antes se fundían en un solo paciente. Ahora se rechazan hasta que el cliente genere un id propio (Fase 3).
+4. **Filas «Sin documento»:** el cliente les pone el id `pac-00001741-`, el mismo para todas, y antes se fundían en un solo paciente. Ahora se rechazan. *Resuelto el 05/11/2026: Edward decidió que el documento es obligatorio (ver `F4_correcciones.md`).*
 5. **Webhooks HOSIX/FHIR:**
    - El documento debe ser un DNI de 8 dígitos (antes, 3 a 15 caracteres); CE y pasaporte por esa vía se rechazan.
    - Un paciente nuevo necesita nombre.
@@ -229,7 +229,7 @@ Los scripts y sus salidas están en `docs/produccion/evidencia/f2/` (ver su `REA
 **Técnicos, por fase**
 - **Fase 3/4 (cliente):**
   - Pasar los 69 manejadores en línea a `addEventListener` y quitar `'unsafe-inline'` de `script-src`. Mientras tanto, `main.js:1605-1608` interpola `p.id` y `p.dni` dentro de JavaScript en línea. Hoy es seguro porque el servidor solo acepta `[A-Za-z0-9_.-]` en ids y letras o dígitos en documentos, pero no debe depender de eso.
-  - Id propio para «Sin documento».
+  - ~~Id propio para «Sin documento»~~ (no aplica: el documento es obligatorio).
   - No perder las letras del CE o del pasaporte (`replace(/\D/g, '')` en `padronGridModal.js`).
   - No mostrar «SIS» cuando el financiador está vacío.
   - Mensaje de la pre-cita con 404.
@@ -246,7 +246,7 @@ Los scripts y sus salidas están en `docs/produccion/evidencia/f2/` (ver su `REA
 
 **De Edward (no técnicos)**
 1. **Rotar secretos:** si alguna vez se desplegó con los valores del antiguo `.env.example`, cambiar `AUTH_SECRET` y la clave del ADMIN. Siguen en el historial de Git.
-2. **Pacientes sin documento:** ¿se registran? Si sí, hace falta definir su identificador.
+2. ~~Pacientes sin documento~~ — **resuelto (05/11/2026): no; el documento es obligatorio.**
 3. **Integración HOSIX:** ¿llegarán carnés de extranjería o pasaportes? Hoy esa vía exige DNI.
 4. **Claves:** hoy solo el ADMIN fija y cambia las claves de todos, y no existe el cambio de clave por el propio usuario. ¿Se quiere ese cambio, y que la clave inicial sea obligatoria de cambiar?
 5. **Cifrado en reposo:** ¿quién custodia la clave?

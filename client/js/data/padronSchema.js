@@ -41,7 +41,8 @@
   ];
 
   const LISTAS = {
-    TIPO_DOC: ["DNI", "Carné de extranjería", "Pasaporte", "Sin documento"],
+    // Decisión de Edward (05/11/2026): el documento es obligatorio; no se registran pacientes sin documento
+    TIPO_DOC: ["DNI", "Carné de extranjería", "Pasaporte"],
     SEXO: ["Femenino", "Masculino"],
     SEGURO: ["SIS", "EsSalud", "Otro seguro", "Sin seguro"],
     SECTOR: [...SECTORES_HUARMEY, ...OTROS_DISTRITOS],
@@ -233,9 +234,8 @@
 
     const valStr = value !== null && value !== undefined ? String(value).trim() : '';
 
-    // Requerido (el número de documento no lo es si el tipo es «Sin documento»)
-    const sinDocumento = key === 'nro_documento' && tipoDocumento(row) === 'SIN';
-    if (col.required && !valStr && !sinDocumento) {
+    // Requerido
+    if (col.required && !valStr) {
       return `El campo "${col.label}" es obligatorio.`;
     }
 
@@ -244,7 +244,7 @@
     // 1. Validación de DNI
     if (key === 'nro_documento') {
       const tipo = tipoDocumento(row);
-      if (tipo === 'SIN') return 'Con «Sin documento» deje vacío el número de documento.';
+      if (tipo === 'SIN') return 'El documento es obligatorio: no se registran pacientes sin documento (DNI, carné de extranjería o pasaporte).';
       const clean = documentoNormalizado({ tipo_documento: row && row.tipo_documento, nro_documento: valStr });
       if (tipo === 'DNI' && clean.length !== 8) {
         return `El DNI debe tener exactamente 8 dígitos numéricos (actual: ${clean.length}).`;

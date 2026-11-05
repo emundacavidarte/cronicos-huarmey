@@ -60,7 +60,7 @@ async function abrir(browser, usuario, clave, viewport, opciones = {}) {
   await api('POST', '/api/users', A, { username: 'f4.dir.pn', nombre: "O'Brien & <i>Co</i>", role: 'DIRECTOR', red: '157', password: clave });
   const browser = await chromium.launch();
 
-  // C-14 vista inicial, C-08 aviso de DNI existente, C-07 aviso sin ubicación, «Sin documento»
+  // C-14 vista inicial, C-08 aviso de DNI existente, C-07 aviso sin ubicación, documento obligatorio
   const { page } = await abrir(browser, 'admin', process.env.ADMIN_PASSWORD);
   const visibles = await page.evaluate(() => {
     const b = window.app.mapManager.map.getBounds();
@@ -86,13 +86,28 @@ async function abrir(browser, usuario, clave, viewport, opciones = {}) {
   await page.evaluate(() => { const m = document.getElementById('modal-padron-grid'); if (m) m.classList.remove('active'); if (window.PadronGridModal) window.PadronGridModal.patients = []; });
 
   const toastsAntes = await page.evaluate(() => document.querySelectorAll('#toast-container .toast').length);
-  await subir(libro([fila('96500002', 'PACIENTE INVENTADO SIN UBICAR', { direccion: 'Zzqx 999 lugar inexistente' }),
-    fila('', 'PACIENTE INVENTADO SIN DOCUMENTO', { tipo_documento: 'Sin documento' })]), false);
+  await subir(libro([fila('96500002', 'PACIENTE INVENTADO SIN UBICAR', { direccion: 'Zzqx 999 lugar inexistente' })]), false);
   const avisos = await page.evaluate(n => [...document.querySelectorAll('#toast-container .toast')].slice(0).map(t => t.textContent.trim()).slice(-4), toastsAntes);
   anota('C-07 avisa cuántos pacientes no se pudieron ubicar en el mapa', avisos.some(t => t.includes('no se pudieron ubicar')), avisos.find(t => t.includes('ubicar')) || JSON.stringify(avisos));
-  const lista = (await api('GET', '/api/cronicos', A)).json;
-  const sinDoc = lista.find(p => p.apellidos_nombres === 'PACIENTE INVENTADO SIN DOCUMENTO');
-  anota('«Sin documento» se guarda con un id propio', !!sinDoc && /^pac-sd-[0-9a-f]{8}$/.test(sinDoc.id), sinDoc ? sinDoc.id : 'no se guardó');
+  // Documento obligatorio (decisión de Edward): la cuadrícula marca la fila y no deja cargarla
+  await page.evaluate(() => { if (window.PadronGridModal) window.PadronGridModal.patients = []; });
+  const antesSinDoc = page.peticiones.length;
+  const [fcSin] = await Promise.all([page.waitForEvent('filechooser'), page.click('#rail-tab-excel')]);
+  await fcSin.setFiles(libro([fila('', 'PACIENTE INVENTADO SIN DOCUMENTO', { tipo_documento: 'Sin documento' })]));
+  await page.waitForSelector('#modal-padron-grid.active #padron-grid-tbody tr');
+  const errorDoc = await page.evaluate(() => {
+    const r = window.PadronGridModal.validationResult;
+    const e = r && r.rowResults && r.rowResults[0] ? r.rowResults[0].errors : {};
+    return e.nro_documento || '';
+  });
+  const botonDeshabilitado = await page.$eval('#padron-btn-cargar', b => b.disabled);
+  if (!botonDeshabilitado) await page.click('#padron-btn-cargar');
+  await sleep(1200);
+  const enviados = page.peticiones.slice(antesSinDoc).filter(p => p.includes('importar-lote')).length;
+  const enServidor = (await api('GET', '/api/cronicos', A)).json.some(p => p.apellidos_nombres === 'PACIENTE INVENTADO SIN DOCUMENTO');
+  anota('documento obligatorio: una fila «Sin documento» queda observada y no se carga', /obligatorio/.test(errorDoc) && enviados === 0 && !enServidor,
+    `${errorDoc.slice(0, 60)}… · botón Cargar ${botonDeshabilitado ? 'deshabilitado' : 'habilitado'} · envíos ${enviados}`);
+  await page.evaluate(() => { const m = document.getElementById('modal-padron-grid'); if (m) m.classList.remove('active'); if (window.PadronGridModal) window.PadronGridModal.patients = []; });
 
   // C-04: al salir, el tablero queda sin cifras
   await page.evaluate(() => window.app.switchView('dashboard'));

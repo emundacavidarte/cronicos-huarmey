@@ -711,18 +711,10 @@
 
         // 1. Transformar filas limpias en pacientes con recursos clínicos FHIR y coordenadas
         const esquema = window.PadronSchema;
-        // Id estable de un paciente sin documento: huella de nombre, fecha de nacimiento y sexo (reimportar no lo duplica)
-        const huellaSinDocumento = r => {
-          const base = [r.apellidos_nombres, r.fecha_nacimiento, r.sexo].map(v => String(v || '').trim().toUpperCase()).join('|');
-          let h = 0x811c9dc5;
-          for (let i = 0; i < base.length; i++) { h ^= base.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-          return 'pac-sd-' + h.toString(16).padStart(8, '0');
-        };
         const calcEdad = window.PadronCalculadora && window.PadronCalculadora.calcularEdad;
         const processedPatients = this.patients.map((r, idx) => {
-          // DNI solo dígitos; carné de extranjería y pasaporte conservan sus letras; «Sin documento» no lleva número
+          // DNI solo dígitos; carné de extranjería y pasaporte conservan sus letras (el documento es obligatorio)
           const dni = esquema && esquema.documentoNormalizado ? esquema.documentoNormalizado(r) : String(r.nro_documento || '').replace(/\D/g, '');
-          const sinDocumento = esquema && esquema.tipoDocumento ? esquema.tipoDocumento(r) === 'SIN' : false;
           const direccion = r.direccion || '';
           const geo = geocoder.geocode(direccion || 'Huarmey');
 
@@ -742,7 +734,7 @@
           const fechaProxima = r.proxima_cita || null;
 
           const pObj = {
-            id: sinDocumento ? huellaSinDocumento(r) : `pac-00001741-${dni}`,
+            id: `pac-00001741-${dni}`,
             dni,
             tipo_documento: r.tipo_documento || 'DNI',
             historia_clinica: r.historia_clinica || '',

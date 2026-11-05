@@ -53,7 +53,7 @@ Regla de evidencia: cada corrección tiene una prueba que falla antes y pasa des
 | C-14 | Vista inicial con todos los pacientes ubicados (20 de 20; antes 3); se puede ampliar con los dedos (sin `user-scalable=no`); aviso «Su sesión venció» al recargar; avisos y controles del mapa por encima de la barra inferior; botones de cierre visibles | Chromium (03) |
 | C-11 = S-08 | Ver 2.3 | — |
 | F2 | El carné de extranjería y el pasaporte conservan sus letras | `testCorreccionesF4.js` |
-| F2 | «Sin documento» recibe un id propio y estable, `pac-sd-<huella>`, calculado con nombre, fecha de nacimiento y sexo. Antes todos compartían `pac-00001741-` y además la cuadrícula los rechazaba | `testCorreccionesF4.js` y Chromium |
+| F2 | **Documento obligatorio (decisión de Edward, 05/11/2026):** no se registran pacientes sin documento. Se quitó «Sin documento» de la lista, del formulario de Registro Clínico y de la plantilla. La cuadrícula marca esa fila y deshabilita «Cargar», y el servidor rechaza toda fila sin número de documento, aunque traiga id. Antes todos esos pacientes compartían el id `pac-00001741-` | `testCorreccionesF4.js` y Chromium (03) |
 | F2 | «No registrado» en vez de mostrar SIS cuando no hay seguro | Lectura |
 | F2 | Mensaje de la pre-cita cuando el servidor responde 404 | Lectura |
 | F2 | El comentario de la pre-cita ya no lleva nombre ni DNI | Lectura |
@@ -116,7 +116,7 @@ Regla de evidencia: cada corrección tiene una prueba que falla antes y pasa des
 
 1. **Sin internet:** solo un aviso claro; no se guardan datos de pacientes en el equipo. Trabajar sin red con datos exigiría almacenamiento cifrado en el dispositivo y más trabajo.
 2. **Cifrado en reposo:** implementado pero **apagado**. Se activa definiendo `STORE_KEY` en Render. **Antes, decidir quién guarda la clave fuera del servidor**: si se pierde, el padrón cifrado no se puede leer. Los respaldos y el `.bak` quedan cifrados con la misma clave.
-3. **Pacientes sin documento:** se aceptan con un id propio calculado con nombre, fecha de nacimiento y sexo. Dos personas con los mismos tres datos se tratarían como una sola.
+3. ~~Pacientes sin documento~~ — **decidido por Edward (05/11/2026): el documento es obligatorio.** Se registran solo con DNI, carné de extranjería o pasaporte; «Sin documento» se rechaza en la pantalla y en el servidor.
 4. **Cierre por inactividad:** 30 minutos (`INACTIVIDAD_MINUTOS`).
 5. **Diagnósticos:** se acumulan; una importación o una atención no borran un diagnóstico anterior. Dar de baja un diagnóstico no tiene todavía una acción en la interfaz (definirlo con la licenciada).
 6. **Respaldos:** uno por día en el mismo disco, los últimos 14 (`RESPALDOS_DIARIOS`). Restaurar es copiar el archivo del día sobre `store.json` con el servidor detenido.
@@ -129,7 +129,7 @@ Siguen pendientes de Edward las decisiones de la Fase 2: rotar secretos si se us
   - Al importar, aparece un aviso si hay documentos ya registrados y otro si hay pacientes sin ubicar.
   - El DIRECTOR ve totales de su red y «no disponible» donde antes veía 0.
 - **Sesión:** se cierra tras 30 minutos sin uso. Sin internet, la pantalla de acceso lo dice y no borra la sesión.
-- **Importación:** el carné de extranjería y el pasaporte guardan sus letras. Las filas «Sin documento» ya se pueden cargar.
+- **Importación:** el carné de extranjería y el pasaporte guardan sus letras. El documento es obligatorio: una fila sin documento queda observada y no se carga.
 - **Instalación en Render:**
   - Build `npm run build` (o `npm install`); start `npm start`; Node 22.
   - Con `DATA_DIR` aparece la carpeta `respaldos/`.

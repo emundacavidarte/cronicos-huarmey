@@ -10,6 +10,7 @@ Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. 
 - Rama de trabajo: `claude/pensive-cray-3lwodm`. No tocar `main`. No abrir pull request salvo que Edward lo pida.
 - Regla de evidencia: nada se afirma sin haberlo ejecutado. Cada hallazgo se reproduce o se marca «solo por lectura».
 - **Capacidad (decisión de Edward, 05/11/2026):** la salida en Render es un **prototipo con un máximo de 5 usuarios concurrentes**. La **meta de escalada** es de más de 2 000 usuarios conectados a la vez; con la arquitectura actual (un proceso Node + `store.json`) eso **no se alcanza** (medido en la Fase 1: con 2 000 pacientes y 1 000 conexiones la mediana pasa de 17 s) y se trata como proyecto aparte. La Fase 5 deja documentados el umbral y la ruta de migración (base de datos real, varias instancias, `/api/cronicos` paginado o en caché, límite de tasa compartido); no se rediseña para esa meta en esta salida.
+- **Documento obligatorio (Edward, 05/11/2026):** para registrar a un paciente debe tener documento (DNI de 8 dígitos, carné de extranjería o pasaporte). No se registran pacientes sin documento: la interfaz, la plantilla y el servidor lo exigen.
 - **Requisito funcional (Edward, 05/11/2026):** al escribir el DNI para registrar una atención, el sistema debe **cargar los datos ya guardados del paciente**. Existe (`buscarPacientePorDni`, Registro Clínico) y la Fase 1 lo vio funcionar con el administrador; la Fase 3 debe validarlo por rol y red, y revisar los valores por defecto que rellena si faltan datos.
 
 ## Reglas para todas las ventanas
@@ -60,7 +61,7 @@ Corregir en orden de gravedad con prueba que falla antes y pasa después. Seguri
 - Instalación: gzip de estáticos (≈6,4 → ≈1,4 MB), `npm ci` y Node 22 (S-10), y sin cifras sin sustento (L-11).
 - 3 hallazgos nuevos corregidos. El más grave, F4-02: cada atención en Registro Clínico borraba la dislipidemia.
 - `npm test`: 283 correctas, 0 fallas. Chromium: 32 de 32 acciones y 19 de 19 comprobaciones del cliente, sin violaciones de la CSP.
-- Decisiones tomadas por defecto (sin internet solo aviso, cifrado apagado, id de «Sin documento», 30 min de inactividad, diagnósticos acumulados): sección 5 del informe.
+- Decisiones tomadas por defecto (sin internet solo aviso, cifrado apagado, 30 min de inactividad, diagnósticos acumulados): sección 5 del informe. Para «Sin documento», Edward decidió después que el documento es obligatorio.
 
 ### Fase 5 — Persistencia, respaldos y datos reales
 *Ya hecho en la Fase 4:* espera máxima del guardado, formato único, transacciones con reversión, respaldo diario local con prueba de restauración y cifrado opcional (`STORE_KEY`). Falta: copia cifrada **fuera** del servidor, retención de la bitácora, procedimiento de carga del padrón real y umbral o ruta de migración (L-05, L-07, L-08).
@@ -84,13 +85,12 @@ Un modelo distinto revisa el diff completo y la lista de hallazgos sin ver mis c
 - Trabajo sin conexión (Fase 1): «sin conexión» = abrir y usar la app **sin internet** (hoy no funciona y no deja datos en el dispositivo). **Pendiente de que Edward confirme** si lo quiere o basta un aviso claro; la precarga por DNI que pidió es otra cosa y no depende de estar sin red.
 - ~~Tamaño de la instancia~~ — con ≤ 5 usuarios la memoria no es un riesgo (70 MB al inicio); queda solo confirmar el plan de Render en la Fase 6.
 - Rotación de secretos (Fase 2): si alguna vez se desplegó con los valores del antiguo `.env.example`, cambiar `AUTH_SECRET` y la clave del ADMIN. Siguen en el historial de Git.
-- Pacientes sin documento (Fase 2): ¿se registran? Hoy el servidor rechaza esas filas porque el cliente les pone a todas el mismo id; hace falta definir su identificador.
+- ~~Pacientes sin documento~~ — **RESUELTO el 05/11/2026 por Edward: para registrar a un paciente el documento es obligatorio** (DNI, carné de extranjería o pasaporte). La pantalla y el servidor rechazan «Sin documento».
 - Integración HOSIX (Fase 2): ¿llegarán carnés de extranjería o pasaportes? Hoy esa vía exige DNI de 8 dígitos.
 - Claves de usuario (Fase 2): solo el ADMIN fija y cambia las claves; ¿se quiere que cada usuario cambie la suya y que la inicial sea obligatoria de cambiar?
 - Cifrado en reposo (Fase 2 → Fase 5): ¿quién custodia la clave? Si se pierde, se pierde el padrón. *Fase 4:* ya está implementado y apagado; se activa definiendo `STORE_KEY` en Render cuando se decida la custodia.
 - Decisiones aplicadas por defecto en la Fase 4 (confirmar o cambiar):
   - Sin internet, solo aviso y sin datos en el equipo.
-  - «Sin documento» con un id calculado con nombre, fecha de nacimiento y sexo.
   - Cierre por inactividad a los 30 minutos.
   - Los diagnósticos se acumulan (dar de baja un diagnóstico se define con la licenciada).
 

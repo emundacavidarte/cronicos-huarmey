@@ -48,14 +48,17 @@ async function main() {
   });
 
   // --- Tipo de documento (pendiente de la Fase 2) ---
-  await step('documento: el carné de extranjería y el pasaporte conservan sus letras; «Sin documento» va vacío', () => {
+  await step('documento obligatorio (decisión de Edward): CE y pasaporte conservan sus letras; «Sin documento» no se acepta', () => {
     const ce = { tipo_documento: 'Carné de extranjería', nro_documento: 'x-001234' };
     assert.strictEqual(schema.documentoNormalizado(ce), 'X001234');
     assert.strictEqual(schema.validateCell('nro_documento', ce.nro_documento, ce, new Map()), null);
     assert.ok(schema.validateCell('nro_documento', 'ab', { tipo_documento: 'Pasaporte' }, new Map()));
     const sin = { tipo_documento: 'Sin documento' };
-    assert.strictEqual(schema.validateCell('nro_documento', '', sin, new Map()), null, 'sin número es válido');
-    assert.ok(/vacío/i.test(schema.validateCell('nro_documento', '12345678', sin, new Map())));
+    assert.ok(/obligatorio/i.test(schema.validateCell('nro_documento', '', sin, new Map())), 'sin número no es válido');
+    assert.ok(/obligatorio/i.test(schema.validateCell('nro_documento', '12345678', sin, new Map())));
+    assert.ok(schema.validateCell('tipo_documento', 'Sin documento', sin), 'la opción ya no está en la lista');
+    assert.ok(!schema.LISTAS.TIPO_DOC.includes('Sin documento'));
+    assert.ok(/obligatorio/i.test(schema.validateCell('nro_documento', '', { tipo_documento: 'DNI' }, new Map())));
     assert.strictEqual(schema.documentoNormalizado({ tipo_documento: 'DNI', nro_documento: '10.000.001' }), '10000001');
   });
 
@@ -116,9 +119,15 @@ async function main() {
       const p = (await call('GET', '/api/cronicos', { token: admin })).json.find(x => x.dni === '96400001');
       assert.deepStrictEqual([...p.diagnosticos].sort(), ['E11', 'E78.2', 'I10']);
     });
-    await step('«Sin documento»: el servidor acepta el id propio que genera el cliente y la fila sin número', async () => {
-      const r = await call('POST', '/api/padron/importar-lote', { token: admin, body: [{ id: 'pac-sd-1a2b3c4d', tipo_documento: 'Sin documento', dni: '', apellidos_nombres: 'PACIENTE SIN DOCUMENTO F4', red_salud: 'PACIFICO SUR' }] });
-      assert.strictEqual(r.status, 200, r.text);
+    await step('documento obligatorio: el servidor rechaza «Sin documento» y la fila sin número (aunque traiga id)', async () => {
+      for (const fila of [
+        { id: 'pac-sd-1a2b3c4d', tipo_documento: 'Sin documento', dni: '', apellidos_nombres: 'PACIENTE SIN DOCUMENTO F4', red_salud: 'PACIFICO SUR' },
+        { id: 'pac-f4-sin-doc', apellidos_nombres: 'PACIENTE SOLO ID F4', red_salud: 'PACIFICO SUR' }
+      ]) {
+        const r = await call('POST', '/api/padron/importar-lote', { token: admin, body: [fila] });
+        assert.strictEqual(r.status, 400, r.text);
+        assert.ok(/documento es obligatorio/.test(r.text), r.text);
+      }
     });
     await step('S-08 los estáticos de texto salen con gzip, con ETag y 304; sin recorrido de rutas', async () => {
       const r = await fetch(srv.base + '/libs/leaflet.js', { headers: { 'Accept-Encoding': 'gzip' } });

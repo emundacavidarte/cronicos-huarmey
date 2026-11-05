@@ -137,15 +137,15 @@ function validarLotePadron(lista, db) {
     const id = texto(p.id).trim();
     if (!vacio(p.dni) && typeof p.dni !== 'string' && typeof p.dni !== 'number') throw new ErrorValidacion(`${donde}: dni debe ser texto.`);
     if (!vacio(p.id) && !ID_REGEX.test(id)) throw new ErrorValidacion(`${donde}: id inválido.`);
-    if (dni) {
-      if (tipo === 'DNI' && !DNI_REGEX.test(dni)) throw new ErrorValidacion(`${donde}: el DNI debe tener exactamente 8 dígitos.`);
-      if (tipo === 'OTRO' && !DOC_OTRO_REGEX.test(dni)) throw new ErrorValidacion(`${donde}: el número de documento debe tener de 6 a 15 letras o dígitos.`);
-      if (tipo === 'SIN') throw new ErrorValidacion(`${donde}: «Sin documento» no puede traer número de documento.`);
-      if (dnis.has(dni)) throw new ErrorValidacion(`${donde}: el documento ${dni} está repetido en el lote.`);
-      dnis.add(dni);
-      p.dni = dni;
+    // Decisión de Edward (05/11/2026): el documento es obligatorio para registrar a un paciente
+    if (tipo === 'SIN' || !dni) {
+      throw new ErrorValidacion(`${donde}: el documento es obligatorio (DNI, carné de extranjería o pasaporte); no se registran pacientes sin documento.`);
     }
-    if (!dni && !id) throw new ErrorValidacion(`${donde}: falta el número de documento (o el id del paciente).`);
+    if (tipo === 'DNI' && !DNI_REGEX.test(dni)) throw new ErrorValidacion(`${donde}: el DNI debe tener exactamente 8 dígitos.`);
+    if (tipo === 'OTRO' && !DOC_OTRO_REGEX.test(dni)) throw new ErrorValidacion(`${donde}: el número de documento debe tener de 6 a 15 letras o dígitos.`);
+    if (dnis.has(dni)) throw new ErrorValidacion(`${donde}: el documento ${dni} está repetido en el lote.`);
+    dnis.add(dni);
+    p.dni = dni;
     if (id) p.id = id;
 
     const porDni = dni ? db.getPatientByDni(dni) : null;
