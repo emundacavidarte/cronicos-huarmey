@@ -1,0 +1,32 @@
+setup: ADMIN crea paciente de Pacífico Norte → 200
+setup: paciente PN antes → diagnosticos [] | pa null | citas 0
+setup: COORD Pacífico Sur ve el paciente PN en /api/cronicos → false
+H-01 COORD Pacífico Sur envía DNI propio + id del paciente PN con hijos → status 200
+H-01   paciente PN después → diagnosticos ["E11"] | pa 210/125 | citas 1 | condición inyectada: {"id":"cond-pac-f2-pn-1-E11","patient_id":"pac-f2-pn-1","cie10_cod":"E11","diagnostico":"INYECTADO-F2","fecha_diagnostico":"2026-11-04"}
+H-02 GET eventos: DNI de otra red → 403 «No puede ver pacientes fuera de su alcance.» | DNI inexistente → 404 «Paciente no encontrado»
+H-02 PUT consentimiento: DNI de otra red → 403 «No puede modificar información de pacientes de otra red.» | DNI inexistente → 404 «Paciente no encontrado»
+H-02 POST eventos: DNI de otra red → 403 «No puede modificar información de pacientes de otra red.» | DNI inexistente → 404 «Paciente no encontrado»
+H-02 POST pre-cita: DNI de otra red → 403 «No puede modificar información de pacientes de otra red.» | DNI inexistente → 403 «El registro apunta a un paciente que no existe en su red.»
+H-02 GET /fhir/Patient (control): DNI de otra red → 404 «Paciente 97000001 no encontrado en el Padrón Territorial» | DNI inexistente → 404 «Paciente 97999999 no encontrado en el Padrón Territorial»
+H-03 ETag COORD red completa = W/"cronicos-v9-21-fd6513b1" (20 pacientes) | ETag COORD est. 00001741 = W/"cronicos-v9-21-fd6513b1" (13)
+H-03 COORD est. 00001744 con If-None-Match del COORD de red completa → 304 | Cache-Control: private, no-cache
+H-04 sin token: cuerpo chico → 401 en 2.9 ms | 9,5 MB → 401 en 431/163/355 ms
+H-04 20 cuerpos de 9,5 MB simultáneos a /fhir/auth/login sin sesión: RSS 190.7 → 377.4 MB
+H-05 importar-lote con la clave "toString" sobre paciente existente → 400 «(PLACEHOLDER_VALUES[field] || []).includes is not a function»
+H-05 lote [nuevo válido, existente con "hasOwnProperty"] → 400 | ¿quedó guardado el primero pese al error? true
+H-06 Condition SIN código → status 200 | diagnósticos guardados ["I10"]
+H-06 Condition con código HTML → status 200 | guardado ["<img src=x onerror=alert(1)>"]
+H-07 código CIE-10 numérico → 400 «code.startsWith is not a function»
+H-07 patient_id objeto sin toString → 500 «Cannot convert object to primitive value»
+H-07 JSON roto → 400 «Unexpected end of JSON input»
+H-08 COORD fija actualizado_por="admin", fuente y un campo de 200 KB → 200 | guardado: actualizado_por = admin | fuente = HOSIX | campo_arbitrario = 200000 caracteres
+H-09 COORD con sector "Sector 6" ve 17 pacientes de los sectores ["Sector 62","Sector 63","Sector 64","Sector 65","Sector 68","Sector 69","Sector 66"]
+H-10 COORD est. 00001741 mueve su paciente a 00001744 → 200 | ¿lo sigue viendo? false | traer uno de 00001744 a 00001741 → 403
+H-11 PATCH con __proto__/constructor → 200 | rol del COORD después: COORDINADOR | lote con __proto__ → 200 | query con __proto__ → 200 | rol del DIRECTOR: DIRECTOR
+H-12 eventos en la bitácora tras las lecturas de /api/cronicos, /fhir/Patient y eventos: {"BULK_IMPORT":5,"USUARIO_MODIFICADO":1,"BUNDLE_INGESTED":2,"LOGIN_OK":7,"USUARIO_CREADO":6}
+H-12 ejemplo de payload guardado: {"count":1}
+H-13 store.json: modo 644 | ¿texto plano legible? true
+H-13 store.json.bak: modo 644 | ¿texto plano legible? true
+H-14 preflight desde https://ajeno.example → 204 | ACAO: * | ACAH: authorization
+H-15 CSP de la página: default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'; img-src 'self' data: blob: https: http:; connect-src 'self' https: http:; font-src 'self' data:; frame-ancestors 'self';
+H-16 130 logins fallidos por /fhir/auth/login con usuarios distintos → 130 × 401, 0 × 429

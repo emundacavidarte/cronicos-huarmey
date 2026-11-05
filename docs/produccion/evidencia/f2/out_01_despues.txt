@@ -1,0 +1,33 @@
+setup: ADMIN crea paciente de Pacífico Norte → 200
+setup: paciente PN antes → diagnosticos [] | pa null | citas 0
+setup: COORD Pacífico Sur ve el paciente PN en /api/cronicos → false
+H-01 COORD Pacífico Sur envía DNI propio + id del paciente PN con hijos → status 400
+H-01   paciente PN después → diagnosticos [] | pa null/null | citas 0 | condición inyectada: null
+H-02 GET eventos: DNI de otra red → 404 «Paciente no encontrado» | DNI inexistente → 404 «Paciente no encontrado»
+H-02 PUT consentimiento: DNI de otra red → 404 «Paciente no encontrado» | DNI inexistente → 404 «Paciente no encontrado»
+H-02 POST eventos: DNI de otra red → 404 «Paciente no encontrado» | DNI inexistente → 404 «Paciente no encontrado»
+H-02 POST pre-cita: DNI de otra red → 404 «Paciente no encontrado» | DNI inexistente → 404 «Paciente no encontrado»
+H-02 GET /fhir/Patient (control): DNI de otra red → 404 «Paciente no encontrado en el Padrón Territorial» | DNI inexistente → 404 «Paciente no encontrado en el Padrón Territorial»
+H-03 ETag COORD red completa = W/"cronicos-v4-21-3ad3c987" (20 pacientes) | ETag COORD est. 00001741 = W/"cronicos-v4-21-0f13daad" (13)
+H-03 COORD est. 00001744 con If-None-Match del COORD de red completa → 200 | Cache-Control: private, no-store
+H-04 sin token: cuerpo chico → 401 en 2.9 ms | 9,5 MB → 401 en 23/27/22 ms
+H-04 20 cuerpos de 9,5 MB simultáneos a /fhir/auth/login sin sesión: RSS 162.3 → 169.8 MB
+H-05 importar-lote con la clave "toString" sobre paciente existente → 400 «Fila 1: nombre de campo no permitido.»
+H-05 lote [nuevo válido, existente con "hasOwnProperty"] → 400 | ¿quedó guardado el primero pese al error? false
+H-06 Condition SIN código → status 400 | diagnósticos guardados undefined
+H-06 Condition con código HTML → status 400 | guardado undefined
+H-07 código CIE-10 numérico → 400 «Condition 1: falta un código CIE-10 válido (por ejemplo I10 o E11.9).»
+H-07 patient_id objeto sin toString → 400 «patient_id válido es requerido»
+H-07 JSON roto → 400 «El cuerpo de la solicitud no es un JSON válido.»
+H-08 COORD fija actualizado_por="admin", fuente y un campo de 200 KB → 400 | guardado: actualizado_por = undefined | fuente = PADRON_ESTANDARIZADO | campo_arbitrario = 0 caracteres
+H-09 COORD con sector "Sector 6" ve 0 pacientes de los sectores []
+H-10 COORD est. 00001741 mueve su paciente a 00001744 → 200 | ¿lo sigue viendo? false | traer uno de 00001744 a 00001741 → 403
+H-11 PATCH con __proto__/constructor → 200 | rol del COORD después: COORDINADOR | lote con __proto__ → 400 | query con __proto__ → 200 | rol del DIRECTOR: DIRECTOR
+H-12 eventos en la bitácora tras las lecturas de /api/cronicos, /fhir/Patient y eventos: {"USUARIO_MODIFICADO":1,"BULK_IMPORT":2,"LECTURA_PACIENTES":5,"LOGIN_OK":7,"USUARIO_CREADO":6}
+H-12 ejemplo de payload guardado: {"count":1,"pacientes":["pac-sim-10000001"]}
+H-13 store.json: modo 600 | ¿texto plano legible? true
+H-13 store.json.bak: modo 600 | ¿texto plano legible? true
+H-14 preflight desde https://ajeno.example → 401 | ACAO: null | ACAH: null
+H-15 CSP de la página: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mt0.google.com https://mt1.google.com https://mt2.google.com https://mt3.google.com https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.fr https://server.arcgisonline.com; connect-src 'self'; font-src 'self' data:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+H-16 130 logins fallidos por /fhir/auth/login con usuarios distintos → 95 × 401, 35 × 429
+H-16 130 logins fallidos por /api/auth/login con usuarios distintos → 23 × 401, 107 × 429

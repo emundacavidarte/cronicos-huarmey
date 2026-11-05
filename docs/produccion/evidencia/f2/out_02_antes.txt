@@ -1,0 +1,4 @@
+marca: crear usuario f2.marca.mw2whtzu → 201
+antes: entradas 2 | ¿la marca está en la bitácora? true
+5100 logins fallidos SIN sesión por /fhir/auth/login en 62.7 s → {"401":5100}
+después: entradas 5000 | LOGIN_FALLIDO 5000 | ¿la marca sigue en la bitácora? false

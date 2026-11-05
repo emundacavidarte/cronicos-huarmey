@@ -1,0 +1,9 @@
+marca: crear usuario f2.marca.mw2xlycj → 201
+antes: entradas 2 | ¿la marca está en la bitácora? true
+5100 logins fallidos SIN sesión por /fhir/auth/login en 2.4 s → {"401":120,"429":4980}
+después: entradas 2 | LOGIN_FALLIDO 0 | ¿la marca sigue en la bitácora? true
+--- ruta de login vigente:
+marca: crear usuario f2.marca.mw2xm0si → 201
+antes: entradas 4 | ¿la marca está en la bitácora? true
+300 logins fallidos SIN sesión por /api/auth/login en 1.4 s → {"401":28,"429":272}
+después: entradas 32 | LOGIN_FALLIDO 28 | ¿la marca sigue en la bitácora? true
