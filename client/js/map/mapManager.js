@@ -478,6 +478,8 @@ class MapManager {
     this.cadastreBuildingsLayer = L.geoJSON({ type: 'FeatureCollection', features: buildings }, {
       style: { color: '#475569', weight: 0.8, fillColor: '#94a3b8', fillOpacity: 0.10 },
       onEachFeature: (feature, layer) => {
+        // Un lote sin nombre no responde al ratón: así el clic llega al sector sanitario que está debajo
+        if (!feature.properties.name) layer.options.interactive = false;
         if (feature.properties.name) {
           layer.bindTooltip(`<b>${escapeHtml(feature.properties.name)}</b>`, { direction: 'top', className: 'georis-tooltip' });
         }
@@ -487,6 +489,7 @@ class MapManager {
     this.cadastreStreetsLayer = L.geoJSON({ type: 'FeatureCollection', features: streets }, {
       style: { color: '#334155', weight: 1.5, opacity: 0.70 },
       onEachFeature: (feature, layer) => {
+        if (!feature.properties.name) layer.options.interactive = false;
         if (feature.properties.name) {
           layer.bindTooltip(escapeHtml(feature.properties.name), { direction: 'center', className: 'georis-tooltip' });
         }
@@ -915,6 +918,12 @@ class MapManager {
         }));
       }
 
+      if (n > 1 && useHighDensityCanvas) {
+        // Modo canvas (padrones grandes): un círculo por punto compartido con la lista de sus pacientes
+        this._marcadorGrupoCanvas(grupo);
+        continue;
+      }
+
       grupo.forEach((p, i) => {
         const lat = Number(p.latitud), lng = Number(p.longitud);
         const { color, clase, isPurple, isRed } = this._colorPaciente(p);
@@ -977,6 +986,30 @@ class MapManager {
       });
     }
     this._reordenarVectores();
+  }
+
+  /** Círculo único (modo canvas) para varios pacientes en la misma coordenada, con su lista en el popup. */
+  _marcadorGrupoCanvas(grupo) {
+    const p0 = grupo[0];
+    const prioridad = p => (this._colorPaciente(p).isRed ? 3 : (this._colorPaciente(p).isPurple ? 2 : (p.semaforo === 'yellow' ? 1 : 0)));
+    const peor = grupo.slice().sort((a, b) => prioridad(b) - prioridad(a))[0];
+    const { color } = this._colorPaciente(peor);
+    const exactas = grupo.filter(p => window.GeoUbicacion && window.GeoUbicacion.ubicacionEsExacta(p)).length;
+    const marker = L.circleMarker([Number(p0.latitud), Number(p0.longitud)], {
+      radius: Math.min(8 + grupo.length, 16), fillColor: color, color: '#0f172a', weight: 2, fillOpacity: 0.92,
+      dashArray: exactas === grupo.length ? null : '2, 2'
+    });
+    marker.bindTooltip(`<b>${grupo.length} pacientes en este punto</b><br>${escapeHtml(this._precisionPin(p0).desc.etiqueta)}`, { direction: 'top', className: 'georis-tooltip', opacity: 0.98 });
+    marker.bindPopup(() => `
+      <div class="georis-popup">
+        <div class="georis-popup-header" style="background:#0F234D; color:#FFFFFF;"><span>${grupo.length} pacientes en el mismo punto</span></div>
+        <div class="georis-popup-body">
+          ${grupo.map(p => `<div class="georis-popup-row"><span class="georis-popup-label">${escapeHtml(p.apellidos_nombres)}</span>
+            <button data-patient-action="detail" data-patient-id="${escapeHtml(p.id)}" class="btn-mini btn-precita">Ficha</button></div>`).join('')}
+        </div>
+      </div>`, GEORIS_POPUP_CONFIG);
+    this.layers.pacientes.addLayer(marker);
+    grupo.forEach(p => this.patientMarkers.set(String(p.id), marker));
   }
 
   /**
@@ -1059,6 +1092,10 @@ class MapManager {
    *          onConfirm: async ({lat,lng,precision_geo,precision_m}) => void (lanza Error si no se guardó), onCancel }
    */
   iniciarSeleccionUbicacion(opts = {}) {
+    if (this.seleccion && this.seleccion.guardando) {
+      if (window.app && window.app.showToast) window.app.showToast('Espere a que termine de guardarse la ubicación anterior.', 'warning');
+      return false;
+    }
     if (this.seleccion) this.cancelarSeleccionUbicacion(true);
     if (this.measuring) this.toggleMeasurement();
     this.limpiarFoco();
@@ -1089,6 +1126,7 @@ class MapManager {
       circulo: null,
       precision_geo: precision,
       precision_m: (precision === 'gps' && Number.isFinite(Number(opts.precision_m))) ? Number(opts.precision_m) : null,
+      requiereAjuste: !!opts.requiereAjuste, // GPS impreciso: hay que mover el marcador antes de confirmar
       opts,
       guardando: false
     };
@@ -1136,6 +1174,7 @@ class MapManager {
       // Mover el punto a mano lo convierte en una ubicación marcada en el mapa (ya no es la lectura del GPS)
       this.seleccion.precision_geo = 'mapa';
       this.seleccion.precision_m = null;
+      this.seleccion.requiereAjuste = false;
     }
     this._dibujarCirculoPrecision();
     this._actualizarBannerSeleccion();
@@ -1219,9 +1258,14 @@ class MapManager {
       const d = window.GeoUbicacion.distanciaMetros(ll.lat, ll.lng, ref.lat, ref.lng);
       refTxt = `<div>Distancia a ${escapeHtml(ref.nombre || 'su establecimiento')}: <b>${d >= 1000 ? (d / 1000).toFixed(2) + ' km' : Math.round(d) + ' m'}</b> (línea recta)</div>`;
     }
-    const aviso = (!t.ris || t.ris.id_ris !== 156)
+    let aviso = (!t.ris || t.ris.id_ris !== 156)
       ? `<div class="ubicacion-banner-aviso">⚠️ El punto está fuera de la RIS Pacífico Sur. Verifique antes de confirmar.</div>`
       : '';
+    if (s.requiereAjuste) {
+      aviso += `<div class="ubicacion-banner-aviso">⚠️ El GPS tiene poca precisión: arrastre el marcador o toque el mapa sobre la vivienda para poder confirmar.</div>`;
+    }
+    const btnConf = document.querySelector('#ubicacion-banner [data-ubic="confirmar"]');
+    if (btnConf && !s.guardando) btnConf.disabled = !!s.requiereAjuste;
     el.innerHTML = `
       <div><b>Lat</b> ${ll.lat.toFixed(6)} · <b>Lng</b> ${ll.lng.toFixed(6)} · ${escapeHtml(precisionTxt)}</div>
       <div>${sectorTxt}</div>
@@ -1233,7 +1277,7 @@ class MapManager {
 
   async _confirmarSeleccion() {
     const s = this.seleccion;
-    if (!s || s.guardando) return;
+    if (!s || s.guardando || s.requiereAjuste) return;
     const ll = s.marker.getLatLng();
     const errEl = document.getElementById('ubicacion-banner-error');
     const v = window.GeoUbicacion ? window.GeoUbicacion.validarCoordenadas(ll.lat, ll.lng) : { ok: true, lat: ll.lat, lng: ll.lng };
@@ -1243,16 +1287,19 @@ class MapManager {
     s.guardando = true;
     s.marker.dragging && s.marker.dragging.disable();
     const btn = document.querySelector('#ubicacion-banner [data-ubic="confirmar"]');
+    const btnCancelar = document.querySelector('#ubicacion-banner [data-ubic="cancelar"]');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+    if (btnCancelar) btnCancelar.disabled = true;
     if (errEl) errEl.textContent = '';
     try {
       await s.opts.onConfirm(datos);
-      this.finalizarSeleccionUbicacion();
+      if (this.seleccion === s) this.finalizarSeleccionUbicacion();
     } catch (e) {
-      if (!this.seleccion) return;
+      if (this.seleccion !== s) return;
       s.guardando = false;
       s.marker.dragging && s.marker.dragging.enable();
       if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar ubicación'; }
+      if (btnCancelar) btnCancelar.disabled = false;
       if (errEl) errEl.textContent = (e && e.message) ? e.message : 'No se pudo guardar la ubicación.';
     }
   }
@@ -1261,6 +1308,11 @@ class MapManager {
   cancelarSeleccionUbicacion(silencioso = false) {
     const s = this.seleccion;
     if (!s) return;
+    if (s.guardando) {
+      // No se puede «cancelar» algo que ya se está guardando en el servidor
+      if (!silencioso && window.app && window.app.showToast) window.app.showToast('La ubicación se está guardando; espere la respuesta del servidor.', 'warning');
+      return;
+    }
     this.finalizarSeleccionUbicacion();
     if (!silencioso && typeof s.opts.onCancel === 'function') s.opts.onCancel();
   }
@@ -1342,7 +1394,12 @@ class MapManager {
       if (window.app && window.app.showToast) window.app.showToast('Termine o cancele primero la ubicación del domicilio.', 'warning');
       return false;
     }
-    this.measuring = !this.measuring;
+    return this.setMedicion(!this.measuring);
+  }
+
+  /** Activa o desactiva la medición (silencioso: sin aviso, p. ej. al cerrar sesión). */
+  setMedicion(activo, silencioso = false) {
+    this.measuring = !!activo;
     this.map.getContainer().classList.toggle('modo-medicion', this.measuring);
     const btn = document.getElementById('btn-medir');
     if (btn) { btn.classList.toggle('active', this.measuring); btn.setAttribute('aria-pressed', String(this.measuring)); }
@@ -1352,10 +1409,10 @@ class MapManager {
         this.measurePolyline = null;
       }
       this.measurePoints = [];
-      if (window.app && window.app.showToast) window.app.showToast('Herramienta de medición desactivada', 'info');
+      if (!silencioso && window.app && window.app.showToast) window.app.showToast('Herramienta de medición desactivada', 'info');
     } else {
       this.map.closePopup();
-      if (window.app && window.app.showToast) window.app.showToast('Haga clic en 2 o más puntos del mapa para medir distancia y tiempo estimado de ambulancia. Vuelva a pulsar 📏 para terminar.', 'info', 5000);
+      if (!silencioso && window.app && window.app.showToast) window.app.showToast('Haga clic en 2 o más puntos del mapa para medir distancia y tiempo estimado de ambulancia. Vuelva a pulsar 📏 para terminar.', 'info', 5000);
     }
     return this.measuring;
   }

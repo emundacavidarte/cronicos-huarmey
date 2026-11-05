@@ -288,6 +288,84 @@ function assert(c, m) { if (!c) throw new Error(m || 'assert'); }
     assert(txt && /SECTOR SANITARIO/.test(txt), 'popup=' + txt);
   });
 
+  await step('modo canvas (padrones grandes): pacientes en el mismo punto se agrupan con su lista y no se pierde ninguno', async () => {
+    const r = await page.evaluate(async () => {
+      const umbral = window.APP_CONFIG.MAP_PERFORMANCE;
+      window.APP_CONFIG.MAP_PERFORMANCE = { CANVAS_THRESHOLD: 1 };
+      const base = { latitud: -10.067099, longitud: -78.150514, precision_geo: 'calle', semaforo: 'green', diagnosticos: ['I10'] };
+      const lista = [{ ...base, id: 'g1', apellidos_nombres: 'UNO' }, { ...base, id: 'g2', apellidos_nombres: 'DOS', semaforo: 'red' }, { ...base, id: 'g3', apellidos_nombres: 'TRES' }, { id: 'g4', apellidos_nombres: 'CUATRO', latitud: -10.06, longitud: -78.15, semaforo: 'green' }];
+      const mm = window.app.mapManager;
+      mm.renderPatients(lista);
+      const out = { capas: mm.layers.pacientes.getLayers().length, todos: ['g1', 'g2', 'g3', 'g4'].every(id => mm.patientMarkers.has(id)), color: mm.patientMarkers.get('g1').options.fillColor };
+      mm.patientMarkers.get('g2').openPopup();
+      await new Promise(res => setTimeout(res, 200));
+      out.txt = document.querySelector('.leaflet-popup-content').textContent;
+      mm.map.closePopup();
+      window.APP_CONFIG.MAP_PERFORMANCE = umbral;
+      window.app.render();
+      return out;
+    });
+    assert(r.capas === 2 && r.todos && r.color === '#DC2626' && /3 pacientes/.test(r.txt) && /TRES/.test(r.txt), JSON.stringify(r));
+  });
+
+  await step('cambiar de opción con el GPS en marcha lo detiene (no secuestra la selección después)', async () => {
+    await context.setGeolocation({ latitude: -10.0700, longitude: -78.1600, accuracy: 45 });
+    await page.evaluate(() => window.app.iniciarFijarUbicacion('pac-sim-10000003'));
+    await page.click('[data-ubic-accion="gps"]');
+    await page.waitForFunction(() => !document.getElementById('ubic-gps-usar').disabled, null, { timeout: 10000 });
+    await page.click('[data-ubic-accion="coords"]');
+    const r = await page.evaluate(() => ({ watch: window.app._gpsWatchId, timer: window.app._gpsTimer }));
+    assert(r.watch === null && r.timer === null, 'el GPS sigue activo ' + JSON.stringify(r));
+    await page.evaluate(() => window.app.cerrarModalUbicacion());
+  });
+
+  await step('GPS impreciso (±120 m): no se puede confirmar hasta poner el marcador sobre la vivienda', async () => {
+    await context.setGeolocation({ latitude: -10.0700, longitude: -78.1520, accuracy: 120 });
+    await page.evaluate(() => window.app.iniciarFijarUbicacion('pac-sim-10000003'));
+    await page.click('[data-ubic-accion="gps"]');
+    await page.waitForFunction(() => { const b = document.getElementById('ubic-gps-usar'); return b && !b.disabled; }, null, { timeout: 10000 });
+    await page.click('#ubic-gps-usar');
+    await page.waitForSelector('#ubicacion-banner');
+    await sleep(300);
+    assert(await page.locator('[data-ubic="confirmar"]').isDisabled(), 'confirmar habilitado con GPS impreciso');
+    const b = await page.evaluate(() => { const r = window.app.mapManager.seleccion.marker.getElement().getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height - 4 }; });
+    await page.mouse.move(b.x, b.y); await page.mouse.down(); await page.mouse.move(b.x + 30, b.y + 10, { steps: 6 }); await page.mouse.up();
+    await sleep(200);
+    assert(!(await page.locator('[data-ubic="confirmar"]').isDisabled()), 'confirmar sigue deshabilitado tras ajustar');
+    await page.click('[data-ubic="confirmar"]');
+    await page.waitForFunction(() => !document.getElementById('ubicacion-banner'), null, { timeout: 5000 });
+    const pr = await page.evaluate(() => window.app.findPatient('pac-sim-10000003'));
+    assert(pr.precision_geo === 'mapa' && pr.precision_m === undefined, JSON.stringify({ a: pr.precision_geo, m: pr.precision_m }));
+  });
+
+  await step('Escape mientras se guarda no cancela a medias: se espera la respuesta y se cierra la propia selección', async () => {
+    await page.route('**/api/patients/*/ubicacion', async route => { await sleep(1200); await route.continue(); });
+    await page.evaluate(() => window.app.iniciarFijarUbicacion('pac-sim-10000004'));
+    await page.click('[data-ubic-accion="mapa"]');
+    await sleep(300);
+    await page.click('[data-ubic="confirmar"]');
+    await sleep(150);
+    await page.keyboard.press('Escape');
+    await sleep(150);
+    assert(await page.locator('#ubicacion-banner').count() === 1, 'el banner se cerró durante el guardado');
+    const abierta = await page.evaluate(() => window.app.mapManager.iniciarSeleccionUbicacion({ lat: -10.07, lng: -78.15 }));
+    assert(abierta === false, 'se abrió otra selección durante el guardado');
+    await page.waitForFunction(() => !document.getElementById('ubicacion-banner'), null, { timeout: 6000 });
+    await page.unroute('**/api/patients/*/ubicacion');
+    const pr = await page.evaluate(() => window.app.findPatient('pac-sim-10000004'));
+    assert(pr.precision_geo === 'mapa', pr.precision_geo);
+  });
+
+  await step('cerrar sesión con el GPS en marcha lo detiene y no deja datos del paciente en pantalla', async () => {
+    await context.setGeolocation({ latitude: -10.0700, longitude: -78.1600, accuracy: 45 });
+    await page.evaluate(() => window.app.iniciarFijarUbicacion('pac-sim-10000005'));
+    await page.click('[data-ubic-accion="gps"]');
+    await sleep(300);
+    await page.evaluate(() => { window.app.mapManager.setMedicion(true, true); window.app.limpiarSesion(); });
+    const r = await page.evaluate(() => ({ watch: window.app._gpsWatchId, timer: window.app._gpsTimer, modal: !!document.getElementById('modal-ubicacion'), banner: !!document.getElementById('ubicacion-banner'), midiendo: window.app.mapManager.measuring }));
+    assert(r.watch === null && r.timer === null && !r.modal && !r.banner && !r.midiendo, JSON.stringify(r));
+  });
+
   await step('las 7 RIS y las 44 zonas dibujan exactamente lo de GeoRIS (sin duplicados ni establecimientos fuera de su zona)', async () => {
   const r = await page.evaluate(() => {
       const G = window.GeorisTerritory, mm = window.app.mapManager, b = G.bundle;
@@ -352,6 +430,22 @@ function assert(c, m) { if (!c) throw new Error(m || 'assert'); }
       return out;
     });
     assert(r.problemas.length === 0, r.problemas.slice(0, 5).join(' | '));
+  });
+
+  await step('tocar un lote sin nombre del catastro (zoom 17) abre el popup del sector que está debajo', async () => {
+    await page.evaluate(() => { window.app.mapManager.map.closePopup(); window.app.selectRis('156'); });
+    const ll = await page.evaluate(() => {
+      const f = window.HUARMEY_CADASTRE.features.find(x => x.properties.type === 'building' && !x.properties.name && x.geometry.coordinates[0].length > 4 && window.AncashGeocoder.getSectorFromCoordinates(x.geometry.coordinates[0][0][1], x.geometry.coordinates[0][0][0]));
+      const r = f.geometry.coordinates[0]; const lat = r.reduce((a, q) => a + q[1], 0) / r.length, lng = r.reduce((a, q) => a + q[0], 0) / r.length;
+      window.app.mapManager.map.setView([lat, lng], 17, { animate: false });
+      return [lat, lng];
+    });
+    await sleep(400);
+    await clickLatLng(ll[0], ll[1]);
+    await sleep(300);
+    const txt = await page.evaluate(() => { const p = document.querySelector('.leaflet-popup-content'); return p ? p.textContent : null; });
+    assert(txt && /SECTOR SANITARIO/.test(txt), 'popup=' + txt);
+    await page.evaluate(() => { window.app.mapManager.map.closePopup(); });
   });
 
   await step('sin errores de consola en todo el recorrido', async () => { assert(errores.length === 0, errores.join(' | ')); });

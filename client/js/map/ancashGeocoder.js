@@ -180,6 +180,8 @@ const FRASES_EQUIVALENTES = [
 
 // Primera palabra de un nombre de vía: si precede a una ciudad, el texto es la vía y no la ciudad
 const TIPOS_DE_VIA = new Set(['AV', 'JR', 'CALLE', 'PSJ', 'PROL', 'CARRETERA', 'MALECON', 'OVALO']);
+// Tipos de vía que se omiten al comparar («Jr. Pativilca 245» = «Pativilca 245» = «Ca. Pativilca 245»)
+const TIPOS_DE_VIA_CLAVE = new Set(['AV', 'JR', 'CALLE', 'CA', 'PSJ', 'PROL', 'CARRETERA', 'URB']);
 // Palabras que no cambian el lugar al comparar dos direcciones («Jr. Pativilca Nro 245» = «JR PATIVILCA 245»)
 const PALABRAS_NEUTRAS = new Set(['NRO', 'NO', 'NUM', 'NUMERO', 'N', 'S', 'SN', 'HUARMEY', 'ANCASH', 'PERU', 'DPTO', 'INT', 'PISO', 'DE', 'LA', 'EL', 'PROVINCIA', 'DISTRITO']);
 
@@ -453,7 +455,15 @@ class AncashGeocoder {
  * («Jirón Pativilca N° 245, Huarmey» y «JR PATIVILCA 245»). Sirve para saber si el paciente se mudó.
  */
 AncashGeocoder.prototype.claveDireccion = function (texto) {
-  return this.normalize(texto).split(' ').filter(w => w && !PALABRAS_NEUTRAS.has(w)).join(' ');
+  // Las referencias entre paréntesis o tras «frente a / al costado de / ref.» no cambian el lugar
+  const sinRef = String(texto === null || texto === undefined ? '' : texto)
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\b(frente|al costado|costado|cerca|altura|espalda|ref|referencia)\b[\s\S]*$/i, ' ');
+  const palabras = this.normalize(sinRef).split(' ')
+    .map(w => (w === 'MZA' || w === 'MANZANA') ? 'MZ' : ((w === 'LOTE' || w === 'LTE') ? 'LT' : w))
+    .filter(w => w && !PALABRAS_NEUTRAS.has(w) && !TIPOS_DE_VIA_CLAVE.has(w));
+  // El orden no importa («Mz F Lt 3» = «Lt 3 Mz F»)
+  return palabras.sort().join(' ');
 };
 
 // Exportación compatible navegador / Node.js

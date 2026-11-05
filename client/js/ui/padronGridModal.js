@@ -726,8 +726,8 @@
             longitud: geo.lng,
             precision_geo: geo.precision_geo,
             geo_fuente: 'geocodificador',
-            geo_toponimo: geo.toponym,
-            sector_sanitario: geo.sector || undefined
+            geo_toponimo: geo.toponym
+            // el sector sanitario lo deriva el servidor del polígono GeoRIS de estas coordenadas
           } : {});
 
           // Buscar última PAS y PAD registradas en el año

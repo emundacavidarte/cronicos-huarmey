@@ -87,6 +87,17 @@ async function unitarias() {
       assert.ok(Math.abs(r.lat + 10.0478) < 1e-4 && Math.abs(r.lng + 78.1548) < 1e-4, c + ' → ' + r.lat + ',' + r.lng);
     }
   });
+  await step('enlaces de mapas: pin de un lugar (!3d!4d) antes que el centro de la vista, %2C codificado y geo:', async () => {
+    const pin = G.interpretarTexto('https://www.google.com/maps/place/X/@-10.06,-78.13,15z/data=!3m1!4b1!4m6!3m5!1s0x0:0x0!8m2!3d-10.0789!4d-78.1512');
+    assert.ok(pin.ok && pin.lat === -10.0789 && pin.lng === -78.1512, JSON.stringify(pin));
+    assert.strictEqual(G.interpretarTexto('https://maps.google.com/?q=-10.0478%2C-78.1548').lat, -10.0478);
+    assert.strictEqual(G.interpretarTexto('geo:-10.0478,-78.1548?z=17').lng, -78.1548);
+  });
+  await step('un GPS de más de 50 m no es una ubicación exacta', async () => {
+    assert.strictEqual(G.ubicacionEsExacta({ latitud: -10.05, longitud: -78.15, precision_geo: 'gps', precision_m: 3000 }), false);
+    assert.strictEqual(G.ubicacionEsExacta({ latitud: -10.05, longitud: -78.15, precision_geo: 'gps', precision_m: 12 }), true);
+    assert.strictEqual(G.describirPrecision({ latitud: -10.05, longitud: -78.15, precision_geo: 'gps', precision_m: 3000 }).exacta, false);
+  });
   await step('latitud y longitud invertidas se corrigen y se avisa; 0/0, texto y fuera del Perú se rechazan', async () => {
     const inv = G.validarCoordenadas(-78.1548, -10.0478);
     assert.ok(inv.ok && inv.invertidas && inv.lat === -10.0478 && inv.lng === -78.1548);
@@ -259,6 +270,63 @@ async function unitarias() {
     assert.strictEqual(p.longitud, null);
     assert.strictEqual(p.precision_geo, undefined);
   });
+  await step('la misma casa escrita de otra forma no borra la ubicación exacta (sin tipo de vía, Mza/Lote, referencias)', async () => {
+    base();
+    db.setPatientLocation('91000001', { latitud: -10.06676, longitud: -78.15358, precision_geo: 'gps', precision_m: 6 }, { username: 'u' });
+    for (const dir of ['Bolognesi 640', 'Ca. Bolognesi 640', 'JR BOLOGNESI 640 (frente al mercado)', 'Jr. Bolognesi 690']) {
+      db.upsertPatient({ dni: '91000001', direccion: dir });
+      const p = db.getPatientByDni('91000001');
+      assert.strictEqual(p.precision_geo, 'gps', dir);
+      assert.strictEqual(p.latitud, -10.06676, dir);
+      assert.strictEqual(p.geo_registrado_por, 'u', dir);
+    }
+  });
+  await step('completar la dirección de un paciente que no la tenía no borra la ubicación tomada en la visita', async () => {
+    resetDb();
+    db.upsertPatient({ id: 'pac-00001741-91000009', dni: '91000009', apellidos_nombres: 'SIN DIRECCION' });
+    db.setPatientLocation('91000009', { latitud: -10.0745, longitud: -78.147, precision_geo: 'mapa' }, { username: 'u' });
+    db.upsertPatient({ dni: '91000009', direccion: 'Jr. Bolognesi 120' });
+    const p = db.getPatientByDni('91000009');
+    assert.strictEqual(p.precision_geo, 'mapa');
+    assert.strictEqual(p.latitud, -10.0745);
+  });
+  await step('dirección nueva ilegible: se conserva el punto exacto marcado «por verificar»; mudanza lejana: queda historial', async () => {
+    base();
+    db.setPatientLocation('91000001', { latitud: -10.06676, longitud: -78.15358, precision_geo: 'mapa' }, { username: 'u' });
+    db.upsertPatient({ dni: '91000001', direccion: 'Mz Q Lt 9 Sector Nuevo' });
+    let p = db.getPatientByDni('91000001');
+    assert.strictEqual(p.precision_geo, 'mapa');
+    assert.strictEqual(p.ubicacion_por_verificar, true);
+    assert.ok(G.describirPrecision(p).etiqueta.includes('verifique'));
+    db.upsertPatient({ dni: '91000001', direccion: 'Ciudad de Huaraz' });
+    p = db.getPatientByDni('91000001');
+    assert.strictEqual(p.precision_geo, 'localidad');
+    assert.strictEqual(p.sector_sanitario, 'Sin sector GeoRIS', 'Huaraz está fuera de los polígonos de sectores');
+    assert.strictEqual(p.geo_anterior.precision_geo, 'mapa');
+    assert.strictEqual(p.geo_anterior.latitud, -10.06676);
+    assert.strictEqual(p.ubicacion_por_verificar, undefined);
+  });
+  await step('el sector derivado de las coordenadas se reinicia si el paciente se muda a una dirección que no se ubica', async () => {
+    base();
+    assert.strictEqual(db.getPatientByDni('91000001').sector_sanitario, 'Sector 67');
+    db.upsertPatient({ dni: '91000001', direccion: 'Pasaje Inventado 4' });
+    const p = db.getPatientByDni('91000001');
+    assert.strictEqual(p.latitud, null);
+    assert.strictEqual(p.sector_sanitario, 'Sin sector asignado');
+  });
+  await step('setPatientLocation rechaza un GPS de más de 50 m', async () => {
+    base();
+    const r = db.setPatientLocation('91000001', { latitud: -10.06, longitud: -78.15, precision_geo: 'gps', precision_m: 3000 }, { username: 'u' });
+    assert.ok(!r.ok && /insuficiente/.test(r.error), r.error);
+  });
+  await step('ids con caracteres peligrosos se sanean al guardar (no llegan a los botones de la pantalla)', async () => {
+    resetDb();
+    db.upsertPatient({ id: "x');window.__xss=1;//", dni: '91000010', direccion: 'Jr. Bolognesi 1' });
+    const p = db.getPatientByDni('91000010');
+    assert.ok(/^[A-Za-z0-9._-]+$/.test(p.id), p.id);
+    db.upsertCondition({ patient_id: "x');window.__xss=1;//", cie10_cod: 'I10' });
+    assert.ok(db.getPatientByIdOrDni(p.id).conditions.some(c => c.cie10_cod === 'I10'), 'la condición quedó huérfana');
+  });
   await step('un lote no puede declararse «gps» ni traer usuario/fecha de registro de la ubicación', async () => {
     resetDb();
     db.upsertPatient({ dni: '91000002', direccion: 'X', latitud: -10.065, longitud: -78.15, precision_geo: 'gps', precision_m: 3, geo_registrado_por: 'falso', geo_fecha: '2020-01-01' });
@@ -383,6 +451,7 @@ async function http() {
     const coordSur = await crearUsuario(admin, 'coord_sur', 'COORDINADOR', 'Pacífico Sur');
     const coordNorte = await crearUsuario(admin, 'coord_norte', 'COORDINADOR', 'Pacífico Norte');
     const director = await crearUsuario(admin, 'director_sur', 'DIRECTOR', 'Pacífico Sur');
+    const coordSector = await crearUsuario(admin, 'coord_sec67', 'COORDINADOR', 'Pacífico Sur', { sector_sanitario: 'Sector 69' });
 
     await step('la importación ubicó «Jr. Casma 180» en Huarmey (no en la ciudad de Casma) y dejó sin ubicación lo que no se reconoce', async () => {
       const list = (await call('GET', '/api/cronicos', { token: admin })).json;
@@ -417,6 +486,20 @@ async function http() {
       assert.strictEqual((await call('PUT', '/api/patients/92000001/ubicacion', { token: coordNorte, body })).status, 404);
       assert.strictEqual((await call('PUT', '/api/patients/92000001/ubicacion', { body })).status, 401);
       assert.strictEqual((await call('PUT', '/api/patients/99999999/ubicacion', { token: admin, body })).status, 404);
+    });
+
+    await step('un coordinador limitado a su sector no puede mover al paciente fuera de él (403) y sí dentro (200)', async () => {
+      // 92000001 está en el Sector 69 (Jr. Casma)
+      const fuera = await call('PUT', '/api/patients/92000001/ubicacion', { token: coordSector, body: { latitud: -10.06721, longitud: -78.15352, precision_geo: 'mapa' } });
+      assert.strictEqual(fuera.status, 403, fuera.text);
+      const dentro = await call('PUT', '/api/patients/92000001/ubicacion', { token: coordSector, body: { latitud: -10.06993, longitud: -78.1498, precision_geo: 'mapa' } });
+      assert.strictEqual(dentro.status, 200, dentro.text);
+      assert.strictEqual(dentro.json.data.sector_sanitario, 'Sector 69');
+    });
+
+    await step('un GPS de más de 50 m responde 400', async () => {
+      const r = await call('PUT', '/api/patients/92000001/ubicacion', { token: admin, body: { latitud: -10.0699, longitud: -78.1498, precision_geo: 'gps', precision_m: 99999 } });
+      assert.strictEqual(r.status, 400, r.text);
     });
 
     await step('datos inválidos responden 400 y no cambian nada', async () => {

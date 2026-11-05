@@ -29,10 +29,23 @@
     localidad: { exacta: false, etiqueta: 'Aproximada a la localidad (centro poblado)', radio_m: 1000 }
   };
   const PRECISIONES_EXACTAS = Object.keys(PRECISION).filter(k => PRECISION[k].exacta);
+  // Una lectura GPS solo vale como ubicación exacta si su precisión es de 50 m o mejor; con menos precisión hay que
+  // ajustar el marcador sobre la vivienda (y entonces queda como «marcada en el mapa»)
+  const GPS_MAX_EXACTA_M = 50;
   const PRECISIONES_VALIDAS = Object.keys(PRECISION);
 
   function esPrecisionExacta(precision) {
     return PRECISIONES_EXACTAS.includes(precision);
+  }
+
+  /** ¿La ubicación guardada de un paciente es exacta? (una lectura GPS de más de 50 m no lo es) */
+  function ubicacionEsExacta(p) {
+    if (!p || !esPrecisionExacta(p.precision_geo)) return false;
+    if (p.precision_geo === 'gps') {
+      const m = aNumero(p.precision_m);
+      return m !== null && m <= GPS_MAX_EXACTA_M;
+    }
+    return true;
   }
 
   /** Convierte un valor (número o texto con punto o coma decimal) en número, o null. */
@@ -92,11 +105,16 @@
    * Devuelve lo mismo que validarCoordenadas.
    */
   function interpretarTexto(texto) {
-    const t = String(texto === null || texto === undefined ? '' : texto).trim();
+    let t = String(texto === null || texto === undefined ? '' : texto).trim();
     if (!t) return { ok: false, error: 'Escriba o pegue las coordenadas.' };
+    // Enlaces con la coma codificada (%2C) o espacios codificados
+    if (/%[0-9A-F]{2}/i.test(t)) { try { t = decodeURIComponent(t); } catch (e) { /* texto con % suelto */ } }
 
-    // Enlace de mapas: q=, query=, ll=, destination= o @lat,lng
-    const enlace = /(?:[?&](?:q|query|ll|destination|daddr)=|@)\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)/i.exec(t);
+    // Pin de un lugar de Google Maps (…!3d-10.07!4d-78.15…): manda sobre el centro de la vista (@lat,lng)
+    const pin = /!3d(-?\d{1,3}(?:\.\d+)?)!4d(-?\d{1,3}(?:\.\d+)?)/i.exec(t);
+    if (pin) return validarCoordenadas(pin[1], pin[2]);
+    // geo:lat,lng (Android) y enlaces con q=, query=, ll=, destination=, daddr= o @lat,lng
+    const enlace = /(?:^geo:|[?&](?:q|query|ll|destination|daddr)=(?:loc:)?|@)\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)/i.exec(t);
     if (enlace) return validarCoordenadas(enlace[1], enlace[2]);
 
     // Grados-minutos-segundos
@@ -137,8 +155,10 @@
     const radio = (p.precision_geo === 'gps' && Number.isFinite(Number(p.precision_m)) && Number(p.precision_m) > 0)
       ? Math.round(Number(p.precision_m))
       : def.radio_m;
-    if (p.precision_geo === 'gps' && radio) etiqueta += ` (±${radio} m)`;
-    return { clave: p.precision_geo, exacta: def.exacta, etiqueta, radio_m: radio };
+    const exacta = ubicacionEsExacta(p);
+    if (p.precision_geo === 'gps') etiqueta = exacta ? `Exacta por GPS (±${radio} m)` : `GPS de baja precisión (±${radio || '?'} m)`;
+    if (p.ubicacion_por_verificar) etiqueta += ' · la dirección cambió: verifique en la visita';
+    return { clave: p.precision_geo, exacta, etiqueta, radio_m: radio, por_verificar: !!p.ubicacion_por_verificar };
   }
 
   /** Distancia geodésica en metros (Haversine). */
@@ -167,7 +187,9 @@
     PRECISION,
     PRECISIONES_EXACTAS,
     PRECISIONES_VALIDAS,
+    GPS_MAX_EXACTA_M,
     esPrecisionExacta,
+    ubicacionEsExacta,
     aNumero,
     validarCoordenadas,
     interpretarTexto,

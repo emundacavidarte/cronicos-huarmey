@@ -21,13 +21,14 @@ const fechaLima = require('../../client/js/utils/fechaLima');
 const scope = require('../auth/scope');
 const { sameRed, normalizeRed } = require('../auth/redes');
 const geoUbicacion = require('../../client/js/map/geoUbicacion');
+const geocoder = require('../../client/js/map/ancashGeocoder');
 
 /** Conteo de la ubicación del domicilio: exacta (GPS/mapa/coordenadas), aproximada (dirección) o sin ubicación. */
 function contarUbicaciones(patients) {
   const c = { exacta: 0, aproximada: 0, sin_ubicacion: 0 };
   for (const p of patients) {
     if (!geoUbicacion.validarCoordenadas(p.latitud, p.longitud).ok) c.sin_ubicacion++;
-    else if (geoUbicacion.esPrecisionExacta(p.precision_geo)) c.exacta++;
+    else if (geoUbicacion.ubicacionEsExacta(p)) c.exacta++;
     else c.aproximada++;
   }
   return c;
@@ -345,6 +346,17 @@ router.put('/patients/:id/ubicacion', requireScope(ROLES_ESCRITURA), (req, res) 
   const denied = scope.checkWrite(req.user, [{ patients: [], observations: [{ patient_id: patient.id }] }]);
   if (denied) return forbidden(res, denied);
   const body = req.body || {};
+  // Un usuario limitado a un sector no puede dejar al paciente fuera de su propio alcance al reubicarlo
+  if (!scope.isAdmin(req.user)) {
+    const v = geoUbicacion.validarCoordenadas(body.latitud, body.longitud);
+    if (v.ok) {
+      const s = geocoder.getSectorFromCoordinates(v.lat, v.lng);
+      const nuevoSector = s ? `Sector ${s.id_sector}` : 'Sin sector GeoRIS';
+      if (!scope.canSeePatient(req.user, { ...patient, sector_sanitario: nuevoSector })) {
+        return forbidden(res, `La ubicación queda en ${nuevoSector}, fuera de su ámbito asignado. Pida a un administrador que la registre.`);
+      }
+    }
+  }
   const result = db.setPatientLocation(patient.id, {
     latitud: body.latitud,
     longitud: body.longitud,

@@ -18,6 +18,14 @@ if (typeof window !== 'undefined') {
   window.escapeHtml = escapeHtml;
 }
 
+/**
+ * Argumento seguro para un manejador en línea (onclick="f(...)"): cadena JSON escapada para el atributo HTML.
+ * escapeHtml solo no basta: el navegador decodifica &#39; antes de ejecutar el JavaScript del atributo.
+ */
+function argJs(val) {
+  return escapeHtml(JSON.stringify(String(val === null || val === undefined ? '' : val)));
+}
+
 class App {
   constructor() {
     this.mapManager = null;
@@ -108,9 +116,13 @@ class App {
           appointments: mergedAppts,
           conditions: mergedConds
         };
-        // Un registro entrante sin coordenadas válidas no borra la ubicación que ya se mostraba
+        // Un registro entrante sin coordenadas válidas no borra la ubicación que ya se mostraba, y una ubicación exacta
+        // (GPS, mapa) no se reemplaza por otra aproximada si la dirección es la misma (igual que en el servidor)
         const geoU = window.GeoUbicacion;
-        if (geoU && !geoU.validarCoordenadas(incoming.latitud, incoming.longitud).ok) {
+        const geoC = window.AncashGeocoder;
+        const mismaDir = !!geoC && geoC.claveDireccion(incoming.direccion || existing.direccion || '') === geoC.claveDireccion(existing.direccion || '');
+        const conservarExacta = !!geoU && geoU.ubicacionEsExacta(existing) && mismaDir;
+        if (geoU && (conservarExacta || !geoU.validarCoordenadas(incoming.latitud, incoming.longitud).ok)) {
           ['latitud', 'longitud', 'precision_geo', 'precision_m', 'geo_fuente', 'geo_toponimo', 'geo_fecha', 'geo_registrado_por'].forEach(k => {
             if (existing[k] !== undefined) merged[k] = existing[k]; else delete merged[k];
           });
@@ -500,8 +512,10 @@ class App {
     if (window.AlertsManager) window.AlertsManager.precitas = [];
     this.resetFiltros();
 
+    this.cerrarModalUbicacion(); // detiene el GPS y sus temporizadores
     if (this.mapManager) {
-      if (this.mapManager.seleccion) this.mapManager.cancelarSeleccionUbicacion(true);
+      if (this.mapManager.seleccion) this.mapManager.finalizarSeleccionUbicacion();
+      if (this.mapManager.measuring) this.mapManager.setMedicion(false, true);
       if (this.mapManager.limpiarFoco) this.mapManager.limpiarFoco();
       const capa = this.mapManager.layers && this.mapManager.layers.pacientes;
       if (capa) capa.clearLayers();
@@ -1113,13 +1127,13 @@ class App {
       const ubicBadge = `<span class="badge-ubicacion ${ubic.exacta ? 'is-exacta' : (sinUbic ? 'is-sin' : 'is-aprox')}" title="${escapeHtml(ubic.etiqueta)}">${ubic.exacta ? '📍 Exacta' : (sinUbic ? '⚠️ Sin ubicación' : '≈ Aproximada')}</span>`;
       const puedeUbicar = this.permisos().escribir;
       const btnVer = sinUbic
-        ? (puedeUbicar ? `<button class="btn-mini btn-ubicar" onclick="window.app.iniciarFijarUbicacion('${safeId}')" title="Fijar la ubicación del domicilio" aria-label="Fijar la ubicación de ${safeName}">${iconLocBlue} Ubicar</button>` : '')
-        : `<button class="btn-mini btn-ubicar" onclick="window.app.centrarPaciente('${safeId}')" title="Ubicar en el mapa" aria-label="Ubicar a ${safeName} en el mapa">${iconLocBlue} Ver</button>`;
+        ? (puedeUbicar ? `<button class="btn-mini btn-ubicar" onclick="window.app.iniciarFijarUbicacion(${argJs(p.id)})" title="Fijar la ubicación del domicilio" aria-label="Fijar la ubicación de ${safeName}">${iconLocBlue} Ubicar</button>` : '')
+        : `<button class="btn-mini btn-ubicar" onclick="window.app.centrarPaciente(${argJs(p.id)})" title="Ubicar en el mapa" aria-label="Ubicar a ${safeName} en el mapa">${iconLocBlue} Ver</button>`;
       const iconFicha = window.AppIcons ? window.AppIcons.clipboardCheck(13, '#1E8E3E') : '📋';
       const iconWp = window.AppIcons ? window.AppIcons.whatsapp(13, '#25D366') : '📱';
 
       card.innerHTML = `
-        <div class="patient-card-header" onclick="window.app.openPatientDetail('${safeId}')" role="button" tabindex="0" aria-label="Abrir ficha clínica de ${safeName}">
+        <div class="patient-card-header" onclick="window.app.openPatientDetail(${argJs(p.id)})" role="button" tabindex="0" aria-label="Abrir ficha clínica de ${safeName}">
           <div class="patient-card-title-group">
             <span class="patient-name" title="${safeName}">${safeName}</span>
             <div class="patient-card-badges">${diagBadges} ${hosixTag} ${ubicBadge}</div>
@@ -1127,7 +1141,7 @@ class App {
           ${badgeHtml}
         </div>
 
-        <div class="pcard-compact-grid" onclick="window.app.openPatientDetail('${safeId}')" role="button" tabindex="0">
+        <div class="pcard-compact-grid" onclick="window.app.openPatientDetail(${argJs(p.id)})" role="button" tabindex="0">
           <div class="pcard-demo-cell">
             <span class="pcard-cell-lbl">DNI</span>
             <span class="pcard-cell-val">${escapeHtml(p.dni || '—')}</span>
@@ -1150,8 +1164,8 @@ class App {
           <span class="pcard-address" title="${safeAddr} • ${escapeHtml(p.puerta_entrada || '')}">${iconLoc} ${safeAddr}</span>
           <div class="patient-actions">
             ${btnVer}
-            <button class="btn-mini btn-precita" onclick="window.app.openPatientDetail('${safeId}')" title="Ver Ficha Clínica HEARTS" aria-label="Ver Ficha Clínica de ${safeName}">${iconFicha} Ficha</button>
-            <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp('${safeId}')" title="Enviar recordatorio por WhatsApp"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Enviar recordatorio WhatsApp a ${safeName}">${iconWp} WhatsApp</button>
+            <button class="btn-mini btn-precita" onclick="window.app.openPatientDetail(${argJs(p.id)})" title="Ver Ficha Clínica HEARTS" aria-label="Ver Ficha Clínica de ${safeName}">${iconFicha} Ficha</button>
+            <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp(${argJs(p.id)})" title="Enviar recordatorio por WhatsApp"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Enviar recordatorio WhatsApp a ${safeName}">${iconWp} WhatsApp</button>
           </div>
         </div>
       `;
@@ -1232,12 +1246,18 @@ class App {
     return est ? { lat: est.latitud, lng: est.longitud, nombre: est.nombre } : null;
   }
 
-  cerrarModalUbicacion() {
-    if (this._gpsWatchId !== undefined && this._gpsWatchId !== null && navigator.geolocation) {
+  /** Detiene la lectura del GPS en curso; los avisos de intentos anteriores se ignoran (contador de intento). */
+  _detenerGps() {
+    this._gpsIntento = (this._gpsIntento || 0) + 1;
+    if (this._gpsWatchId !== undefined && this._gpsWatchId !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.clearWatch(this._gpsWatchId);
     }
     this._gpsWatchId = null;
     if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+  }
+
+  cerrarModalUbicacion() {
+    this._detenerGps();
     const m = document.getElementById('modal-ubicacion');
     if (m) m.remove();
   }
@@ -1295,6 +1315,8 @@ class App {
       const b = e.target.closest('[data-ubic-accion]');
       if (!b || b.disabled) return;
       const accion = b.getAttribute('data-ubic-accion');
+      // Elegir cualquier opción detiene una lectura de GPS anterior
+      this._detenerGps();
       if (accion === 'cerrar') this.cerrarModalUbicacion();
       else if (accion === 'gps') this._ubicacionPorGps(p);
       else if (accion === 'mapa') this._abrirSeleccionEnMapa(p, null);
@@ -1326,6 +1348,7 @@ class App {
       zoom: punto.zoom || 18,
       precision_geo: punto.precision_geo || 'mapa',
       precision_m: punto.precision_m,
+      requiereAjuste: !!punto.requiereAjuste,
       titulo: `Domicilio de ${p.apellidos_nombres || 'paciente'}`,
       referencia: ref,
       onConfirm: (datos) => this.guardarUbicacion(p, datos)
@@ -1340,7 +1363,9 @@ class App {
       paso.innerHTML = '<div class="ubic-error">Este navegador no ofrece GPS. Use «Marcar la vivienda en el mapa».</div>';
       return;
     }
-    if (this._gpsWatchId !== undefined && this._gpsWatchId !== null) navigator.geolocation.clearWatch(this._gpsWatchId);
+    this._detenerGps();
+    const intento = this._gpsIntento;
+    const vigente = () => intento === this._gpsIntento && !!document.getElementById('modal-ubicacion');
     let mejor = null;
     const OBJETIVO_M = 15;
     const LIMITE_MS = 25000;
@@ -1355,9 +1380,8 @@ class App {
     `;
     const estado = () => document.getElementById('ubic-gps-estado');
     const terminar = () => {
-      if (this._gpsWatchId !== null && this._gpsWatchId !== undefined) navigator.geolocation.clearWatch(this._gpsWatchId);
-      this._gpsWatchId = null;
-      if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+      if (!vigente()) return; // intento anterior, opción cambiada o ventana cerrada
+      this._detenerGps();
       if (!mejor) {
         const el = estado();
         if (el) el.innerHTML = '<span class="ubic-error">No se obtuvo ninguna lectura del GPS. Salga al exterior y reintente, o marque la vivienda en el mapa.</span>';
@@ -1369,18 +1393,20 @@ class App {
         if (el) el.innerHTML = `<span class="ubic-error">${escapeHtml(v.error)}</span>`;
         return;
       }
-      this._abrirSeleccionEnMapa(p, { lat: v.lat, lng: v.lng, precision_geo: 'gps', precision_m: Math.max(1, Math.round(mejor.acc)) });
-      if (mejor.acc > 50) this.showToast(`Precisión del GPS baja (±${Math.round(mejor.acc)} m). Ajuste el marcador sobre la vivienda antes de confirmar.`, 'warning', 7000);
+      const acc = Math.max(1, Math.round(mejor.acc));
+      const maxM = window.GeoUbicacion.GPS_MAX_EXACTA_M;
+      // Una lectura de más de 50 m no se puede confirmar tal cual: hay que poner el marcador sobre la vivienda
+      this._abrirSeleccionEnMapa(p, { lat: v.lat, lng: v.lng, precision_geo: 'gps', precision_m: acc, requiereAjuste: acc > maxM });
+      if (acc > maxM) this.showToast(`Precisión del GPS baja (±${acc} m). Arrastre el marcador sobre la vivienda para poder confirmar.`, 'warning', 7000);
     };
     document.getElementById('ubic-gps-cancelar').onclick = () => {
-      if (this._gpsWatchId !== null && this._gpsWatchId !== undefined) navigator.geolocation.clearWatch(this._gpsWatchId);
-      this._gpsWatchId = null;
-      if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+      this._detenerGps();
       paso.innerHTML = '';
     };
     document.getElementById('ubic-gps-usar').onclick = terminar;
 
     this._gpsWatchId = navigator.geolocation.watchPosition((pos) => {
+      if (!vigente()) return;
       const acc = Number(pos.coords.accuracy);
       if (!Number.isFinite(acc)) return;
       if (!mejor || acc < mejor.acc) mejor = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc };
@@ -1395,10 +1421,9 @@ class App {
         2: 'El dispositivo no pudo determinar la ubicación (sin señal GPS).',
         3: 'El GPS tardó demasiado en responder.'
       };
+      if (!vigente()) return;
       if (mejor && err.code === 3) { terminar(); return; }
-      if (this._gpsWatchId !== null && this._gpsWatchId !== undefined) navigator.geolocation.clearWatch(this._gpsWatchId);
-      this._gpsWatchId = null;
-      if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+      this._detenerGps();
       const el = estado();
       if (el) el.innerHTML = `<span class="ubic-error">${escapeHtml(motivos[err.code] || err.message || 'Error del GPS.')}</span>`;
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: LIMITE_MS });
@@ -1453,6 +1478,7 @@ class App {
   async guardarUbicacion(p, datos) {
     const base = this.apiEndpoints().API_PATIENTS || '/api/patients';
     const url = `${base}/${encodeURIComponent(p.id)}/ubicacion`;
+    const token = this.session.getToken();
     let res;
     try {
       res = await this.session.authFetch(url, {
@@ -1470,7 +1496,10 @@ class App {
     }
     const cuerpo = await res.json();
     const d = cuerpo.data || {};
-    const objetivo = this.findPatient(p.id) || p;
+    // La sesión cambió o se cerró mientras se guardaba: no se toca la pantalla de otro usuario (ni la de acceso)
+    if (this.session.getToken() !== token) return d;
+    const objetivo = this.findPatient(p.id);
+    if (!objetivo) return d;
     objetivo.latitud = d.latitud;
     objetivo.longitud = d.longitud;
     objetivo.precision_geo = d.precision_geo;
@@ -1480,6 +1509,7 @@ class App {
     objetivo.geo_registrado_por = d.geo_registrado_por;
     delete objetivo.geo_toponimo;
     objetivo.sector_por_ubicacion = true;
+    delete objetivo.ubicacion_por_verificar;
     if (d.sector_sanitario) objetivo.sector_sanitario = d.sector_sanitario;
     objetivo._searchStr = `${objetivo.dni || ''} ${objetivo.historia_clinica || ''} ${objetivo.apellidos_nombres || ''} ${objetivo.direccion || ''} ${objetivo.puerta_entrada || ''} ${objetivo.sector_sanitario || ''}`.toLowerCase();
     this.render();
@@ -1877,8 +1907,8 @@ class App {
                 <span class="ficha-ubicacion-detalle">${ubicFicha.detalle}</span>
               </div>
               <div class="ficha-ubicacion-acciones">
-                ${ubicFicha.tieneCoords ? `<button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente('${escapeHtml(p.id)}')">Ver en el mapa</button>` : ''}
-                ${ubicFicha.puedeUbicar ? `<button class="btn-mini btn-precita" onclick="window.app.iniciarFijarUbicacion('${escapeHtml(p.id)}')">📍 ${ubicFicha.desc.exacta ? 'Corregir ubicación' : 'Fijar ubicación exacta'}</button>` : ''}
+                ${ubicFicha.tieneCoords ? `<button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente(${argJs(p.id)})">Ver en el mapa</button>` : ''}
+                ${ubicFicha.puedeUbicar ? `<button class="btn-mini btn-precita" onclick="window.app.iniciarFijarUbicacion(${argJs(p.id)})">📍 ${ubicFicha.desc.exacta ? 'Corregir ubicación' : 'Fijar ubicación exacta'}</button>` : ''}
               </div>
             </div>
           </div>
@@ -2027,10 +2057,10 @@ class App {
         </div>
 
         <div class="modal-footer">
-          <button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente('${escapeHtml(p.id)}')">${iconBtnLocation} Ubicar en Mapa</button>
+          <button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente(${argJs(p.id)})">${iconBtnLocation} Ubicar en Mapa</button>
           <button class="btn-mini btn-precita" style="background:#16a34a; border-color:#15803d; color:#ffffff;" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); if(window.RegistroClinicoModal) window.RegistroClinicoModal.open('${p.dni || p.nro_documento || ''}');" title="Registrar nueva atención médica en Padrón Estandarizado">${iconBtnEdit} Registrar Atención</button>
-          <button class="btn-mini btn-precita" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.abrirModalPreCita('${p.id}')">${iconBtnCalendar} Pre-cita HOSIX</button>
-          <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp('${p.id}')"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Notificar por WhatsApp a ${escapeHtml(p.apellidos_nombres)}">${iconBtnWhatsapp} Notificar por WhatsApp</button>
+          <button class="btn-mini btn-precita" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.abrirModalPreCita(${argJs(p.id)})">${iconBtnCalendar} Pre-cita HOSIX</button>
+          <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp(${argJs(p.id)})"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Notificar por WhatsApp a ${escapeHtml(p.apellidos_nombres)}">${iconBtnWhatsapp} Notificar por WhatsApp</button>
         </div>
       </div>
     `;

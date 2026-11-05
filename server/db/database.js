@@ -114,6 +114,12 @@ function sanearUbicacionEntrante(clean) {
   }
 }
 
+/** Id de paciente seguro para guardar y mostrar: [A-Za-z0-9._-], máximo 64 caracteres ('' si no queda nada). */
+function sanearId(id) {
+  if (id === null || id === undefined) return '';
+  return String(id).trim().replace(/[^A-Za-z0-9._-]/g, '').slice(0, 64);
+}
+
 /** Sector GeoRIS («Sector N») que contiene el punto, o null si queda fuera de los sectores oficiales. */
 function sectorDeCoordenadas(lat, lng) {
   const s = geocoder.getSectorFromCoordinates(lat, lng);
@@ -504,7 +510,8 @@ class Database {
    * devuelve la referencia sin cambios.
    */
   resolvePatientId(ref) {
-    const key = String(ref === null || ref === undefined ? '' : ref).trim();
+    const crudo = String(ref === null || ref === undefined ? '' : ref).trim();
+    const key = this.patientByIdMap.has(crudo) ? crudo : (sanearId(crudo) || crudo);
     if (!key) return key;
     const byId = this.patientByIdMap.get(key);
     if (byId) return String(byId.id);
@@ -516,7 +523,9 @@ class Database {
   upsertPatient(patientData) {
     const clean = sanitizeRecord(patientData);
     const dniKey = clean.dni ? String(clean.dni).trim() : '';
-    const idKey = clean.id ? String(clean.id).trim() : `pac-00001741-${dniKey || crypto.randomUUID()}`;
+    // El id viaja a la pantalla (botones, enlaces): solo letras, números, punto, guion y guion bajo (como fhirAdapter)
+    const idSaneado = sanearId(clean.id);
+    const idKey = idSaneado || `pac-00001741-${sanearId(dniKey) || crypto.randomUUID()}`;
     clean.id = idKey;
     sanearUbicacionEntrante(clean);
     // La ubicación exacta solo se fija con setPatientLocation (usuario y fecha del servidor): un lote no puede
@@ -525,6 +534,9 @@ class Database {
     delete clean.geo_fecha;
     delete clean.geo_registrado_por;
     delete clean.sector_por_ubicacion;
+    delete clean.ubicacion_por_verificar;
+    delete clean.geo_anterior;
+    delete clean.precision_geo_revisada;
 
     const existing = (dniKey && this.patientByDniMap.get(dniKey)) || this.patientByIdMap.get(idKey);
     this._resolverUbicacion(clean, existing);
@@ -555,43 +567,72 @@ class Database {
 
   /**
    * Decide qué ubicación del domicilio queda tras un upsert (importación, FHIR, webhook, formulario):
-   * 1. Una ubicación exacta (GPS, mapa, coordenadas) con la misma dirección no se reemplaza.
-   * 2. Si no llegan coordenadas, el servidor geocodifica la dirección cuando el paciente es nuevo, se mudó o no
-   *    tenía ubicación (así todas las vías de ingreso quedan ubicadas igual).
-   * 3. Si llegan coordenadas, o el paciente se mudó, la ubicación se reemplaza como un todo (sin la precisión ni la
-   *    fuente de la anterior). Mudado y sin ubicación nueva: las coordenadas viejas se borran.
-   * 4. El sector sanitario sale del polígono GeoRIS de las coordenadas cuando el registro no trae uno.
+   * 1. Sin dirección real guardada antes (vacía, «Sin dirección consignada», «Huarmey») no hay mudanza: completar la
+   *    dirección no borra la ubicación tomada en la visita.
+   * 2. Una ubicación exacta (GPS, mapa, coordenadas) con la misma dirección (escrita de otra forma) no se reemplaza.
+   *    Si la dirección cambió: el punto nuevo (coordenadas entrantes o geocodificación) cerca del exacto = misma casa
+   *    → se conserva; lejos = mudanza → se reemplaza y la anterior queda en geo_anterior; sin punto nuevo → se
+   *    conserva el exacto marcado «por verificar» (no se pierde una lectura de campo por una dirección ilegible).
+   * 3. Si no llegan coordenadas, el servidor geocodifica la dirección cuando el paciente es nuevo, se mudó o no tenía
+   *    ubicación (así todas las vías de ingreso quedan ubicadas igual).
+   * 4. Si llegan coordenadas o hubo mudanza, la ubicación se reemplaza como un todo. Mudado sin ubicación nueva:
+   *    las coordenadas viejas (aproximadas) se borran.
+   * 5. Sin sector en el registro, el sector sale del polígono GeoRIS de las coordenadas (o «Sin sector GeoRIS») y se
+   *    marca como derivado, para reiniciarlo si las coordenadas desaparecen.
    */
   _resolverUbicacion(clean, existing) {
     const clave = t => geocoder.claveDireccion(t || '');
     const dirReal = hasRealValue('direccion', clean.direccion);
-    const seMudo = !!existing && dirReal && clave(clean.direccion) !== clave(existing.direccion);
+    const habiaDireccion = !!existing && hasRealValue('direccion', existing.direccion);
+    const seMudo = habiaDireccion && dirReal && clave(clean.direccion) !== clave(existing.direccion);
     const existenteValida = !!existing && geoUbicacion.validarCoordenadas(existing.latitud, existing.longitud).ok;
     const existenteExacta = existenteValida && geoUbicacion.esPrecisionExacta(existing.precision_geo);
     const sectorEntrante = hasRealValue('sector_sanitario', clean.sector_sanitario);
-
-    if (existenteExacta && !seMudo) {
+    const conservarExacta = () => {
       for (const k of CAMPOS_UBICACION) delete clean[k];
       if (existing.sector_por_ubicacion) delete clean.sector_sanitario;
-      return;
-    }
+    };
 
     let traeCoords = typeof clean.latitud === 'number' && typeof clean.longitud === 'number';
-    if (!traeCoords && dirReal && (!existing || seMudo || !existenteValida)) {
+    const geocodificar = () => {
       const geo = geocoder.geocode(clean.direccion);
-      if (geo.matched) {
-        clean.latitud = geo.lat;
-        clean.longitud = geo.lng;
-        clean.precision_geo = geo.precision_geo;
-        clean.geo_fuente = 'geocodificador';
-        clean.geo_toponimo = geo.toponym;
-        traeCoords = true;
+      if (!geo.matched) return false;
+      clean.latitud = geo.lat;
+      clean.longitud = geo.lng;
+      clean.precision_geo = geo.precision_geo;
+      clean.geo_fuente = 'geocodificador';
+      clean.geo_toponimo = geo.toponym;
+      return true;
+    };
+
+    if (existenteExacta) {
+      if (!seMudo) { conservarExacta(); return; }
+      if (!traeCoords) traeCoords = geocodificar();
+      if (!traeCoords) {
+        // Dirección nueva que no se puede ubicar: se conserva el punto de campo, a verificar en la próxima visita
+        conservarExacta();
+        existing.ubicacion_por_verificar = true;
+        return;
       }
+      const radios = { calle: 300, sector: 600, localidad: 2500 };
+      const radio = radios[clean.precision_geo] || 300;
+      const d = geoUbicacion.distanciaMetros(existing.latitud, existing.longitud, clean.latitud, clean.longitud);
+      if (d <= radio) { conservarExacta(); delete existing.ubicacion_por_verificar; return; }
+      // Mudanza real: la ubicación exacta anterior queda como historial
+      existing.geo_anterior = {
+        latitud: existing.latitud, longitud: existing.longitud, precision_geo: existing.precision_geo,
+        precision_m: existing.precision_m === undefined ? null : existing.precision_m,
+        geo_fecha: existing.geo_fecha || null, geo_registrado_por: existing.geo_registrado_por || null,
+        direccion: existing.direccion, reemplazada: new Date().toISOString()
+      };
+    } else if (!traeCoords && dirReal && (!existing || seMudo || !existenteValida)) {
+      traeCoords = geocodificar();
     }
 
+    let sectorDerivado = false;
     if (traeCoords && !sectorEntrante) {
-      const sec = sectorDeCoordenadas(clean.latitud, clean.longitud);
-      if (sec) clean.sector_sanitario = sec;
+      clean.sector_sanitario = sectorDeCoordenadas(clean.latitud, clean.longitud) || SIN_SECTOR_GEORIS;
+      sectorDerivado = true;
     }
 
     if (existing && (traeCoords || seMudo)) {
@@ -605,7 +646,10 @@ class Database {
       }
       if (!traeCoords && existing.sector_por_ubicacion && !sectorEntrante) existing.sector_sanitario = PATIENT_DEFAULTS.sector_sanitario;
       delete existing.sector_por_ubicacion;
-      delete existing.precision_geo_revisada;
+      delete existing.ubicacion_por_verificar;
+    }
+    if (sectorDerivado) {
+      if (existing) existing.sector_por_ubicacion = true; else clean.sector_por_ubicacion = true;
     }
   }
 
@@ -804,6 +848,9 @@ class Database {
       precisionM = Math.round(precisionM * 10) / 10;
     }
     if (src.precision_geo === 'gps' && precisionM === null) return { ok: false, error: 'Una ubicación por GPS debe indicar su precisión en metros (precision_m)' };
+    if (src.precision_geo === 'gps' && precisionM > geoUbicacion.GPS_MAX_EXACTA_M) {
+      return { ok: false, error: `Precisión del GPS insuficiente (±${Math.round(precisionM)} m; máximo ±${geoUbicacion.GPS_MAX_EXACTA_M} m): ajuste el punto sobre la vivienda en el mapa` };
+    }
 
     const pid = this.resolvePatientId(idOrDni);
     const patient = this.patientByIdMap.get(String(pid));
@@ -820,6 +867,7 @@ class Database {
     patient.geo_registrado_por = String(registrante.username);
     patient.sector_sanitario = territorio.sector ? `Sector ${territorio.sector.id_sector}` : SIN_SECTOR_GEORIS;
     patient.sector_por_ubicacion = true;
+    delete patient.ubicacion_por_verificar;
     this.invalidateCache();
     this.scheduleSave();
     return { ok: true, patient: this._enrichPatient(patient), territorio };

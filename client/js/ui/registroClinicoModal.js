@@ -1073,7 +1073,7 @@
         const geo = conservarUbicacion ? { matched: false } : geocoder.geocode(direccion);
         const ubicacion = conservarUbicacion
           ? {}
-          : (geo.matched ? { latitud: geo.lat, longitud: geo.lng, precision_geo: geo.precision_geo, geo_fuente: 'geocodificador', geo_toponimo: geo.toponym, sector_sanitario: geo.sector || undefined } : {});
+          : (geo.matched ? { latitud: geo.lat, longitud: geo.lng, precision_geo: geo.precision_geo, geo_fuente: 'geocodificador', geo_toponimo: geo.toponym } : {});
 
         const pas = parseInt(this.dom.pasHoy.value, 10) || null;
         const pad = parseInt(this.dom.padHoy.value, 10) || null;
