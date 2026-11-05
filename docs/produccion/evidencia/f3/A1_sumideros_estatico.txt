@@ -1,0 +1,254 @@
+A1 — INVENTARIO ESTÁTICO DE SUMIDEROS DEL CLIENTE (Fase 3, auditoría del cliente)
+=========================================================================================
+Alcance leído: client/index.html, client/sw.js, client/manifest.json y client/js/** (11 430 líneas, los 25 archivos).
+NO se leyó client/data/georis/*.js ni client/libs/* (datos y librerías); de los datos solo se buscaron, con grep, los caracteres
+< > & ` y «javascript:» dentro de los nombres (0 coincidencias: ver sección 8).
+Esto es lectura estática. Lo que está marcado «REPRODUCIDO» se ejecutó en Chromium con el servidor real: ver A2_sumideros_navegador.js
+y out_A2_sumideros_navegador.txt (A2) y A3_salida_datos_y_almacenamiento.js (A3).
+
+Veredictos: SEGURO = el dato llega escapado o es una constante/número. NO ALCANZABLE = el dato sale de un archivo estático del
+paquete (GeoRIS, catastro, catálogo de establecimientos) que ningún usuario puede escribir; no lleva escape, pero no hay vía de
+entrada. RIESGO = hay al menos un valor controlable por un usuario que llega sin escape.
+
+0. ARGUMENTO DE BÚSQUEDA (Grep sobre index.html, sw.js y js/**, excluyendo data/georis)
+-------------------------------------------------------------------------------------------------
+  innerHTML .............. 53 coincidencias (52 escrituras + 1 lectura en padronGridModal.js:581)
+  Leaflet: bindPopup 7, bindTooltip 8, L.divIcon({html}) 5 ....... 20 sumideros de HTML de Leaflet
+  outerHTML, insertAdjacentHTML, document.write, createContextualFragment, DOMParser, srcdoc ............ 0
+  eval(, new Function, setTimeout/setInterval con cadena, postMessage, importScripts, import(), Worker ... 0
+  javascript:, data:text, tel:, mailto:, location.href/assign/replace, document.location, window.name ..... 0
+  localStorage, indexedDB, document.cookie, navigator.geolocation, XMLHttpRequest, WebSocket, sendBeacon ... 0
+  window.open ............ 2 (main.js:1971; whatsappNotifier.js:68, sin llamadas: sendDirect no se usa)
+  URL.createObjectURL .... 1 (main.js:2201) · .href = ... 1 (main.js:2203, URL de Blob) · XLSX.writeFile 1 (main.js:2282)
+  textContent = ... 80 · createElement 18 (todo texto; no son sumideros de HTML)
+  alert/confirm/prompt ... 15 (texto plano; los nombres de pacientes que se muestran ahí no se interpretan como HTML)
+  console.log/info/warn/error ... 8 llamadas; ninguna imprime pacientes (ver sección 7)
+
+Funciones de escape (5 copias equivalentes): main.js:8 escapeHtml · mapManager.js:8 escapeHtml · registroClinicoModal.js:29 esc ·
+padronGridModal.js:16 esc · authUi.js:17 esc.
+  Convierten & < > " '  (&amp; &lt; &gt; &quot; &#39;). NO convierten la tilde grave (`). Cobertura: contexto de texto SÍ;
+  atributo entre comillas dobles SÍ; atributo entre comillas simples SÍ; atributo SIN comillas NO (backtick), pero ninguna plantilla
+  del cliente deja un atributo sin comillas (comprobado en las 53 + 20 plantillas); contexto de JavaScript o de URL NO se usa (ya no hay
+  manejadores en línea ni href con datos). Con la CSP script-src 'self' el backtick no es explotable.
+
+1. SUMIDEROS innerHTML (52 escrituras con datos o constantes)
+-------------------------------------------------------------------------------------------------
+Leyenda de «quién escribe»: EXCEL = padrón importado por la interfaz (ADMIN/COORDINADOR) hacia /api/padron/importar-lote;
+API = ese mismo endpoint llamado directamente (acepta cualquier clave de campo, ver C3-01); HOSIX/FHIR = webhooks y /fhir/Bundle
+(ADMIN/COORDINADOR); CSV = CSV de HOSIX subido en la interfaz (solo memoria, no va al servidor); ADMIN-usuarios = nombre de usuario
+creado por el ADMIN; EVENTOS = /patients/:id/eventos y pre-citas (ADMIN/COORDINADOR); ESTÁTICO = archivo del paquete.
+
+main.js
+  353  pathList.innerHTML ..................... nombres fijos + enteros ...................... ESTÁTICO ........ SEGURO
+  398  ipressTbody.innerHTML .................. nombre y categoría de IPRESS (puerta_entrada) . EXCEL/API/HOSIX .. escapeHtml ... SEGURO
+  514  avisos.innerHTML = '' .................. vaciado .................................................... SEGURO
+  516  lista.innerHTML = '' ................... vaciado .................................................... SEGURO
+  552  pathList.innerHTML (aviso al DIRECTOR) . constante escapada ................ ESTÁTICO ........ SEGURO
+  554  ipressTbody.innerHTML (aviso) .......... constante escapada ................ ESTÁTICO ........ SEGURO
+  570  innerHTML = '' (limpia tablero) ........ vaciado .................................................... SEGURO
+  636  iconSpan.innerHTML = iconSvg ........... SVG de AppIcons con colores literales (todas las llamadas con literal) ... SEGURO
+  664  selectRis.innerHTML .................... r.nombre, r.id_ris de GeorisTerritory ............ ESTÁTICO ........ NO ALCANZABLE
+  689  selectZona.innerHTML ................... z.distrito, z.cabecera ............................ ESTÁTICO ........ NO ALCANZABLE
+  717  selectPuerta.innerHTML ................. p.nombre, p.categoria, cod_renipress ............. ESTÁTICO ........ NO ALCANZABLE
+  749  panel.innerHTML (todas las RIS) ........ texto fijo ........................................................... SEGURO
+  762  panel.innerHTML (una RIS) .............. r.nombre, r.poblacion, hospital ................... ESTÁTICO ........ NO ALCANZABLE
+  786  panel.innerHTML (una zona) ............. z.* de GeorisTerritory ........................... ESTÁTICO ........ NO ALCANZABLE
+  834  card.innerHTML (inspector de referencia) es.nombre, hosp.nombre, categoría; es.nombre también en data-arg con escapeHtml ... ESTÁTICO ..... NO ALCANZABLE (y el atributo, SEGURO)
+  881  card.innerHTML (hospital Huarmey) ...... texto fijo ........................................................... SEGURO
+ 1041  container.innerHTML = '' ............... vaciado .................................................... SEGURO
+ 1044  container.innerHTML (lista vacía) ...... texto fijo ........................................................... SEGURO
+ 1084  card.innerHTML (tarjeta de paciente) ... nombre, DNI, dirección, estado_control, puerta_entrada, diagnósticos, dias_*, PA: escapeHtml en todos
+                                              EXCEPTO main.js:1100 «${p.edad + ' años'}» (edad sin escape) ... EXCEL/API ... RIESGO (BAJO, ver C3-03)
+ 1449  modal.innerHTML (ficha clínica) ........ ~60 valores del paciente: escapados, EXCEPTO:
+         1661 ${p.nota_duplicado_padron} ........ cualquier texto que envíe la API ..... API (ADMIN/COORDINADOR) ... RIESGO (REPRODUCIDO, C3-01)
+         1343,1360,1378,1396,1423 formatDatePE(p.fecha_estado | p.fecha_limite) y 1602 formatDatePE(p.fecha_examenes): formatDatePE
+              devuelve la cadena tal cual si no es AAAA-MM-DD ......... EXCEL/API (el servidor exige fecha ISO a toda clave fecha_*) ... RIESGO (BAJO, C3-03)
+         1302 ${pas}/${pad} (pas_ene…pad_oct) ... el servidor exige número; además la comparación `pas > 0` descarta cadenas ... NO EXPLOTABLE (probado en A2)
+         1408 data-paciente="${escapeHtml(p.id)}" ................. SEGURO
+ 1756  tbody.innerHTML = '' ................... vaciado .................................................... SEGURO
+ 1782  ind-convenio-tbody.innerHTML ........... nombres de indicadores (constantes) + cifras del servidor, todo con escapeHtml ... SEGURO
+ 1818  ind-est-tbody.innerHTML ................ e.nombre, e.categoria (catálogo del servidor) con escapeHtml ... SEGURO
+ 1833  actual.innerHTML = renderEventosHtml ... e.estado, e.detalle, e.establecimiento, destino, registrado_por, rol, tipo, fecha: escapeHtml en cada uno
+                                              (e.detalle viene de EVENTOS y del comentario de la pre-cita; probado en A2) ... EVENTOS/HOSIX ... SEGURO
+ 1836  actual.innerHTML (error) ............... texto fijo ........................................................... SEGURO
+
+registroClinicoModal.js
+   71  modal.innerHTML (plantilla del modal) .. solo íconos y listas de meses fijas .................... ESTÁTICO ........ SEGURO
+  713  statusAlert.innerHTML = '' ............. vaciado .................................................... SEGURO
+  755  statusAlert.innerHTML (aviso DNI) ...... texto fijo ........................................................... SEGURO
+  780  statusAlert.innerHTML (paciente nuevo) . esc(dni) ................................................ usuario ......... SEGURO
+  819  statusAlert.innerHTML (encontrado) ..... esc(nombreCompleto), esc(dni) ........................... EXCEL/API/HOSIX .. SEGURO
+ 1070  btnGuardar.innerHTML ................... texto fijo ........................................................... SEGURO
+ 1194  btnGuardar.innerHTML ................... ícono ................................................... ESTÁTICO ........ SEGURO
+  (los datos del paciente existente entran en el formulario por .value, nunca por HTML: líneas 836-880)
+
+padronGridModal.js
+   52  modal.innerHTML (plantilla del modal) .. íconos y texto fijos ................................... ESTÁTICO ........ SEGURO
+  295  statusMsg.innerHTML .................... totalRows (entero) ............................................ SEGURO
+  298  btnCargar.innerHTML .................... totalRows ..................................................... SEGURO
+  300  statusMsg.innerHTML .................... totalErrors, rowsWithErrors (enteros) ......................... SEGURO
+  303  btnCargar.innerHTML .................... enteros ....................................................... SEGURO
+  314  btnAutofillEess.innerHTML .............. emptyEessCount (entero) ....................................... SEGURO
+  331  errorsPillsWrap.innerHTML = '' ......... vaciado .................................................... SEGURO
+  360  errorsPillsWrap.innerHTML (píldoras) ... dni, etiqueta de columna y mensaje de error con esc(); rIdx entero; data-key de claves del esquema ... EXCEL ... SEGURO
+  454  thead.innerHTML ........................ bInfo.nombre, col.label, col.desc del esquema (código) .... ESTÁTICO ........ SEGURO
+  462  tbody.innerHTML = '' ................... vaciado .................................................... SEGURO
+  538  tbody.innerHTML (filas) ................ 76 celdas por fila con esc(); data-key de col.key ............. EXCEL ......... SEGURO
+  581  const oldHtml = cell.innerHTML ......... LECTURA (no es sumidero)
+  623  cell.innerHTML = '' .................... vaciado .................................................... SEGURO
+  644  cell.innerHTML = oldHtml ............... vuelve a escribir el HTML que el propio navegador serializó de nodos ya escapados ... SEGURO (probado en A2: Esc en la celda)
+
+authUi.js
+  165  select de redes ........................ esc(r.nombre), esc(r.etiqueta) (lista fija del servidor, /api/auth/redes) ... SEGURO
+  191  select de establecimientos ............. esc(e.cod_renipress), esc(e.nombre), esc(e.categoria) (catálogo del servidor) ... SEGURO
+  200  lista de usuarios (vacía) .............. texto fijo ........................................................... SEGURO
+  203  lista de usuarios ...................... esc(u.nombre), esc(u.username), esc(u.role) en texto y en clase, esc(u.red), esc(u.establecimiento_id), esc(u.correo); data-user con esc ... ADMIN-usuarios ... SEGURO (probado en A2 con nombre «<img src=x id=…>»)
+  229  «Cargando usuarios» .................... texto fijo ........................................................... SEGURO
+  232  mensaje de error ....................... esc(texto del servidor) ...................................... SEGURO
+  275  lista.innerHTML = '' ................... vaciado .................................................... SEGURO
+
+Totales innerHTML: 52 escrituras = 10 vaciados + 42 con contenido. Ninguna usa outerHTML/insertAdjacentHTML.
+
+2. SUMIDEROS DE LEAFLET (20): popups, tooltips y L.divIcon({html})
+-------------------------------------------------------------------------------------------------
+Leaflet interpreta como HTML todo lo que recibe bindPopup, bindTooltip y divIcon.html. Origen de los datos de cada uno:
+mapManager.js
+  286-306  bindPopup RIS ...................... p.ris, p.departamen, p.hospital… del GeoJSON del paquete ... ESTÁTICO ... NO ALCANZABLE (data-arg con escapeHtml)
+  338-356  bindPopup zona sanitaria ........... p.cabecera, p.distrito, p.ris… ................... ESTÁTICO ... NO ALCANZABLE
+  389-405  bindPopup sector sanitario ......... p.sector, p.distrito, p.ipress… ................. ESTÁTICO ... NO ALCANZABLE
+  435      bindTooltip lote (catastro) ........ feature.properties.name (OSM, archivo del paquete; 0 caracteres < > & en los nombres) ... ESTÁTICO ... NO ALCANZABLE
+  450      bindTooltip calle (catastro) ....... feature.properties.name ......................... ESTÁTICO ... NO ALCANZABLE
+  508-516  divIcon hospital ................... SVG fijo ............................................... SEGURO
+  527      bindTooltip hospital de área ....... hosp.nombre, categoria, ris (EstablecimientosHuarmey) ... ESTÁTICO ... NO ALCANZABLE
+  550      bindTooltip terreno del hospital ... texto fijo ................................................ SEGURO
+  560-583  bindPopup hospital ................. hosp.* (catálogo) ............................. ESTÁTICO ... NO ALCANZABLE
+  596-606  divIcon cabecera de zona ........... SVG fijo ............................................... SEGURO
+  613      bindTooltip cabecera ............... es.nombre, categoria ............................ ESTÁTICO ... NO ALCANZABLE
+  624-641  bindPopup cabecera ................. es.* (catálogo) ................................ ESTÁTICO ... NO ALCANZABLE
+  654-664  divIcon puerta de entrada .......... SVG fijo ............................................... SEGURO
+  673      bindTooltip puerta de entrada ...... pe.nombre, pe.red_origen, distancias ............ ESTÁTICO ... NO ALCANZABLE
+  685-706  bindPopup puerta de entrada ........ pe.* (catálogo) ................................ ESTÁTICO ... NO ALCANZABLE
+  729      bindTooltip línea de referencia .... pe.nombre, distancia, tiempo ..................... ESTÁTICO ... NO ALCANZABLE
+  886-898  divIcon pin de paciente ............ solo color literal y clase interna (semaforoClass) ... SEGURO
+  910      bindTooltip paciente ............... escapeHtml en nombre, DNI, HC, seguro, diagnósticos, PA, glucosa, HbA1c, puerta, sector ... EXCEL/API/HOSIX ... SEGURO
+  922 → 783-838  bindPopup paciente (buildPatientPopupHtml) .. 12 valores con escapeHtml, EXCEPTO mapManager.js:831 «(Cada ${p.frecuencia_hearts}d)» ... EXCEL/API ... RIESGO (BAJO, C3-03)
+  1092-1098  divIcon del pin de búsqueda ..... ${label}: texto que ESCRIBE EL PROPIO USUARIO en el buscador (main.js:935 → toUpperCase, sin escape) ... usuario (autoinyección) ... RIESGO (BAJO, C3-04, REPRODUCIDO)
+(Cada bindPopup/bindTooltip de territorio recibe datos del GeoJSON/catálogo del paquete: archivos que solo cambian con una publicación del código.)
+
+3. ATRIBUTOS ARMADOS CON DATOS (href, src, style, title, data-*, value, class)
+-------------------------------------------------------------------------------------------------
+  href / src con datos .............. NINGUNO en plantillas JS (los únicos src/href están en index.html y son rutas fijas). SEGURO.
+  main.js:2203 a.href = URL de Blob ... creada por el navegador; download = nombre fijo con fecha de Lima. SEGURO.
+  style="…${valor}…" ................ main.js:359-388 (pct y data.* = enteros calculados), 859/1108 (colores literales), 1128 (cssText fijo);
+                                      mapManager.js:288 (cfg.color de GEORIS_RIS_CONFIG, estático), 801 (colores por isPurple), 889 (color interno);
+                                      padronGridModal.js:434,447 (bInfo.franja/fondo/texto del esquema). Ninguno lleva texto del usuario. SEGURO.
+  title="…${valor}…" ................ main.js:1087,1113,1115-1117 (escapeHtml); padronGridModal.js:349,500,507,528 (esc); :447 (col.desc, estático). SEGURO.
+  data-arg / data-key / data-user ... main.js:840,863,1085,1093,1115,1116,1117,1408,1672-1675; mapManager.js:301,351,578,636,701,834,835;
+                                      padronGridModal.js:349,500,507,514,528; authUi.js:166,192,219-221: todos con escapeHtml/esc o valores
+                                      del esquema. SEGURO (probado en A2: id, DNI y nombre hostiles llegan como TEXTO del atributo).
+  value="…" ......................... authUi.js:166,192 (esc). SEGURO. Los demás campos se cargan con la propiedad .value (92 asignaciones): SEGURO.
+  class="…${valor}…" ................ main.js:1067, 1279, 1280 y mapManager.js:799 (`badge-${escapeHtml(…)}`), authUi.js:207,211 (`rol-${esc(u.role)}`):
+                                      SEGURO. main.js:1057 usa la propiedad className = `border-${p.semaforo}` (no es HTML): SEGURO; además
+                                      el semáforo se recalcula siempre en el cliente (semaforo.js aplicarSemaforo).
+  setAttribute ...................... solo atributos ARIA fijos (main.js:143-183, modales). SEGURO.
+
+4. URL, NAVEGACIÓN, DESCARGAS
+-------------------------------------------------------------------------------------------------
+  main.js:1971 window.open(url)
+      url = whatsappNotifier.js:49-50 `https://wa.me/${soloDígitos}?text=${encodeURIComponent(mensaje)}`. Host fijo; el teléfono pasa por
+      replace(/\D/g,'') (solo dígitos, ≥9) y el mensaje por encodeURIComponent. El mensaje lleva fecha de control y el nombre del
+      establecimiento; NO lleva nombre, DNI ni diagnóstico. Solo se genera con consentimiento «Sí, firmado». SEGURO (A3: lo que
+      sale hacia wa.me). Datos que llegan a un tercero: el teléfono del paciente (ver C3-05).
+  whatsappNotifier.js:68 window.open(link) en sendDirect ... sin llamadas (código muerto). SEGURO.
+  main.js:2200-2205 CSV de pre-citas (Blob, a.download): alertsManager.js:52-58 _escapeCsvValue duplica comillas y antepone ' a las
+      celdas que empiezan con = + - @ TAB CR. REPRODUCIDO en A2 (nombre «=HYPERLINK(…)», dirección «@SUM(…)», HC «+1+1»): 0 celdas
+      peligrosas en el archivo descargado. SEGURO.
+  main.js:2282 XLSX.writeFile(wb) (padronExportV4.js:145): cada valor del usuario se escribe como celda de texto (t="str"); las
+      únicas fórmulas son las 23 columnas calculadas de la plantilla (texto del código). REPRODUCIDO en A2: 1 704 <f> en 74 filas, 0 con
+      la carga hostil; LibreOffice abre el .xlsx y deja «=HYPERLINK(…)» como texto. No se probó en Microsoft Excel. SEGURO.
+  fetch con datos en la ruta ......... main.js:1721,1827 y authUi.js:333 usan encodeURIComponent. SEGURO.
+  authUi.js:594 window.location.reload() ... sin datos. SEGURO.
+  window.open / location con datos del paciente (otros) ... ninguno.
+
+5. EJECUCIÓN DINÁMICA Y MENSAJERÍA
+-------------------------------------------------------------------------------------------------
+  eval, new Function, setTimeout/setInterval con cadena, postMessage, document.write, importScripts, Worker, import() .... 0 coincidencias.
+  Manejadores en línea (onclick=, onchange=, onerror= …) en index.html y en todas las plantillas ....................... 0 (grep \son[a-z]+=).
+  Asignaciones de manejador por propiedad: main.js:1130 (moreBtn.onclick), 2234 (reader.onload), padronExcelParser.js:178-179 (FileReader):
+  funciones, no cadenas. SEGURO.
+
+6. acciones.js (delegación de data-accion / data-cambio)
+-------------------------------------------------------------------------------------------------
+  Resolución: tabla[nombre] con Object.prototype.hasOwnProperty.call(tabla, nombre): __proto__, constructor, toString… no se encuentran
+  (acciones.js:90). Las acciones llaman a métodos de window.app con NOMBRE FIJO (llamar('switchView')…); el nombre nunca sale del atributo.
+  data-arg se pasa como cadena, sin eval ni plantilla. Escape en el atributo: los valores entran escapados (&quot; &#39; &lt;) y
+  getAttribute los devuelve como texto; el backtick y ${…} no se interpretan en ningún punto.
+  REPRODUCIDO en A2 (parte 3b): 19 nombres ajenos (__proto__, constructor, toString, eval, Function, 'switchView ', 'SWITCHVIEW',
+  «switchView')+alert(1)+('», limpiarSesion, authFetch…) en clic y en cambio: 0 llamadas, 0 errores. Argumentos con comillas, backtick y
+  ${window.__sentinel=2}: llegan como texto; centinela = 0. Las 33 acciones de clic y 6 de cambio de la lista son exactamente las que
+  usan index.html y las plantillas (ninguna fuera de la lista, ninguna sin uso).
+  DEBILIDAD (amplifica C3-01): el listener es de captura sobre `document` y atiende CUALQUIER elemento con data-accion, también uno
+  inyectado. Tres acciones aceptan un id cualquiera de la página: clicEn (hace clic en #id), quitarElemento (elimina #id) y cerrarModal
+  (quita la clase active de #id). Además hay acciones de escritura (confirmarPreCita, enviarWhatsApp, registrarConsentimiento).
+  REPRODUCIDO: un botón inyectado con data-accion="clicEn" data-arg="btn-logout" cierra la sesión de quien lo pulsa; otro con
+  data-accion="confirmarPreCita" escribe una pre-cita en el servidor con la sesión de la víctima.
+
+7. console.*, alert/confirm/prompt, toasts
+-------------------------------------------------------------------------------------------------
+  console.log 3 (mensajes fijos: SW registrado, error del SW, API no disponible), console.warn 2, console.error 3 (objeto de error del navegador).
+  Ninguna imprime pacientes (A3: 319 mensajes de consola en la sesión de prueba, 2 distintos, 0 con DNI o nombres).
+  showToast usa textContent (main.js:645-647): SEGURO (C-12). alert/confirm/prompt reciben texto plano.
+
+8. DATOS ESTÁTICOS QUE SE PINTAN SIN ESCAPE (NO ALCANZABLE)
+-------------------------------------------------------------------------------------------------
+  client/data/georis/georisDataBundle.js y huarmeyCadastreBundle.js (5 MB): grep de «"(name|nombre|ris|hospital|ipress|cabecera|distrito|
+  departamen|sector|provincia|red_origen)":"…[<>&`]…"» → 0 coincidencias; «javascript:» → 0. Se pintan sin escape en 18 sumideros de
+  la sección 1 y 2. Alcanzables solo si alguien publica un archivo alterado (cadena de suministro / despliegue), no por la API.
+  Recomendación (defensa en profundidad, C3-03): escapar también ahí.
+
+9. QUIÉN PUEDE ESCRIBIR CADA DATO QUE EL CLIENTE PINTA
+-------------------------------------------------------------------------------------------------
+  - Nombre, HC, teléfono, sector_sanitario, CIE-10, diagnóstico, estados de cita/control: el servidor RECHAZA < y > (validacion.js
+    SIN_MARCADO, revisarTextoCorto). Probado en A2 parte 1: 21 campos «RECHAZA 400» (16 de nivel superior y 5 anidados); 46 se aceptan.
+  - dirección, sector, seguro, financiador, tipo_documento, establecimiento_*, riesgo_cv, dano_organo_blanco, otras_patologias,
+    tratamiento_hta/dm, estado_empadronamiento, observacion(es), hba1c_texto, peso, talla, imc, pab, creatinina, microalbumina,
+    depuracion_creatinina, colesterol_*, trigliceridos, actualizado_por y NOTA_DUPLICADO_PADRON: el servidor los GUARDA TAL CUAL
+    (solo límite de 4 000 caracteres). El cliente los escapa, salvo nota_duplicado_padron.
+  - edad, dias_*, frecuencia_hearts, fila_excel: el servidor descarta lo que no es numérico (apiRoutes.js:713-715). fecha_*: exige fecha
+    ISO. pa_*, pas_*, pad_*, glucosa, hba1c, latitud, longitud: exige número. Esto es lo que hoy cubre C3-03.
+  - Evento: tipo/estado/establecimiento de lista cerrada; detalle libre (300 caracteres) y comentario de pre-cita libre (500): se pintan
+    con escapeHtml. Nombre de usuario (ADMIN): libre (acepta HTML); se pinta con esc/textContent (A2 parte 3d).
+  - Bitácora (audit_logs) y comentario de pre-cita como tal: el cliente no tiene pantalla que muestre la bitácora (NO ALCANZABLE);
+    el comentario solo aparece como «detalle» de la línea de tiempo (SEGURO).
+  - Establecimientos: catálogo del servidor (DEFAULT_ESTABLISHMENTS), sin API de escritura (NO ALCANZABLE).
+
+10. RESUMEN DE CONTEOS
+-------------------------------------------------------------------------------------------------
+  Sumideros de HTML (innerHTML con contenido 42 + Leaflet 20) ............................ 62
+     A. solo texto, íconos o números (sin dato de usuario) ................................ 21  SEGURO
+     B. datos estáticos del paquete sin escape (GeoRIS, catastro, catálogo) ................ 18  NO ALCANZABLE
+     C. datos de usuarios/API/Excel/HOSIX con escape correcto en todos los valores ......... 19  SEGURO
+     D. con al menos un valor de usuario SIN escape .......................................   4  RIESGO
+          main.js:1084 (edad, :1100) · main.js:1449 (nota_duplicado_padron :1661; fecha_* :1343/1360/1378/1396/1423/1602)
+          mapManager.js:922 (frecuencia_hearts :831) · mapManager.js:1092 (texto de búsqueda)
+  Vaciados innerHTML = '' (no interpretan HTML) .......................................... 10  SEGURO
+  URL/navegación/descargas (window.open 1 activo, CSV 1, XLSX 1, a.href 1, fetch con id/usuario 3) ... 7  SEGURO
+  Atributos armados con datos (title, data-*, value, class, style): todos SEGURO (ver sección 3).
+  Lectura del resultado: de los 62 sumideros de HTML, 19 pintan datos de usuarios con escape correcto en todos sus valores, 21 no pintan
+  datos de usuario, 18 pintan datos estáticos del paquete sin escape (NO ALCANZABLE) y 4 tienen al menos un valor de usuario sin escape.
+  Escape correcto o sin dato de usuario: 40 de 62; contando los no alcanzables: 58 de 62. Los 4 con valor sin escape: 1 alcanzable hoy
+  por la API (C3-01, nota_duplicado_padron), 1 alcanzable solo por el propio usuario (C3-04) y 2 cuyos datos filtra el servidor (C3-03).
+
+11. HALLAZGOS NUEVOS (detalle y reproducción en A2/A3; resumen en el informe)
+-------------------------------------------------------------------------------------------------
+  C3-01 MEDIA   main.js:1661  nota_duplicado_padron sin escape → HTML almacenado en la ficha. REPRODUCIDO (A2 parte 1 y 3a).
+  C3-02 MEDIA   padronGridModal.js:52/registroClinicoModal.js:51 + css: las ventanas del padrón y del registro clínico no se cierran ni se
+                vacían al terminar la sesión y tienen z-index (99999 y 9999) mayor que el de la pantalla de acceso (3000). REPRODUCIDO (A3 §6).
+  C3-03 BAJA    main.js:1100,1343,1360,1378,1396,1423,1602 y mapManager.js:831: valores sin escape que hoy filtra el servidor. REPRODUCIDO en memoria (A2 parte 2).
+  C3-04 BAJA    mapManager.js:1092 (con main.js:935): pin de búsqueda con el texto del usuario sin escape (autoinyección). REPRODUCIDO (A2 parte 3c).
+  C3-05 BAJA    mapManager.js:106-153: los mosaicos del mapa revelan a Google/Esri/Carto/OSM la zona que se mira (hasta 38 m al acercar un
+                paciente); WhatsApp recibe el teléfono. REPRODUCIDO (A3 §1-2).
+  C3-06 BAJA    padronGridModal.js:846-863: si el servidor rechaza el lote, el cliente igual agrega los pacientes a la memoria y avisa «cargados
+                en pantalla»: filas no guardadas conviven con las guardadas (A2 parte 3e).
+  C3-07 INFO    client/libs/xlsx.full.min.js: SheetJS 0.20.1, anterior a la 0.20.2 (CVE-2024-22363, ReDoS al leer un Excel hostil). SOLO POR LECTURA
+                (versión leída del propio archivo; no se probó). El efecto sería colgar la pestaña de quien abre el archivo.

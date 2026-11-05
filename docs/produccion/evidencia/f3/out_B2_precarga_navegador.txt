@@ -1,0 +1,142 @@
+# B2 — Precarga por documento en Registro Clínico, interfaz real (Chromium) (Fase 3)
+Servidor http://127.0.0.1:3262 · 2026-11-05T04:40:28.952Z · solo datos inventados + semilla de 20 pacientes simulados
+
+## 1. Precarga por rol
+
+### admin — chip «Administrador» · pacientes que cargó el cliente al iniciar sesión (GET /api/cronicos): 34 · botón superior «Registro Clínico» visible: false · botón lateral «Nueva atención» visible: true
+  [admin] a  propio (hospital)                               10000001    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 QUISPE ROJAS CARLOS ALBERTO (DNI: 10000001) 
+        precarga: sexo=«» nac=1968-04-12 seguro=SIS sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/12h» meses=2 PAS/PAD hoy=120/75 consentimiento=se pregunta
+  [admin] a  propio (La Victoria)                            10000002    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 ALVAREZ TOLEDO MARIA ELENA (DNI: 10000002) 
+        precarga: sexo=«» nac=1962-08-20 seguro=SIS sector=«Sector II – La Victoria» EESS-control=«C. S. La Victoria (00001744, I» HTA=«I10 – Hipert» DM=«E11 – Diabet» tto-HTA=«Enalapril 10 mg c/12h» meses=1 PAS/PAD hoy=128/78 consentimiento=se pregunta
+  [admin] a  CE propio                                       009600031   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO SUR CARNE (DNI: 009600031) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [admin] a  pasaporte propio                                PA9600032   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO SUR PASAPORTE (DNI: PA9600032) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [admin] b  otra red (PN, DNI)                              96310001    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO NORTE UNO (DNI: 96310001) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«» EESS-control=«» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [admin] b  otra red (CE)                                   009600021   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO NORTE CARNE (DNI: 009600021) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«» EESS-control=«» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [admin] b  otra red (pasaporte)                            PE9600022   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO NORTE PASAPORTE (DNI: PE9600022) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«» EESS-control=«» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [admin] c  inexistente (DNI)                               96999999    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [admin] c  inexistente (CE)                                009699999   /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: Carné de extranjería) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [admin] c  inexistente (pasaporte)                         ZZ9699999   /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: Pasaporte) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [admin] d  datos incompletos (SUR)                         96400001    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO INCOMPLETO SUR (DNI: 96400001) 
+        precarga: sexo=«Femenino» nac=1958-03-03 seguro=SIS sector=«» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«» DM=«» tto-HTA=«» meses=1 PAS/PAD hoy=∅/∅ consentimiento=se pregunta
+  [admin] d  datos incompletos (NORTE)                       96400003    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO INCOMPLETO NORTE (DNI: 96400003) 
+        precarga: sexo=«Femenino» nac=1957-07-07 seguro=SIS sector=«» EESS-control=«» HTA=«» DM=«» tto-HTA=«» meses=1 PAS/PAD hoy=∅/∅ consentimiento=se pregunta
+
+### f3.coord.ps — chip «Coordinador · PACIFICO SUR» · pacientes que cargó el cliente al iniciar sesión (GET /api/cronicos): 30 · botón superior «Registro Clínico» visible: false · botón lateral «Nueva atención» visible: true
+  [coord.ps] a  propio (hospital)                               10000001    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 QUISPE ROJAS CARLOS ALBERTO (DNI: 10000001) 
+        precarga: sexo=«» nac=1968-04-12 seguro=SIS sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/12h» meses=2 PAS/PAD hoy=120/75 consentimiento=se pregunta
+  [coord.ps] a  propio (La Victoria)                            10000002    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 ALVAREZ TOLEDO MARIA ELENA (DNI: 10000002) 
+        precarga: sexo=«» nac=1962-08-20 seguro=SIS sector=«Sector II – La Victoria» EESS-control=«C. S. La Victoria (00001744, I» HTA=«I10 – Hipert» DM=«E11 – Diabet» tto-HTA=«Enalapril 10 mg c/12h» meses=1 PAS/PAD hoy=128/78 consentimiento=se pregunta
+  [coord.ps] a  CE propio                                       009600031   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO SUR CARNE (DNI: 009600031) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [coord.ps] a  pasaporte propio                                PA9600032   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO SUR PASAPORTE (DNI: PA9600032) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [coord.ps] b  otra red (PN, DNI)                              96310001    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.ps] b  otra red (CE)                                   009600021   /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: Carné de extranjería) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.ps] b  otra red (pasaporte)                            PE9600022   /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: Pasaporte) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.ps] c  inexistente (DNI)                               96999999    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.ps] c  inexistente (CE)                                009699999   /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: Carné de extranjería) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.ps] c  inexistente (pasaporte)                         ZZ9699999   /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: Pasaporte) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.ps] d  datos incompletos                               96400001    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO INCOMPLETO SUR (DNI: 96400001) 
+        precarga: sexo=«Femenino» nac=1958-03-03 seguro=SIS sector=«» EESS-control=«Hospital de Apoyo Huarmey (000» HTA=«» DM=«» tto-HTA=«» meses=1 PAS/PAD hoy=∅/∅ consentimiento=se pregunta
+  [coord.ps] d  datos incompletos de otra red                   96400003    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+
+### f3.coord.lv — chip «Coordinador · PACIFICO SUR» · pacientes que cargó el cliente al iniciar sesión (GET /api/cronicos): 4 · botón superior «Registro Clínico» visible: false · botón lateral «Nueva atención» visible: true
+  [coord.lv] a  propio (La Victoria)                            10000002    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 ALVAREZ TOLEDO MARIA ELENA (DNI: 10000002) 
+        precarga: sexo=«» nac=1962-08-20 seguro=SIS sector=«Sector II – La Victoria» EESS-control=«C. S. La Victoria (00001744, I» HTA=«I10 – Hipert» DM=«E11 – Diabet» tto-HTA=«Enalapril 10 mg c/12h» meses=1 PAS/PAD hoy=128/78 consentimiento=se pregunta
+  [coord.lv] b  misma red, OTRO establecimiento (hospital)      10000001    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.lv] b  otra red (PN)                                   96310001    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.lv] c  inexistente                                     96999999    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.lv] d  incompleto del hospital (otro establecimiento)  96400001    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+
+### f3.coord.pn — chip «Coordinador · PACIFICO NORTE» · pacientes que cargó el cliente al iniciar sesión (GET /api/cronicos): 4 · botón superior «Registro Clínico» visible: false · botón lateral «Nueva atención» visible: true
+  [coord.pn] a  propio (PN, DNI)                                96310001    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO NORTE UNO (DNI: 96310001) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«» EESS-control=«» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [coord.pn] a  CE propio                                       009600021   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO NORTE CARNE (DNI: 009600021) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«» EESS-control=«» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [coord.pn] a  pasaporte propio                                PE9600022   /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO NORTE PASAPORTE (DNI: PE9600022) 
+        precarga: sexo=«Masculino» nac=1960-05-10 seguro=EsSalud sector=«» EESS-control=«» HTA=«I10 – Hipert» DM=«» tto-HTA=«Losartán 50 mg c/24h» meses=2 PAS/PAD hoy=150/95 consentimiento=ya registrado: No
+  [coord.pn] b  otra red (SUR, DNI)                             10000001    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.pn] b  otra red (CE)                                   009600031   /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: Carné de extranjería) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.pn] c  inexistente                                     96999999    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [coord.pn] d  datos incompletos                               96400003    /api durante la búsqueda: 0
+      ENCONTRADO · 🎉 PACIENTE INVENTADO INCOMPLETO NORTE (DNI: 96400003) 
+        precarga: sexo=«Femenino» nac=1957-07-07 seguro=SIS sector=«» EESS-control=«» HTA=«» DM=«» tto-HTA=«» meses=1 PAS/PAD hoy=∅/∅ consentimiento=se pregunta
+  [coord.pn] d  incompleto de otra red                          96400001    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+
+### f3.dir.ps — chip «Director · PACIFICO SUR» · pacientes que cargó el cliente al iniciar sesión (GET /api/cronicos): 0 · botón superior «Registro Clínico» visible: false · botón lateral «Nueva atención» visible: false
+    (El DIRECTOR no tiene los botones; se abre el modal desde la consola solo para ver qué haría.)
+  [dir.ps] a/b  (DIRECTOR) documento de su propia red         10000001    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+  [dir.ps] c  (DIRECTOR) inexistente                          96999999    /api durante la búsqueda: 0
+      «Paciente Nuevo» (tipo sugerido: DNI) · formulario vacío con valores por defecto: sexo=Femenino seguro=SIS sector=«Sector I – Centro» EESS=«Hospital de Apoyo Huar»
+
+### ¿«No encontrado» es igual para «existe en otra red» y «no existe»?
+  coord.ps · PN1 (existe en PACIFICO NORTE): «🆕 Paciente Nuevo: No registra atenciones previas con el DNI 96310001. Complete la filiación y los datos de su primera consulta.» · badge Paciente Nuevo
+  coord.ps · NX  (no existe)               : «🆕 Paciente Nuevo: No registra atenciones previas con el DNI 96999999. Complete la filiación y los datos de su primera consulta.» · badge Paciente Nuevo
+  → idénticos: SÍ (la pantalla no revela que existe en otra red)
+
+## 2. Guardar como «Paciente Nuevo» un documento que SÍ existe en otra red / otro establecimiento, y guardar con el formulario por defecto
+  [coord.ps] S1 DNI que existe en otra red                      pantalla: «Paciente Nuevo» → al Guardar: «Error al guardar la atención: La atención no se guardó: No puede modificar pacientes fuera de su alcance. (código 403).»
+      servidor antes: existe «PACIENTE INVENTADO NORTE UNO» · después: «PACIENTE INVENTADO NORTE UNO» red=PACIFICO NORTE EESS=00001741 (sin cambios: no sobrescribió, no duplicó)
+  [coord.ps] S1b carné de extranjería que existe en otra red    pantalla: «Paciente Nuevo» → al Guardar: «Error al guardar la atención: La atención no se guardó: No puede modificar pacientes fuera de su alcance. (código 403).»
+      servidor antes: existe «PACIENTE INVENTADO NORTE CARNE» · después: «PACIENTE INVENTADO NORTE CARNE» red=PACIFICO NORTE EESS=00001741 (sin cambios: no sobrescribió, no duplicó)
+  [coord.ps] S1c pasaporte que existe en otra red               pantalla: «Paciente Nuevo» → al Guardar: «Error al guardar la atención: La atención no se guardó: No puede modificar pacientes fuera de su alcance. (código 403).»
+      servidor antes: existe «PACIENTE INVENTADO NORTE PASAPORTE» · después: «PACIENTE INVENTADO NORTE PASAPORTE» red=PACIFICO NORTE EESS=00001741 (sin cambios: no sobrescribió, no duplicó)
+  [coord.ps] S2 documento que no existe (DNI)                   pantalla: «Paciente Nuevo» → al Guardar: «✅ ¡Atención de INTENTO DESDE LA INTERFAZ NX guardada con éxito en el Padrón Estandarizado!»
+      servidor antes: no existe · después: «INTENTO DESDE LA INTERFAZ NX» red=PACIFICO SUR EESS=00001741
+  [coord.ps] S2b documento que no existe (CE)                   pantalla: «Paciente Nuevo» → al Guardar: «✅ ¡Atención de INTENTO DESDE LA INTERFAZ NXCE guardada con éxito en el Padrón Estandarizado!»
+      servidor antes: no existe · después: «INTENTO DESDE LA INTERFAZ NXCE» red=PACIFICO SUR EESS=00001741
+  [coord.lv] S3 DNI del hospital (misma red, otro establecimiento): pantalla «Paciente Nuevo» → «Error al guardar la atención: La atención no se guardó: No puede modificar pacientes fuera de su alcance. (código 403).»
+  [coord.lv] S4 documento nuevo con el EESS por defecto del formulario (Hospital): «Error al guardar la atención: La atención no se guardó: No puede registrar pacientes de otro establecimiento. (código 403).»
+  [coord.lv] S4b mismo documento eligiendo «C. S. La Victoria» en ambos EESS: «✅ ¡Atención de PACIENTE INVENTADO LV UI guardada con éxito en el Padrón Estandarizado!» · servidor: creado, EESS 00001744
+  [coord.pn] opciones de «EESS que lo controla hoy» que ofrece el formulario: 5 → Hospital de Apoyo Huarmey (000 | C. S. La Victoria (00001744, I | P. S. Puerto Huarmey (00001742 | P. S. Huamba (00001751, I-1) | Fuera del distrito (se anota c
+  [coord.pn] S5 documento nuevo con EESS «Hospital de Apoyo Huarmey (00001741,» → «Error al guardar la atención: La atención no se guardó: No puede registrar ni mover pacientes hacia la red PACIFICO SUR. (código 403).»
+  [coord.pn] S5 documento nuevo con EESS «C. S. La Victoria (00001744, I-3)» → «Error al guardar la atención: La atención no se guardó: No puede registrar ni mover pacientes hacia la red PACIFICO SUR. (código 403).»
+  [coord.pn] S5 documento nuevo con EESS «P. S. Puerto Huarmey (00001742, I-2)» → «Error al guardar la atención: La atención no se guardó: No puede registrar ni mover pacientes hacia la red PACIFICO SUR. (código 403).»
+  [coord.pn] S5 documento nuevo con EESS «P. S. Huamba (00001751, I-1)» → «Error al guardar la atención: La atención no se guardó: No puede registrar ni mover pacientes hacia la red PACIFICO SUR. (código 403).»
+  [coord.pn] S5 documento nuevo con EESS «Fuera del distrito (se anota cuál en» → «Error al guardar la atención: La atención no se guardó: No puede registrar pacientes fuera de su red. (código 403).»
+  [coord.pn] S5 resultado en el servidor: NO se creó ningún paciente: un COORDINADOR de PACIFICO NORTE no puede registrar desde la interfaz
+  [dir.ps] guardar desde la consola (el botón no existe): «Error al guardar la atención: La atención no se guardó: Acceso denegado. El rol 'DIRECTOR' no cuenta con privilegios para este recurso. (código 403).» · servidor: sin cambios
+
+Fin de B2.

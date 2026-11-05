@@ -1,0 +1,69 @@
+hoy (Lima) = 2026-11-04; hoy+30 = 2026-12-04
+
+[Caso 1] DM2 con HbA1c 11 % y SIN presión arterial
+  pantalla (en vivo): {"paEnMeta":"—","hba1cEnMeta":"HbA1c en meta: No","controladoEstable":"Controlado y estable: No","metaPresion":"Meta: < 130/80 mmHg (por DM/ERC/ECV)"}
+  diálogos: ["✅ ¡Atención de PACIENTE INVENTADO 96000021 guardada con éxito en el Padrón Estandarizado!"]
+  guardado  → observations[0].estado_control = Controlado · estado_control = Controlado · frecuencia_hearts = undefined
+  /api/patients/geo → frecuencia_hearts = 90 · estado_control = Controlado (guía §2: no controlado = 30 días)
+  próxima cita que propone el formulario = 2026-12-05 (hoy+30 = 2026-12-04) · guardada en appointments[0] = 2026-12-05
+
+[Caso 2] DM2 + HTA con PA 135/85 y HbA1c 6,5 %
+  pantalla (en vivo): {"paEnMeta":"—","hba1cEnMeta":"HbA1c en meta: Sí","controladoEstable":"Controlado y estable: No","metaPresion":"Meta: < 130/80 mmHg (por DM/ERC/ECV)"}
+  guardado  → observations[0].estado_control = undefined
+ERROR page.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#rail-btn-nuevo')[22m
+[2m    - locator resolved to <button id="rail-btn-nuevo" class="rail-fab-btn" data-permiso="escribir" title="Nueva Atención Clínica" data-accion="abrirRegistroClinico">…</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is visible, enabled and stable[22m
+[2m      - scrolling into view if needed[22m
+[2m      - done scrolling[22m
+[2m      - <div role="dialog" aria-modal="true" id="modal-registro-clinico" class="reg-modal-overlay active">…</div> intercepts pointer events[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is visible, enabled and stable[22m
+[2m      - scrolling into view if needed[22m
+[2m      - done scrolling[22m
+[2m      - <div role="dialog" aria-modal="true" id="modal-registro-clinico" class="reg-modal-overlay active">…</div> intercepts pointer events[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    19 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is visible, enabled and stable[22m
+[2m       - scrolling into view if needed[22m
+[2m       - done scrolling[22m
+[2m       - <div role="dialog" aria-modal="true" id="modal-registro-clinico" class="reg-modal-overlay active">…</div> intercepts pointer events[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+    at registrar (/home/user/cronicos-huarmey/docs/produccion/evidencia/f3/C3_registro_clinico_navegador.js:34:14)
+    at /home/user/cronicos-huarmey/docs/produccion/evidencia/f3/C3_registro_clinico_navegador.js:90:13 {
+  log: [
+    "  - waiting for locator('#rail-btn-nuevo')",
+    '    - locator resolved to <button id="rail-btn-nuevo" class="rail-fab-btn" data-permiso="escribir" title="Nueva Atención Clínica" data-accion="abrirRegistroClinico">…</button>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is visible, enabled and stable',
+    '      - scrolling into view if needed',
+    '      - done scrolling',
+    '      - <div role="dialog" aria-modal="true" id="modal-registro-clinico" class="reg-modal-overlay active">…</div> intercepts pointer events',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is visible, enabled and stable',
+    '      - scrolling into view if needed',
+    '      - done scrolling',
+    '      - <div role="dialog" aria-modal="true" id="modal-registro-clinico" class="reg-modal-overlay active">…</div> intercepts pointer events',
+    '    - retrying click action',
+    '      - waiting 100ms',
+    '    19 × waiting for element to be visible, enabled and stable',
+    '       - element is visible, enabled and stable',
+    '       - scrolling into view if needed',
+    '       - done scrolling',
+    '       - <div role="dialog" aria-modal="true" id="modal-registro-clinico" class="reg-modal-overlay active">…</div> intercepts pointer events',
+    '     - retrying click action',
+    '       - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}

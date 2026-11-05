@@ -1,0 +1,108 @@
+B3 — Valores por defecto de Registro Clínico (Fase 3). Solo datos inventados y la semilla de 20 pacientes simulados.
+Lectura: client/js/ui/registroClinicoModal.js (RC), client/js/clinical/padronCalculadora.js (CALC), server/routes/apiRoutes.js (API), server/db/database.js (DB).
+Prueba antes/después: B3_antes_despues.js → out_B3_antes_despues.txt (Chromium real; el paciente se consulta por la API antes y después de «Guardar»).
+Convención: EJECUTADO = lo vi funcionar en Chromium/HTTP; LECTURA = solo lo leí en el código.
+
+============================================================================================================================
+A. LO QUE EL FORMULARIO RELLENA CUANDO FALTA EL DATO (y se guarda si nadie lo cambia)
+============================================================================================================================
+Clase: INOCUO = no afirma nada clínico/administrativo, o el usuario está obligado a contestar.
+       ASUMIDO = escribe como dato algo que nadie registró.  RIESGO = puede cambiar una decisión clínica, un indicador o un pago.
+
+ #  Campo                      Valor por defecto                 Dónde (archivo:línea)                              Clase    Comprobado
+ 1  Tipo de documento          DNI                               RC:126 (selected), RC:720, RC:831 (p.tipo || 'DNI') INOCUO   EJECUTADO (se sugiere CE/pasaporte al buscar, RC:775-776; el documento se valida en RC:1041)
+ 2  Consentimiento WhatsApp    «Seleccione…» (sin valor)         RC:382, RC:732; exigido en RC:1063                  INOCUO   EJECUTADO (D1: solo se guarda lo que el usuario elige; no hay consentimiento inventado)
+ 3  Fecha de la atención       hoy (Lima)                        RC:680-681, RC:736, RC:1082                         INOCUO   EJECUTADO (la atención que se registra ocurre hoy)
+ 4  Mes a registrar            mes actual                        RC:682-683, RC:737 (getMonth() del navegador)       INOCUO   EJECUTADO
+ 5  Albuminuria, laboratorio   vacío / «Sin dato»                RC:430, campos RC:397-450                           INOCUO   EJECUTADO (D1: hba1c, glucosa, creatinina quedan nulos)
+ 6  Dirección                  «Huarmey» si falta                RC:839                                              INOCUO   EJECUTADO (el servidor lo trata como relleno y no pisa un dato real: DB:93-96)
+ 7  Sexo                       Femenino                          RC:145 (selected), RC:721, RC:834 (p.sexo || 'Femenino')  ASUMIDO/RIESGO  EJECUTADO: D1 guardó «Femenino» en un paciente sin sexo; D7 cambió Masculino→Femenino
+ 8  Seguro de salud            SIS                               RC:158, RC:722, RC:836 (… || 'SIS')                 ASUMIDO/RIESGO  EJECUTADO: D1 guardó seguro_salud «SIS» sin que nadie lo dijera; D7 cambió EsSalud→SIS (afecta FUA/pago SIS)
+ 9  Dx confirmado              Sí                                RC:258, RC:726, RC:848 (… || 'Sí')                  ASUMIDO/RIESGO  EJECUTADO: D1 guardó «Sí» en un paciente SIN diagnóstico; D7 cambió «En estudio»→«Sí»
+10  Enfermedad CV previa       No                                RC:266, RC:727, RC:849 (… || 'No')                  ASUMIDO/RIESGO  EJECUTADO: D4 guardó «No» en un paciente con infarto antiguo (I25.2); D7 cambió «Sí»→«No»
+11  Estatina                   No                                RC:284, RC:728, RC:865                              ASUMIDO/RIESGO  EJECUTADO: D1 guardó «No»; D7 cambió «Sí»→«No»
+12  AAS 100 mg                 No indicado                       RC:292, RC:729, RC:866                              ASUMIDO/RIESGO  EJECUTADO: D1 guardó «No indicado»; D7 cambió «Sí»→«No indicado»
+13  Meses de medicación        1 mes                             RC:301, RC:730, RC:867 (… || '1')                   ASUMIDO/RIESGO  EJECUTADO: D1 guardó «1» y medicacion_hasta = hoy+30 días sin entrega alguna; D7 cambió 3→1 (CALC:273-276, 318 también usa ||1)
+14  Estado del paciente        Activo                            RC:372, RC:731; NO se precarga en RC:807-907        ASUMIDO/RIESGO  EJECUTADO: D3 cambió «Fallecido»→«Activo» (ver P3-02)
+15  EESS adscripción / control Hospital de Apoyo Huarmey         RC:198, RC:208, RC:724-725, RC:840-841; id RC:1086  ASUMIDO/RIESGO  EJECUTADO: D1 escribió establecimiento_adscripcion; D7 movió a un paciente de P. S. Puerto Huarmey al Hospital (puerta_entrada_id 00001742→00001741)
+16  Sector sanitario           Sector I – Centro                 RC:173, RC:723, RC:838; se envía en RC:1096         ASUMIDO/RIESGO  EJECUTADO: D2/D3/D6 pisaron «Sector 62», «Sector 69» con nombres de la lista del formulario; D7 «Puerto Huarmey»→«Sector I – Centro»
+17  Próxima cita               hoy + 30 días                     RC:685-688, RC:739-741; se agrega «booked» en RC:1122-1127  ASUMIDO/RIESGO  EJECUTADO: D1 creó una cita que nadie programó y el semáforo pasó de gris a VERDE; D6 de rojo a verde; D2 dejó dos citas (la guardada 25-nov no se precarga)
+18  PAS/PAD/HbA1c/glucosa «de hoy»  último control ANTERIOR       RC:886-893 (observations[0]); se guarda en RC:1110-1119 y como pas_/pad_ del mes (RC:962-967)  ASUMIDO/RIESGO  EJECUTADO: D2 copió 120/75 del 15-oct como medición del 4-nov; D8b copió 150/95 (el control MÁS ANTIGUO) y el control HEARTS bajó de 13/27 a 12/27
+19  Estado de control (obs.)   «Controlado» si no hay PA        RC:1117 ((pas >= 140 || pad >= 90) ? 'No Controlado' : 'Controlado')  ASUMIDO/RIESGO  EJECUTADO: D1b guardó una HbA1c 9,5 % sin presión y quedó «Controlado»
+20  Fecha del último control   hoy, aunque no se midió nada      RC:941; la cuenta como control indicadoresConvenio.js:125  ASUMIDO (LECTURA para el efecto en el indicador)  EJECUTADO: D1 guardó fecha_ultimo_control sin ninguna medición
+21  Peso, talla, perímetro, creatinina, LDL  los guardados      RC:895-899                                          INOCUO   EJECUTADO (mismos valores; peso/talla pasan de número a texto «72», D2); no cambian de fecha
+22  Nombre del diagnóstico     texto fijo por código             RC:1131-1141: HTA «Hipertensión Arterial», DM «Diabetes Mellitus Tipo 2» (también para E10), ERC, dislipidemia  ASUMIDO/RIESGO  EJECUTADO: D10 E10 (tipo 1) quedó «Diabetes Mellitus Tipo 2»; D2 «Hipertensión Arterial Esencial»→«Hipertensión Arterial»
+23  Fecha del diagnóstico      hoy                               API:740 (fecha_diagnostico: p.fecha_captacion || hoy)  ASUMIDO/RIESGO  EJECUTADO: D10 el diagnóstico del 1-mar-2019 pasó a 4-nov-2026 (se sobrescribe en cada atención)
+24  Coordenadas y sector geocodificados  dirección → punto      RC:1075-1076, RC:1102-1103                          ASUMIDO (bajo)  EJECUTADO: D2/D6 movieron el pin (-10.0682→-10.0710). LECTURA: si el geocodificador no carga, RC:1075 pone a TODOS en -10.0478,-78.1548 «matched: true»
+
+============================================================================================================================
+B. LO QUE EL MOTOR DE CÁLCULO DEJA GUARDADO CUANDO FALTAN DATOS (…calc se mezcla en el paciente: RC:1090)
+============================================================================================================================
+ B1 nivel_riesgo_cv «Bajo (< 5%)» y alto_riesgo_cv «No» sin riesgo ni ECV/ERC/DM        CALC:292-293      ASUMIDO/RIESGO  EJECUTADO: D1, D2, D4 (infarto previo → «Bajo»; meta_presion queda < 140/90 en vez de < 130/80, CALC:128-131)
+ B2 edad || 50 (PA y TFGe)                                                              CALC:309, 312     ASUMIDO (bajo)  LECTURA (la fecha de nacimiento es obligatoria para guardar, RC:1053)
+ B3 TFGe con sexo en blanco = fórmula de hombre                                         CALC:68 + RC:834  RIESGO          EJECUTADO: D5 mujer de 64 años, creatinina 1,0 → 84 ml/min con el sexo en blanco frente a 63 con «Femenino» (si el sexo guardado es «F»/«M», como en FHIR/HOSIX y la semilla, el selector queda en blanco)
+ B4 medicacion_hasta = fecha + max(meses,1)·30                                          CALC:273-276      ASUMIDO/RIESGO  EJECUTADO: D1, D6 (paciente en deserción con 0 meses quedó con medicación hasta 4-dic)
+ B5 controlado_estable «No», pa_en_meta «Sin datos», hba1c/ldl «Sin dato», estadio ERC «Sin dato»   CALC:137,143,184,189   INOCUO (dicen «sin dato»)  EJECUTADO
+ B6 distrito_residencia «Huarmey»                                                       CALC:322          INOCUO (bajo)    EJECUTADO
+ B7 alerta_del_dato «Dato conforme» / «DNI no tiene 8 dígitos» para CE y pasaporte      CALC:334-338      INOCUO (bajo; falsa alarma con CE/pasaporte)  EJECUTADO (llamada directa a la función con 009600031 y PA9600032)
+ B8 semaforo_hearts «verde» solo por la cita por defecto                                CALC:198-233      ver fila 17
+
+============================================================================================================================
+C. LO QUE PONE EL SERVIDOR (no es del formulario, pero actúa en el mismo guardado)
+============================================================================================================================
+ C1 Paciente NUEVO: historia «S/N», nombre «PACIENTE SIN NOMBRE», teléfono «», dirección «Sin dirección consignada», distrito «Huarmey»,
+    sector_sanitario «Sector 01 - Centro Urbano», puerta_entrada_id «00001741»    DB:78-89 (aplicado en DB:565-566). Sexo y financiador quedan NULOS a propósito (S-06): bien.
+    EJECUTADO: el paciente incompleto de B3 quedó con sector «Sector 01 - Centro Urbano» y el selector del formulario lo muestra en blanco (no está en la lista).
+ C2 Lectura: puerta_entrada_id «00001741» si falta, y el nombre del hospital en puerta_entrada       DB:453, DB:508 (un paciente de PACIFICO NORTE se lee con «NUEVO HOSPITAL DE APOYO HUARMEY»)
+ C3 Control: id «obs-<id>-<posición>»; Cita: id «app-<id>-<posición>» (el primer elemento pisa al primero guardado)   API:747, API:761 → causa de la pérdida de D9
+ C4 Un campo vacío NO pisa un dato guardado; un valor por defecto (cualquier texto) SÍ     DB:559 (hasRealValue). Por eso «No», «Sí», «Femenino», «SIS» sobrescriben y «» no.
+ C5 semaforo del paciente se recalcula con la cita; no se manda `fallecido`, así que queda guardado «green» en un fallecido (D3; el cliente lo vuelve a negro al cargar)   API:706-711
+
+============================================================================================================================
+D. LO QUE EL FORMULARIO NO PRECARGA (y por eso el guardado lo reemplaza por el valor por defecto)
+============================================================================================================================
+ - estado_paciente (RC:807-907 no lo asigna)         → D3
+ - proxima_cita guardada                              → fila 17
+ - sexo guardado como M/F/O                           → selector en blanco (D5)
+ - sector / EESS que no están en las listas del formulario (14 sectores, 4 EESS + «fuera del distrito», 1/2/3 meses) → quedan en blanco; el guardado los ignora (D6: «P. S. Culebras» y «0 meses» se conservan) pero la pantalla no los muestra y alerta_del_dato dice «Falta EESS»
+ - observaciones, albuminuria, colesterol total, fechas de laboratorio y de evaluación del pie → en blanco; no se pierden en el servidor (campos vacíos no pisan), pero el usuario no los ve
+
+============================================================================================================================
+E. RESULTADO DE LA PRUEBA «GUARDAR SIN TOCAR» (consulta por API antes y después; detalle en out_B3_antes_despues.txt)
+============================================================================================================================
+ D1  Paciente con datos incompletos (sin sexo, seguro, sector, diagnóstico, medicación, controles ni citas), solo se contestó el consentimiento:
+     escribió 12 valores de entrada que nadie registró (sexo Femenino, seguro SIS, dx_confirmado Sí, ECV No, estatina No, AAS No indicado, meses 1, EESS adscripción Hospital,
+     estado Activo, tipo DNI, fecha_ultimo_control hoy, proxima_cita +30 d) + 1 cita «booked» + riesgo CV «Bajo» + semáforo gris→verde. NO inventó mediciones (observations 0→0), ni diagnósticos (0→0), ni glucosa/HbA1c.
+ D1b Lo mismo con solo una HbA1c 9,5 % y sin presión: nace una observación con PAS/PAD nulas y estado_control «Controlado».
+ D2  Semilla 10000001 sin tocar: observations 1→2 (copia 120/75 con fecha de hoy), appointments 1→2, sector «Sector 62»→«Sector I – Centro», conditions con fecha_diagnostico de hoy, pin movido, peso/talla a texto.
+ D3  Fallecido 10000006: estado «Fallecido»→«Activo», nueva observación 130/80 «Controlado» y cita +30 d; semáforo guardado «black»→«green» (fallecido sigue true).
+ D4  Infarto antiguo I25.2: enfermedad_cardiovascular «No», nivel de riesgo «Bajo (< 5%)».
+ D5  Sexo «F»: TFGe 84 (en blanco) frente a 63 (Femenino).
+ D6  Deserción con 0 meses: no cambia meses_medicacion, pero medicacion_hasta = hoy+30 y semáforo rojo→verde.
+ D7  Lista desactualizada (el paciente lo creó un colega después del inicio de sesión): la pantalla dice «Paciente Nuevo» y el guardado sobrescribió sexo, seguro, estatina, AAS, meses, dx_confirmado, ECV, EESS y estado de control.
+ D8  Dos controles cronológicos (jun 150/95, oct 118/74): se precarga 150/95 (observations[0]); D8b lo guarda como de hoy: estado «Controlado»→«No Controlado», HEARTS 13/27→12/27.
+ D9  Dos sesiones: la atención de B (111/71) fue sobrescrita por la de A (133/83), que tenía la lista vieja.
+ D10 Diagnósticos con fecha 2019: E10 quedó «Diabetes Mellitus Tipo 2» y la fecha pasó a hoy.
+ D11 ADMIN guarda sin tocar a un paciente de PACIFICO NORTE: la red y el establecimiento NO cambian (no hay movimiento de red por el EESS por defecto cuando el paciente no tiene EESS).
+
+ Conclusión: guardar «sin tocar» NO es neutro. Lo que NO se inventa: consentimiento, laboratorio, diagnósticos nuevos, mediciones cuando no hay un control previo.
+ Lo que SÍ queda escrito sin que nadie lo registre: las filas 7-20, 22 y 23 de la tabla A, y B1, B3 y B4.
+
+============================================================================================================================
+F. HALLAZGOS NUEVOS DE LA PRECARGA (P3 = precarga, Fase 3)
+============================================================================================================================
+ P3-01 Alta   «Guardar sin tocar» re-registra el último control como medición de hoy y toma el control más antiguo si la lista viene en orden cronológico (RC:886-893, RC:1110-1119)   REPRODUCIDO (D2, D8, D8b; HEARTS 13/27→12/27)
+ P3-02 Alta   estado_paciente no se precarga: un fallecido, abandono o cambio de residencia vuelve a «Activo» y recibe control y cita (RC:807-907, RC:731)                                  REPRODUCIDO (D3)
+ P3-03 Alta   Lo que falta se guarda como dato: sexo Femenino, seguro SIS, Dx confirmado Sí, ECV No, estatina No, AAS, 1 mes, EESS Hospital; con ECV «No» y riesgo «Bajo» en un infarto previo  REPRODUCIDO (D1, D4, D7)
+ P3-04 Alta   estado_control «Controlado» cuando no hay presión (RC:1117)                                                                                                         REPRODUCIDO (D1b)
+ P3-05 Alta   La búsqueda usa la lista cargada al iniciar sesión (main.js:943-957, RC:760-766), sin consultar al servidor: un paciente creado después sale «Nuevo» y el guardado lo sobrescribe con los valores por defecto   REPRODUCIDO (D7)
+ P3-06 Alta   Una atención se pierde cuando dos usuarios guardan con listas distintas: ids de control por posición (API:747; también citas API:761)                                   REPRODUCIDO (D9)
+ P3-07 Alta   Sexo guardado como M/F (FHIR, HOSIX, semilla) no se reconoce: el selector queda en blanco y la TFGe se calcula como hombre (84 frente a 63 ml/min)                       REPRODUCIDO (D5)
+ P3-08 Media  Próxima cita por defecto +30 d: se guarda como cita «booked», deja el semáforo en verde y la cita guardada no se precarga (RC:685-688, RC:1122-1127)                   REPRODUCIDO (D1, D2, D6)
+ P3-09 Media  Etiqueta fija «Diabetes Mellitus Tipo 2» para cualquier E1x y fecha_diagnostico = hoy en cada atención (RC:1131-1141, API:740)                                          REPRODUCIDO (D10)
+ P3-10 Media  sector_sanitario del formulario (14 nombres) pisa el sector de GeoRIS/semilla y saca al paciente del alcance de un COORDINADOR con sector (RC:1096)                     REPRODUCIDO (D2, D3, D6; B1 W15-W16)
+ P3-11 Media  Un COORDINADOR de otra red (p. ej. PACIFICO NORTE) no puede registrar desde la interfaz: 5 opciones fijas de EESS (RC:197-213), todas de PACIFICO SUR o sin código; el catálogo del servidor trae 13 EESS, todos de PACIFICO SUR   REPRODUCIDO (B2 S5, B1 W11-W12)
+ P3-12 Media  Guardar revela existencia (403 «fuera de su alcance» si el documento existe en otra red/establecimiento; 200 si no). La LECTURA no revela (404 idéntico). Es el residual F2-04; la interfaz dice «Paciente Nuevo» y luego 403   REPRODUCIDO (B1 W1 vs W2, B2 S1, S3)
+ P3-13 Baja   Un COORDINADOR con establecimiento puede MOVER un paciente suyo a otro establecimiento de su red (queda fuera de su alcance) aunque no puede crear allí (API/scope.js:129-136)  REPRODUCIDO (B1 W10 vs W8)
+ P3-14 Baja   El selector de EESS ofrece 4 de los 13 del catálogo: un paciente de otro EESS (P. S. Culebras) queda en blanco y alerta_del_dato dice «Falta EESS» (RC:197-213)             REPRODUCIDO (D6)
+ P3-15 Baja   CE y pasaporte reciben la alerta «DNI no tiene 8 dígitos» (CALC:334); respaldo de geocodificador con coordenadas fijas (RC:1075); próxima cita calculada con toISOString (UTC) (RC:685-688)   REPRODUCIDO la alerta; SOLO POR LECTURA el respaldo y la fecha UTC

@@ -1,0 +1,552 @@
+# B3 — Valores por defecto de Registro Clínico: guardar sin tocar y comparar en el servidor (Fase 3)
+Servidor http://127.0.0.1:3262 · 2026-11-05T04:42:33.893Z · fecha de hoy en el servidor: 2026-11-04 (Lima)
+
+### D1 Paciente con DATOS INCOMPLETOS (sin sexo, seguro, sector, diagnóstico, medicación, controles ni citas): se guarda sin tocar nada
+    pantalla: 🎉 Paciente Encontrado: PACIENTE INVENTADO INCOMPLETO SUR (DNI: 96400001) ✓ Fili
+    precargado en el formulario: sexo=«Femenino» seguro=«SIS» sector=«» EESS-control=«Hospital de Apoyo Huarmey » dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No indicado» meses=«1» estado=«Activo» PAS/PAD=«/» próxima cita=«2026-12-05» consentimiento=pregunta
+    al Guardar: «✅ ¡Atención de PACIENTE INVENTADO INCOMPLETO SUR guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      aspirina_aas = "No indicado"
+      consentimiento = "No"
+      controlado_estable = "No"
+      controles_en_el_anio = 0
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 68
+      enfermedad_cardiovascular = "No"
+      establecimiento_adscripcion = "Hospital de Apoyo Huarmey (00001741, II-1)"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      estado_paciente = "Activo"
+      estatina = "No"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      ldl_en_meta = "Sin dato"
+      medicacion_hasta = "2026-12-04"
+      meses_medicacion = "1"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "96400001"
+      pa_en_meta = "Sin datos"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "No (Sin celular válido)"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      seguro_salud = "SIS"
+      semaforo_hearts = "verde"
+      sexo = "Femenino"
+      tipo_documento = "DNI"
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      (ninguno)
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001741 → 00001741
+    semáforo (servidor): gray → green · fallecido: false → false · estado_paciente: undefined → Activo
+    observations: sin cambios (0)
+    appointments: 0 → 1
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: sin cambios (0)
+    diagnosticos: sin cambios (0)
+
+### D1b Paciente incompleto: el usuario solo anota una HbA1c de 9,5 % y NO mide la presión (PAS/PAD vacías)
+    pantalla: 🎉 Paciente Encontrado: PACIENTE INVENTADO INCOMPLETO TRES (DNI: 96400007) ✓ Fil
+    precargado en el formulario: sexo=«Femenino» seguro=«SIS» sector=«» EESS-control=«Hospital de Apoyo Huarmey » dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No indicado» meses=«1» estado=«Activo» PAS/PAD=«/» próxima cita=«2026-12-05» consentimiento=pregunta
+    al Guardar: «✅ ¡Atención de PACIENTE INVENTADO INCOMPLETO TRES guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      aspirina_aas = "No indicado"
+      consentimiento = "No"
+      controlado_estable = "No"
+      controles_en_el_anio = 0
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 67
+      enfermedad_cardiovascular = "No"
+      establecimiento_adscripcion = "Hospital de Apoyo Huarmey (00001741, II-1)"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      estado_control = "Controlado"
+      estado_paciente = "Activo"
+      estatina = "No"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c = 9.5
+      hba1c_en_meta = "No"
+      ldl_en_meta = "Sin dato"
+      medicacion_hasta = "2026-12-04"
+      meses_medicacion = "1"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "96400007"
+      pa_en_meta = "Sin datos"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "No (Sin celular válido)"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      seguro_salud = "SIS"
+      semaforo_hearts = "verde"
+      sexo = "Femenino"
+      tipo_documento = "DNI"
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      (ninguno)
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001741 → 00001741
+    semáforo (servidor): gray → green · fallecido: false → false · estado_paciente: undefined → Activo
+    observations: 0 → 1
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":null,"pa_diastolica":null,"hba1c":9.5,"glucosa":null,"estado_control":"Controlado"}]
+    appointments: 0 → 1
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: sin cambios (0)
+    diagnosticos: sin cambios (0)
+
+### D2 Semilla 10000001 (HTA, control previo 120/75 del 15-oct): se guarda sin tocar nada
+    pantalla: 🎉 Paciente Encontrado: QUISPE ROJAS CARLOS ALBERTO (DNI: 10000001) ✓ Filiación,
+    precargado en el formulario: sexo=«» seguro=«SIS» sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey » dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«Sí» meses=«2» estado=«Activo» PAS/PAD=«120/75» próxima cita=«2026-12-05» consentimiento=pregunta
+    al Guardar: «✅ ¡Atención de QUISPE ROJAS CARLOS ALBERTO guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      cie10_hta = "I10 – Hipertensión"
+      consentimiento = "No"
+      controlado_estable = "Sí"
+      controles_en_el_anio = 5
+      cumple_ip04 = "Sí"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 58
+      enfermedad_cardiovascular = "No"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      ldl_en_meta = "Sin dato"
+      medicacion_hasta = "2027-01-03"
+      mes_ultima_pa = "nov"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "10000001"
+      pa_en_meta = "Sí"
+      pad_nov = "75"
+      pas_nov = "120"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "Sí"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      semaforo_hearts = "verde"
+      tipo_documento = "DNI"
+      ultima_pad = 75
+      ultima_pas = 120
+      valoracion_nutricional = "Sobrepeso (25.0 – 29.9)"
+    Campos que tenían un valor y ahora tienen OTRO:
+      latitud: -10.0682 → -10.070977
+      longitud: -78.1522 → -78.153076
+      peso: 72 → "72"
+      sector_sanitario: "Sector 62" → "Sector I – Centro"
+      talla: 1.68 → "1.68"
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001741 → 00001741
+    semáforo (servidor): green → green · fallecido: false → false · estado_paciente: Activo → Activo
+    observations: 1 → 2
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":120,"pa_diastolica":75,"hba1c":null,"glucosa":null,"estado_control":"Controlado"}]
+    appointments: 1 → 2
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: 1 → 1
+        nuevo/cambiado: [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial","fecha_diagnostico":"2026-11-04"}]
+        ANTES era:      [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial Esencial"}]
+    diagnosticos: sin cambios (1)
+
+### D3 Semilla 10000006 (FALLECIDO, infarto antiguo): se guarda sin tocar nada
+    pantalla: 🎉 Paciente Encontrado: HERRERA RAMIREZ FELIX PEDRO (DNI: 10000006) ✓ Filiación,
+    precargado en el formulario: sexo=«» seguro=«SIS» sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey » dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No indicado» meses=«1» estado=«Activo» PAS/PAD=«130/80» próxima cita=«2026-12-05» consentimiento=pregunta
+    al Guardar: «✅ ¡Atención de HERRERA RAMIREZ FELIX PEDRO guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      aspirina_aas = "No indicado"
+      cie10_hta = "I10 – Hipertensión"
+      consentimiento = "No"
+      controlado_estable = "Sí"
+      controles_en_el_anio = 3
+      cumple_ip04 = "Sí"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 79
+      enfermedad_cardiovascular = "No"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      estatina = "No"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      ldl_en_meta = "Sin dato"
+      medicacion_hasta = "2026-12-04"
+      mes_ultima_pa = "nov"
+      meses_medicacion = "1"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "10000006"
+      pa_en_meta = "Sí"
+      pad_nov = "80"
+      pas_nov = "130"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "Sí"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      semaforo_hearts = "verde"
+      tipo_documento = "DNI"
+      ultima_pad = 80
+      ultima_pas = 130
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      estado_paciente: "Fallecido" → "Activo"
+      sector_sanitario: "Sector 62" → "Sector I – Centro"
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001741 → 00001741
+    semáforo (servidor): black → green · fallecido: true → true · estado_paciente: Fallecido → Activo
+    observations: 1 → 2
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":130,"pa_diastolica":80,"hba1c":null,"glucosa":null,"estado_control":"Controlado"}]
+    appointments: 0 → 1
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: 2 → 1
+        nuevo/cambiado: [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial","fecha_diagnostico":"2026-11-04"}]
+        ANTES era:      [{"cie10_cod":"I25.2","diagnostico":"Infarto Antiguo de Miocardio"}]
+        ANTES era:      [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial"}]
+    diagnosticos: sin cambios (2)
+
+### D4 Paciente con infarto previo (I25.2) y SIN el campo «enfermedad cardiovascular previa»: se guarda sin tocar nada
+    pantalla: 🎉 Paciente Encontrado: PACIENTE INVENTADO CON INFARTO PREVIO (DNI: 96400005) ✓ 
+    precargado en el formulario: sexo=«Masculino» seguro=«EsSalud» sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey » dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No indicado» meses=«2» estado=«Activo» PAS/PAD=«150/95» próxima cita=«2026-12-05» consentimiento=No
+    al Guardar: «✅ ¡Atención de PACIENTE INVENTADO CON INFARTO PREVIO guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      cie10_hta = "I10 – Hipertensión"
+      controlado_estable = "No"
+      controles_en_el_anio = 1
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 66
+      enfermedad_cardiovascular = "No"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      latitud = -10.066511
+      ldl_en_meta = "Sin dato"
+      longitud = -78.153259
+      medicacion_hasta = "2027-01-03"
+      mes_ultima_pa = "nov"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "96400005"
+      pa_en_meta = "No"
+      pad_nov = "95"
+      pas_nov = "150"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "No (Sin celular válido)"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      semaforo_hearts = "verde"
+      ultima_pad = 95
+      ultima_pas = 150
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      (ninguno)
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001741 → 00001741
+    semáforo (servidor): green → green · fallecido: false → false · estado_paciente: Activo → Activo
+    observations: 1 → 2
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":150,"pa_diastolica":95,"hba1c":null,"glucosa":null,"estado_control":"No Controlado"}]
+    appointments: 1 → 2
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: sin cambios (2)
+    diagnosticos: sin cambios (2)
+
+### D6 Semilla 10000018 (deserción, 0 meses de medicación, cita incumplida): se guarda sin tocar nada
+    pantalla: 🎉 Paciente Encontrado: QUISPE TORRES JULIO CESAR (DNI: 10000018) ✓ Filiación, d
+    precargado en el formulario: sexo=«» seguro=«SIS» sector=«Culebras» EESS-control=«» dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No» meses=«» estado=«Activo» PAS/PAD=«156/98» próxima cita=«2026-12-05» consentimiento=pregunta
+    al Guardar: «✅ ¡Atención de QUISPE TORRES JULIO CESAR guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Falta EESS"
+      alto_riesgo_cv = "No"
+      cie10_hta = "I10 – Hipertensión"
+      consentimiento = "No"
+      controlado_estable = "No"
+      controles_en_el_anio = 1
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Culebras"
+      dx_confirmado = "Sí"
+      edad_anios = 63
+      enfermedad_cardiovascular = "No"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      ldl_en_meta = "Sin dato"
+      medicacion_hasta = "2026-12-04"
+      mes_ultima_pa = "nov"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "10000018"
+      pa_en_meta = "No"
+      pad_nov = "98"
+      pas_nov = "156"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "Sí"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      semaforo_hearts = "verde"
+      tipo_documento = "DNI"
+      ultima_pad = 98
+      ultima_pas = 156
+      valoracion_nutricional = "Sobrepeso (25.0 – 29.9)"
+    Campos que tenían un valor y ahora tienen OTRO:
+      latitud: -9.932 → -9.949849
+      longitud: -78.225 → -78.221904
+      peso: 78 → "78"
+      sector_sanitario: "Sector 69" → "Culebras"
+      talla: 1.66 → "1.66"
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001743 → 00001743
+    semáforo (servidor): red → green · fallecido: false → false · estado_paciente: Activo → Activo
+    observations: 1 → 2
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":156,"pa_diastolica":98,"hba1c":null,"glucosa":null,"estado_control":"No Controlado"}]
+    appointments: 1 → 2
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: 1 → 1
+        nuevo/cambiado: [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial","fecha_diagnostico":"2026-11-04"}]
+        ANTES era:      [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial Severa No Controlada"}]
+    diagnosticos: sin cambios (1)
+
+### D5 Sexo guardado como «F» (HOSIX/FHIR y la semilla usan M/F; Excel y el formulario usan Femenino/Masculino): TFGe con creatinina 1,0 mg/dl
+    10000002 (mujer de 64 años, sexo guardado «F»): el selector de sexo muestra «» (vacío = ninguna opción coincide)
+    con creatinina 1,0 y el sexo en blanco → TFGe 84 ml/min · G2 (Levemente disminuido, 60–89)
+    eligiendo «Femenino» a mano → TFGe 63 ml/min · G2 (Levemente disminuido, 60–89)
+
+### D8 Paciente con dos controles guardados en orden cronológico (1-jun 150/95 y 1-oct 118/74): ¿cuál se precarga en «PAS/PAD de hoy»?
+    el servidor entrega observations = ["2026-06-01: 150/95","2026-10-01: 118/74"]
+    el formulario precarga PAS/PAD de hoy = 150/95  (último control real: 118/74 del 2026-10-01)
+
+### D8b Mismo paciente (dos controles: 1-jun 150/95 y 1-oct 118/74): se guarda sin tocar nada
+    pantalla: 🎉 Paciente Encontrado: PACIENTE INVENTADO DOS CONTROLES (DNI: 96400004) ✓ Filia
+    precargado en el formulario: sexo=«Masculino» seguro=«EsSalud» sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey » dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No indicado» meses=«2» estado=«Activo» PAS/PAD=«150/95» próxima cita=«2026-12-05» consentimiento=No
+    al Guardar: «✅ ¡Atención de PACIENTE INVENTADO DOS CONTROLES guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      cie10_hta = "I10 – Hipertensión"
+      controlado_estable = "No"
+      controles_en_el_anio = 1
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 66
+      enfermedad_cardiovascular = "No"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      latitud = -10.066511
+      ldl_en_meta = "Sin dato"
+      longitud = -78.153259
+      medicacion_hasta = "2027-01-03"
+      mes_ultima_pa = "nov"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "96400004"
+      pa_en_meta = "No"
+      pad_nov = "95"
+      pas_nov = "150"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "No (Sin celular válido)"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      semaforo_hearts = "verde"
+      ultima_pad = 95
+      ultima_pas = 150
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      estado_control: "Controlado" → "No Controlado"
+      pa_diastolica: 74 → 95
+      pa_sistolica: 118 → 150
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001741 → 00001741
+    semáforo (servidor): green → green · fallecido: false → false · estado_paciente: Activo → Activo
+    observations: 2 → 3
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":150,"pa_diastolica":95,"hba1c":null,"glucosa":null,"estado_control":"No Controlado"}]
+    appointments: 1 → 2
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: sin cambios (1)
+    diagnosticos: sin cambios (1)
+    indicador antes: HEARTS control: 13/27 (48.1 %) · después: HEARTS control: 12/27 (44.4 %)  (el último control del año pasó de 118/74 a 150/95 con fecha de hoy)
+
+### D10 Paciente con HTA y diabetes tipo 1 (E10), diagnosticados el 1-mar-2019: se guarda sin tocar nada
+    pantalla: 🎉 Paciente Encontrado: PACIENTE INVENTADO DIAGNOSTICO ANTIGUO (DNI: 96400009) ✓
+    precargado en el formulario: sexo=«Masculino» seguro=«EsSalud» sector=«Sector I – Centro» EESS-control=«Hospital de Apoyo Huarmey » dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No indicado» meses=«2» estado=«Activo» PAS/PAD=«150/95» próxima cita=«2026-12-05» consentimiento=No
+    al Guardar: «✅ ¡Atención de PACIENTE INVENTADO DIAGNOSTICO ANTIGUO guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "Sí"
+      cie10_dm = "E10 – Diabetes"
+      cie10_hta = "I10 – Hipertensión"
+      controlado_estable = "No"
+      controles_en_el_anio = 1
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 66
+      enfermedad_cardiovascular = "No"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      latitud = -10.066511
+      ldl_en_meta = "Sin dato"
+      longitud = -78.153259
+      medicacion_hasta = "2027-01-03"
+      mes_ultima_pa = "nov"
+      meta_presion = "< 130/80 mmHg (por DM/ERC/ECV)"
+      nivel_riesgo_cv = "Alto (Diabetes Mellitus)"
+      nro_documento = "96400009"
+      pa_en_meta = "No"
+      pad_nov = "95"
+      pas_nov = "150"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "No (Sin celular válido)"
+      que_le_falta = "HbA1c anual · Examen de pies · Creatinina / TFGe · Tamizaje
+      semaforo_hearts = "verde"
+      ultima_pad = 95
+      ultima_pas = 150
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      (ninguno)
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001741 → 00001741
+    semáforo (servidor): green → green · fallecido: false → false · estado_paciente: Activo → Activo
+    observations: 1 → 2
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":150,"pa_diastolica":95,"hba1c":null,"glucosa":null,"estado_control":"No Controlado"}]
+    appointments: 1 → 2
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: 2 → 2
+        nuevo/cambiado: [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial","fecha_diagnostico":"2026-11-04"}]
+        nuevo/cambiado: [{"cie10_cod":"E10","diagnostico":"Diabetes Mellitus Tipo 2","fecha_diagnostico":"2026-11-04"}]
+        ANTES era:      [{"cie10_cod":"I10","diagnostico":"Hipertensión Arterial","fecha_diagnostico":"2019-03-01"}]
+        ANTES era:      [{"cie10_cod":"E10","diagnostico":"Diabetes mellitus tipo 1","fecha_diagnostico":"2019-03-01"}]
+    diagnosticos: sin cambios (2)
+
+### D11 El ADMIN guarda sin tocar nada a un paciente de PACIFICO NORTE (sin establecimiento guardado)
+    pantalla: 🎉 Paciente Encontrado: PACIENTE INVENTADO NORTE UNO (DNI: 96310001) ✓ Filiación
+    precargado en el formulario: sexo=«Masculino» seguro=«EsSalud» sector=«» EESS-control=«» dx-confirmado=«Sí» ECV=«No» estatina=«No» AAS=«No indicado» meses=«2» estado=«Activo» PAS/PAD=«150/95» próxima cita=«2026-12-05» consentimiento=No
+    al Guardar: «✅ ¡Atención de PACIENTE INVENTADO NORTE UNO guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      cie10_hta = "I10 – Hipertensión"
+      controlado_estable = "No"
+      controles_en_el_anio = 1
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      dx_confirmado = "Sí"
+      edad_anios = 66
+      enfermedad_cardiovascular = "No"
+      establecimiento_adscripcion = "Hospital de Apoyo Huarmey (00001741, II-1)"
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      latitud = -10.066511
+      ldl_en_meta = "Sin dato"
+      longitud = -78.153259
+      medicacion_hasta = "2027-01-03"
+      mes_ultima_pa = "nov"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "96310001"
+      pa_en_meta = "No"
+      pad_nov = "95"
+      pas_nov = "150"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "No (Sin celular válido)"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      semaforo_hearts = "verde"
+      ultima_pad = 95
+      ultima_pas = 150
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      (ninguno)
+    red: PACIFICO NORTE → PACIFICO NORTE · establecimiento: 00001741 → 00001741
+    semáforo (servidor): green → green · fallecido: false → false · estado_paciente: Activo → Activo
+    observations: 1 → 2
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":150,"pa_diastolica":95,"hba1c":null,"glucosa":null,"estado_control":"No Controlado"}]
+    appointments: 1 → 2
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: sin cambios (1)
+    diagnosticos: sin cambios (1)
+
+### D7 Lista desactualizada: otro usuario creó al paciente DESPUÉS de que éste inició sesión; al escribir el documento sale «Paciente Nuevo»
+    el colega lo crea por otra vía: 200
+    pantalla del usuario con la lista vieja: «🆕 Paciente Nuevo: No registra atenciones previas con el DNI»
+    al Guardar: «✅ ¡Atención de PACIENTE INVENTADO CREADO POR UN COLEGA guardada con éxito en el Padrón Estandarizado!»
+    Campos que ANTES estaban vacíos o no existían y ahora tienen valor:
+      alerta_del_dato = "Dato conforme"
+      alto_riesgo_cv = "No"
+      controlado_estable = "Sí (Parcial)"
+      controles_en_el_anio = 1
+      cumple_ip04 = "No"
+      dias_atraso = 0
+      distrito_residencia = "Huarmey"
+      edad_anios = 65
+      estadio_erc = "Sin dato"
+      estado_cita = "Programada en 30 días"
+      fecha_ultimo_control = "2026-11-04"
+      hba1c_en_meta = "Sin dato"
+      ldl_en_meta = "Sin dato"
+      medicacion_hasta = "2026-12-04"
+      mes_ultima_pa = "nov"
+      meta_presion = "< 140/90 mmHg"
+      nivel_riesgo_cv = "Bajo (< 5%)"
+      nro_documento = "96400006"
+      pa_en_meta = "Sí"
+      pad_nov = "82"
+      pas_nov = "128"
+      proxima_cita = "2026-12-05"
+      puede_telemonitoreo = "No (Sin celular válido)"
+      que_le_falta = "Creatinina / TFGe · Tamizaje Albuminuria (RAC) · Perfil lip
+      semaforo_hearts = "verde"
+      ultima_pad = 82
+      ultima_pas = 128
+      valoracion_nutricional = "Sin dato"
+    Campos que tenían un valor y ahora tienen OTRO:
+      aspirina_aas: "Sí" → "No indicado"
+      direccion: "Jr. Bolognesi 250 Huarmey" → "Jr. Prueba 300 Huarmey"
+      dx_confirmado: "En estudio" → "Sí"
+      enfermedad_cardiovascular: "Sí (infarto, angina, ACV, arteriopa → "No"
+      establecimiento_adscripcion: "P. S. Puerto Huarmey (00001742, I-2 → "Hospital de Apoyo Huarmey (00001741
+      establecimiento_control: "P. S. Puerto Huarmey (00001742, I-2 → "Hospital de Apoyo Huarmey (00001741
+      estado_control: "No Controlado" → "Controlado"
+      estatina: "Sí" → "No"
+      fecha_nacimiento: "1960-05-10" → "1961-02-02"
+      meses_medicacion: "3" → "1"
+      pa_diastolica: 95 → 82
+      pa_sistolica: 150 → 128
+      puerta_entrada_id: "00001742" → "00001741"
+      sector: "Puerto Huarmey" → "Sector I – Centro"
+      sector_sanitario: "Puerto Huarmey" → "Sector I – Centro"
+      seguro_salud: "EsSalud" → "SIS"
+      sexo: "Masculino" → "Femenino"
+    red: PACIFICO SUR → PACIFICO SUR · establecimiento: 00001742 → 00001741
+    semáforo (servidor): green → green · fallecido: false → false · estado_paciente: Activo → Activo
+    observations: 1 → 1
+        nuevo/cambiado: [{"fecha_registro":"2026-11-04","pa_sistolica":128,"pa_diastolica":82,"hba1c":null,"glucosa":null,"estado_control":"Controlado"}]
+    appointments: 1 → 1
+        nuevo/cambiado: [{"fecha_cita":"2026-12-05","estado":"booked"}]
+    conditions: sin cambios (2)
+    diagnosticos: sin cambios (2)
+
+### D9 Dos usuarios: A (lista vieja) y B guardan una atención del mismo paciente (10000011); ¿se conserva la de B?
+    B guarda PAS/PAD 111/71: «✅ ¡Atención de BENITES CASTILLO GLORIA AMPARO guardada con éxito en el»
+    servidor tras B: ["2026-11-04: 111/71","2026-10-20: 122/76"]
+    A (con la lista vieja, sin la atención de B) guarda PAS/PAD 133/83: «✅ ¡Atención de BENITES CASTILLO GLORIA AMPARO guardada con éxito en el»
+    servidor al final: ["2026-11-04: 133/83","2026-10-20: 122/76"]
+    ¿sigue la atención de B (111/71)? NO: fue sobrescrita por la de A (mismo id de control por posición)
+
+Fin de B3.

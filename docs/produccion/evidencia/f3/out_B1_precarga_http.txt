@@ -1,0 +1,232 @@
+# B1 — Precarga por documento, vista HTTP (Fase 3)
+Servidor http://127.0.0.1:3262 · 2026-11-05T04:40:25.657Z · solo datos inventados + semilla de 20 pacientes simulados
+
+## 1. Roles reales y qué puede hacer cada uno (código: auth.js:15, apiRoutes.js:33-36, scope.js, session.js:23-27)
+Roles: ADMIN, COORDINADOR, DIRECTOR (los únicos de auth.ROLES). Alcance: ADMIN sin límite; COORDINADOR y DIRECTOR por RED (obligatoria, una de las 7 RIS);
+COORDINADOR puede además llevar establecimiento (RENIPRESS de 8 dígitos de su red) y/o sector sanitario (texto exacto, solo por API: el modal de usuarios no lo ofrece).
+Usuarios creados por la prueba:
+  admin          ADMIN, sin red (ve todas)
+  f3.coord.ps    COORDINADOR, red PACIFICO SUR, sin establecimiento
+  f3.coord.lv    COORDINADOR, PACIFICO SUR, solo C. S. La Victoria (00001744)
+  f3.coord.sec   COORDINADOR, PACIFICO SUR, solo sector "Sector 62" (solo por API)
+  f3.coord.pn    COORDINADOR, red PACIFICO NORTE
+  f3.dir.ps      DIRECTOR, PACIFICO SUR
+  f3.dir.pn      DIRECTOR, PACIFICO NORTE
+
+Códigos HTTP por rol y recurso (200 = permitido; 403 = rol sin privilegio; filas = pacientes que devuelve):
+recurso                                                 admin      coord.ps   coord.lv   coord.sec  coord.pn   dir.ps     dir.pn     
+GET /api/cronicos (lista = lo que precarga el cliente)  200 (34)   200 (30)   200 (4)    200 (7)    200 (4)    403        403        
+GET /api/patients                                       200 (34)   200 (30)   200 (4)    200 (7)    200 (4)    403        403        
+GET /api/patients/geo                                   200 (20)   200 (20)   200 (3)    200 (6)    200 (0)    403        403        
+GET /fhir/Bundle                                        200 (34)   200 (30)   200 (4)    200 (7)    200 (4)    403        403        
+GET /api/establishments                                 200 (13)   200 (13)   200 (13)   200 (13)   200 (0)    200 (13)   200 (0)    
+GET /api/alerts/summary (agregados)                     200        200        200        200        200        200        200        
+GET /api/indicadores/convenio (agregados)               200        200        200        200        200        200        200        
+POST /api/padron/importar-lote (lote vacío)             400        400        400        400        400        403        403        
+POST /api/webhooks/hosix (cuerpo vacío)                 400        400        400        400        400        403        403        
+GET /api/users                                          200 (7)    403        403        403        403        403        403        
+GET /api/security/audit-logs                            200        403        403        403        403        403        403        
+
+Escribir (crear / editar) con la misma carga que arma el formulario, un usuario por rol, DNI inventado:
+  admin          crear → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+                 editar → 200
+  f3.coord.ps    crear → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+                 editar → 200
+  f3.coord.pn    crear → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+                 editar → 200
+  f3.dir.ps      crear → 403 Acceso denegado. El rol 'DIRECTOR' no cuenta con privilegios para este recurso.
+                 editar → 403
+  (COORDINADOR de PACIFICO NORTE por API sí puede escribir con red_salud explícita; la interfaz no se lo permite: ver B2.)
+
+## 2. Matriz rol × documento — «buscar por documento»
+El cliente NO llama a un endpoint dedicado: filtra la lista que trajo GET /api/cronicos al iniciar sesión (main.js:943-957; registroClinicoModal.js:760-766).
+Rutas «buscar por DNI» probadas con un COORDINADOR (todas deberían ser inexistentes): /api/patients/10000001 → 404 · /api/cronicos/10000001 → 404 · /api/patients/search?dni=10000001 → 404 · /api/pacientes/10000001 → 404
+
+Documentos de la prueba:
+  H1    10000001    semilla, PS, Hospital Huarmey, Sector 62
+  LV1   10000002    semilla, PS, C. S. La Victoria, Sector 63
+  LV2   96310005    inventado, PS, C. S. La Victoria
+  PN1   96310001    inventado, red PACIFICO NORTE
+  PNCE  009600021   carné de extranjería, PACIFICO NORTE
+  PNPA  PE9600022   pasaporte, PACIFICO NORTE
+  PSCE  009600031   carné de extranjería, PS, Hospital
+  PSPA  PA9600032   pasaporte, PS, Hospital
+  NX    96999999    NO existe
+  NXCE  009699999   NO existe
+  NXPA  ZZ9699999   NO existe
+
+### V1 GET /api/patients/:doc/eventos
+documento       admin     coord.ps  coord.lv  coord.sec coord.pn  dir.ps    dir.pn    
+H1 10000001     200       200       404       200       404       403       403       
+LV1 10000002    200       200       200       404       404       403       403       
+LV2 96310005    200       200       200       404       404       403       403       
+PN1 96310001    200       404       404       404       200       403       403       
+PNCE 009600021  200       404       404       404       200       403       403       
+PNPA PE9600022  200       404       404       404       200       403       403       
+PSCE 009600031  200       200       404       404       404       403       403       
+PSPA PA9600032  200       200       404       404       404       403       403       
+NX 96999999     404       404       404       404       404       403       403       
+NXCE 009699999  404       404       404       404       404       403       403       
+NXPA ZZ9699999  404       404       404       404       404       403       403       
+
+### V2 GET /fhir/Patient/:doc
+documento       admin     coord.ps  coord.lv  coord.sec coord.pn  dir.ps    dir.pn    
+H1 10000001     200       200       404       200       404       403       403       
+LV1 10000002    200       200       200       404       404       403       403       
+LV2 96310005    200       200       200       404       404       403       403       
+PN1 96310001    200       404       404       404       200       403       403       
+PNCE 009600021  200       404       404       404       200       403       403       
+PNPA PE9600022  200       404       404       404       200       403       403       
+PSCE 009600031  200       200       404       404       404       403       403       
+PSPA PA9600032  200       200       404       404       404       403       403       
+NX 96999999     404       404       404       404       404       403       403       
+NXCE 009699999  404       404       404       404       404       403       403       
+NXPA ZZ9699999  404       404       404       404       404       403       403       
+
+### V3 GET /api/cronicos?q=:doc
+documento       admin     coord.ps  coord.lv  coord.sec coord.pn  dir.ps    dir.pn    
+H1 10000001     200 n=1   200 n=1   200 n=0   200 n=1   200 n=0   403       403       
+LV1 10000002    200 n=1   200 n=1   200 n=1   200 n=0   200 n=0   403       403       
+LV2 96310005    200 n=1   200 n=1   200 n=1   200 n=0   200 n=0   403       403       
+PN1 96310001    200 n=1   200 n=0   200 n=0   200 n=0   200 n=1   403       403       
+PNCE 009600021  200 n=1   200 n=0   200 n=0   200 n=0   200 n=1   403       403       
+PNPA PE9600022  200 n=1   200 n=0   200 n=0   200 n=0   200 n=1   403       403       
+PSCE 009600031  200 n=1   200 n=1   200 n=0   200 n=0   200 n=0   403       403       
+PSPA PA9600032  200 n=1   200 n=1   200 n=0   200 n=0   200 n=0   403       403       
+NX 96999999     200 n=0   200 n=0   200 n=0   200 n=0   200 n=0   403       403       
+NXCE 009699999  200 n=0   200 n=0   200 n=0   200 n=0   200 n=0   403       403       
+NXPA ZZ9699999  200 n=0   200 n=0   200 n=0   200 n=0   200 n=0   403       403       
+
+### V4 POST /api/appointments/pre-cita
+documento       admin     coord.ps  coord.lv  coord.sec coord.pn  dir.ps    dir.pn    
+H1 10000001     200       200       404       200       404       403       403       
+LV1 10000002    200       200       200       404       404       403       403       
+LV2 96310005    200       200       200       404       404       403       403       
+PN1 96310001    200       404       404       404       200       403       403       
+PNCE 009600021  200       404       404       404       200       403       403       
+PNPA PE9600022  200       404       404       404       200       403       403       
+PSCE 009600031  200       200       404       404       404       403       403       
+PSPA PA9600032  200       200       404       404       404       403       403       
+NX 96999999     404       404       404       404       404       403       403       
+NXCE 009699999  404       404       404       404       404       403       403       
+NXPA ZZ9699999  404       404       404       404       404       403       403       
+
+### V5 PUT /api/patients/:doc/consentimiento (valor inválido)
+documento       admin     coord.ps  coord.lv  coord.sec coord.pn  dir.ps    dir.pn    
+H1 10000001     400       400       404       400       404       403       403       
+LV1 10000002    400       400       400       404       404       403       403       
+LV2 96310005    400       400       400       404       404       403       403       
+PN1 96310001    400       404       404       404       400       403       403       
+PNCE 009600021  400       404       404       404       400       403       403       
+PNPA PE9600022  400       404       404       404       400       403       403       
+PSCE 009600031  400       400       404       404       404       403       403       
+PSPA PA9600032  400       400       404       404       404       403       403       
+NX 96999999     404       404       404       404       404       403       403       
+NXCE 009699999  404       404       404       404       404       403       403       
+NXPA ZZ9699999  404       404       404       404       404       403       403       
+
+### V6 POST /api/patients/:doc/eventos (tipo inválido)
+documento       admin     coord.ps  coord.lv  coord.sec coord.pn  dir.ps    dir.pn    
+H1 10000001     400       400       404       400       404       403       403       
+LV1 10000002    400       400       400       404       404       403       403       
+LV2 96310005    400       400       400       404       404       403       403       
+PN1 96310001    400       404       404       404       400       403       403       
+PNCE 009600021  400       404       404       404       400       403       403       
+PNPA PE9600022  400       404       404       404       400       403       403       
+PSCE 009600031  400       400       404       404       404       403       403       
+PSPA PA9600032  400       400       404       404       404       403       403       
+NX 96999999     404       404       404       404       404       403       403       
+NXCE 009699999  404       404       404       404       404       403       403       
+NXPA ZZ9699999  404       404       404       404       404       403       403       
+
+### Contraste con el alcance esperado (scope.js)
+  Sin discrepancias: cada usuario ve exactamente lo que su rol, red, establecimiento y sector permiten (en V1, V2 y V3).
+
+### Oráculo de existencia: «existe pero fuera de mi alcance» frente a «no existe» (código y cuerpo idénticos)
+  V1 GET /api/patients/:doc/eventos              coord.ps   INDISTINGUIBLES
+  V1 GET /api/patients/:doc/eventos              coord.lv   INDISTINGUIBLES
+  V1 GET /api/patients/:doc/eventos              coord.sec  INDISTINGUIBLES
+  V1 GET /api/patients/:doc/eventos              coord.pn   INDISTINGUIBLES
+  V2 GET /fhir/Patient/:doc                      coord.ps   INDISTINGUIBLES
+  V2 GET /fhir/Patient/:doc                      coord.lv   INDISTINGUIBLES
+  V2 GET /fhir/Patient/:doc                      coord.sec  INDISTINGUIBLES
+  V2 GET /fhir/Patient/:doc                      coord.pn   INDISTINGUIBLES
+  V3 GET /api/cronicos?q=:doc                    coord.ps   INDISTINGUIBLES
+  V3 GET /api/cronicos?q=:doc                    coord.lv   INDISTINGUIBLES
+  V3 GET /api/cronicos?q=:doc                    coord.sec  INDISTINGUIBLES
+  V3 GET /api/cronicos?q=:doc                    coord.pn   INDISTINGUIBLES
+  V4 POST /api/appointments/pre-cita             coord.ps   INDISTINGUIBLES
+  V4 POST /api/appointments/pre-cita             coord.lv   INDISTINGUIBLES
+  V4 POST /api/appointments/pre-cita             coord.sec  INDISTINGUIBLES
+  V4 POST /api/appointments/pre-cita             coord.pn   INDISTINGUIBLES
+  V5 PUT /api/patients/:doc/consentimiento       coord.ps   INDISTINGUIBLES
+  V5 PUT /api/patients/:doc/consentimiento       coord.lv   INDISTINGUIBLES
+  V5 PUT /api/patients/:doc/consentimiento       coord.sec  INDISTINGUIBLES
+  V5 PUT /api/patients/:doc/consentimiento       coord.pn   INDISTINGUIBLES
+  V6 POST /api/patients/:doc/eventos             coord.ps   INDISTINGUIBLES
+  V6 POST /api/patients/:doc/eventos             coord.lv   INDISTINGUIBLES
+  V6 POST /api/patients/:doc/eventos             coord.sec  INDISTINGUIBLES
+  V6 POST /api/patients/:doc/eventos             coord.pn   INDISTINGUIBLES
+  Ejemplo V1 (coord.ps): PN1 (existe en otra red) → 404 {"error":"Paciente no encontrado"}
+  Ejemplo V1 (coord.ps): NX  (no existe)          → 404 {"error":"Paciente no encontrado"}
+  >> Lectura sin oráculo: fuera de alcance e inexistente dan el mismo código y el mismo cuerpo en V1 a V6 (V5/V6 devuelven 404 igual; en alcance llegan a la validación, 400).
+
+### Tiempo de respuesta (coord.pn; fuera de alcance = H1, inexistente = NX; 80 muestras intercaladas por vía, loopback)
+  V1 eventos       fuera de alcance: mediana 1.283 ms, p90 1.836 ms · inexistente: mediana 1.240 ms, p90 1.532 ms · diferencia de medianas 0.043 ms
+  V2 fhir/Patient  fuera de alcance: mediana 1.175 ms, p90 1.572 ms · inexistente: mediana 1.145 ms, p90 1.398 ms · diferencia de medianas 0.030 ms
+  (Diferencias de décimas de milisegundo o menos, dentro del ruido de una conexión local: no sirven para distinguir.)
+
+## 3. Sin sesión, token alterado y token vencido
+caso                                                                  lista           eventos         WWW-Authenticate / mensaje
+sin encabezado Authorization                                          401             401             sí · Se requiere iniciar sesión (Authorization: Bearer <token>).
+Bearer vacío                                                          401             401             sí · Se requiere iniciar sesión (Authorization: Bearer <token>).
+Bearer con basura (abc)                                               401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+esquema Basic                                                         401             401             sí · Se requiere iniciar sesión (Authorization: Bearer <token>).
+firma con el último carácter cambiado                                 401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+contenido cambiado a «admin» con la firma original                    401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+vigencia extendida +30 días con la firma original                     401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+firma vacía (cuerpo + «.»)                                            401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+solo el contenido, sin firma                                          401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+VENCIDO auténtico (firmado con el secreto real, exp hace 1 h)         401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+firmado con OTRO secreto (vigente)                                    401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+usuario inexistente, firmado con el secreto real                      401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+usuario DESACTIVADO después de iniciar sesión                         401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+token emitido ANTES de cambiar la clave (cambio: 200)                 401             401             sí · Sesión inválida o vencida. Inicie sesión nuevamente.
+  >> Todos los casos dan 401, con el mismo cuerpo exista o no el documento (una sesión inválida no deja buscar nada).
+
+## 4. Guardar una atención fuera del alcance (POST /api/padron/importar-lote con la carga del formulario)
+  W1 documento NUEVO (no existe) en la propia red                                coord.ps  → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+  W2 DNI que YA existe en OTRA red (PN1) escrito como paciente nuevo             coord.ps  → 403 No puede modificar pacientes fuera de su alcance.
+  W2b carné de extranjería que existe en otra red (PNCE)                         coord.ps  → 403 No puede modificar pacientes fuera de su alcance.
+  W2c pasaporte que existe en otra red (PNPA)                                    coord.ps  → 403 No puede modificar pacientes fuera de su alcance.
+  W2d documento inexistente (CE) en la propia red, para comparar con W2b         coord.ps  → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+  W3 DNI de la propia red pero OTRO establecimiento (coord.lv escribe H1)        coord.lv  → 403 No puede modificar pacientes fuera de su alcance.
+  W4 reasignar un paciente propio (RE1) a otra red enviando red_salud PN + el EESS por defecto coord.ps  → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+      → red_salud de RE1 en el servidor: PACIFICO SUR (la red enviada se ignoró: se deriva del establecimiento)
+  W4b reasignar RE1 a otra red enviando red_salud PN SIN código de establecimiento (solo por API) coord.ps  → 403 No puede registrar ni mover pacientes hacia la red PACIFICO NORTE.
+  W5 paciente NUEVO con red_salud de otra red + el EESS por defecto (la red se deriva del EESS) coord.ps  → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+  W5b paciente NUEVO con red_salud PN sin código de establecimiento (solo por API) coord.ps  → 403 No puede registrar ni mover pacientes hacia la red PACIFICO NORTE.
+  W6 paciente nuevo con un establecimiento que no está en el catálogo de la red  coord.ps  → 403 El establecimiento indicado no pertenece a su red.
+  W7 id de un paciente de otra red con un documento nuevo (secuestro del id)     coord.ps  → 403 No puede modificar pacientes fuera de su alcance.
+  W8 coord.lv crea paciente nuevo con el EESS por defecto del formulario (Hospital) coord.lv  → 403 No puede registrar pacientes de otro establecimiento.
+  W9 coord.lv crea paciente nuevo en su establecimiento (La Victoria)            coord.lv  → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+  W10 coord.lv MUEVE un paciente suyo (LV2) al Hospital (otro establecimiento de su red) coord.lv  → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+      → tras W10, ¿coord.lv sigue viendo a LV2? NO: el paciente salió de su establecimiento
+  W11 coord.pn crea paciente con el EESS por defecto del formulario (Hospital)   coord.pn  → 403 No puede registrar ni mover pacientes hacia la red PACIFICO SUR.
+  W12 coord.pn crea paciente con «Fuera del distrito» (sin código)               coord.pn  → 403 No puede registrar pacientes fuera de su red.
+  W13 DIRECTOR intenta guardar                                                   dir.ps    → 403 Acceso denegado. El rol 'DIRECTOR' no cuenta con privilegios para este recurso.
+  W14 sin sesión                                                                 __sin__   → 401 Se requiere iniciar sesión (Authorization: Bearer <token>).
+  W15 coord.sec (sector «Sector 62») guarda a S62 con el sector que envía el formulario («Sector I – Centro») coord.sec → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+      → coord.sec veía a S62 antes: sí; después: NO (el paciente salió de su sector al guardar desde el formulario)
+      → sector_sanitario de S62 en el servidor ahora: «Sector I – Centro» (antes «Sector 62»)
+  W16 coord.sec crea un paciente nuevo (el formulario envía «Sector I – Centro») coord.sec → 200 Se importaron y sincronizaron con éxito 1 pacientes del Padrón Estandarizado.
+      → coord.sec ve al paciente que acaba de crear: NO (queda fuera de su propio alcance)
+
+Comprobación: PN1 en el servidor sigue siendo «PACIENTE INVENTADO NORTE UNO» (red_salud PACIFICO NORTE) → los intentos W2/W2b/W2c no sobrescribieron nada.
+Comprobación: W1 creó «PACIENTE INVENTADO NUEVO PS» con red_salud PACIFICO SUR, puerta_entrada_id 00001741.
+
+### Lectura de W1 frente a W2
+  W1 (documento que no existe) responde 200 y crea al paciente; W2/W2b/W2c (documento que existe en otra red) responden 403 «No puede modificar pacientes fuera de su alcance.»
+  → por la vía de GUARDAR sí se distingue «existe en otra red» de «no existe» (oráculo residual de F2-04, que F2 dejó anotado para la Fase 5).
+
+Fin de B1.

@@ -1,0 +1,4 @@
+Navegador: America/Lima · hoy (Lima) = 2026-11-04 · hora local 23:29
+Próxima cita HOY (2026-11-04) → estado «Vencida hace 1 día(s)» · atraso «⚠️ Atraso: 1 días» · semáforo «ROJO»
+Próxima cita a +8 días (2026-11-12) → estado «En 7 día(s)» · atraso «Cita al día» · semáforo «AMARILLO»
+Próxima cita AYER (2026-11-03) → estado «Vencida hace 2 día(s)» · atraso «⚠️ Atraso: 2 días» · semáforo «ROJO»

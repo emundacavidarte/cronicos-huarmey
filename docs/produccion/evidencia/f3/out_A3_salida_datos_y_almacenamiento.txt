@@ -1,0 +1,76 @@
+A3 — salida de datos y almacenamiento · 20 pacientes simulados cargados en el servidor de prueba
+
+=== 1. Peticiones de red por actividad (solo host y ruta; sin cuerpos) ===
+  [login y carga inicial del mapa] peticiones: 140 (propias 80, externas 60); hosts externos: mt*.google.com ×60
+      API propia: POST /api/auth/login · GET /api/cronicos
+  [mapa] peticiones: 0 (propias 0, externas 0); hosts externos: ninguno
+  [buscar dirección] peticiones: 92 (propias 0, externas 92); hosts externos: mt*.google.com ×92
+      geocodificador: sin red (ancashGeocoder.js usa un catálogo local); peticiones externas que no son mosaicos = 0
+  [centrar paciente] peticiones: 69 (propias 0, externas 69); hosts externos: mt*.google.com ×69
+      mosaicos pedidos: 69; zoom máximo 17; mosaicos que contienen el domicilio del paciente (ID 10000004): 1
+      el proveedor mt*.google.com recibe z/x/y = 16/18540/34609: un cuadrado de ~602 m de lado que incluye el domicilio; Referer enviado: «http://127.0.0.1:3261/»
+      zoom 20: mosaico que contiene el domicilio de ~38 m de lado → mt*.google.com
+  [zoom máximo] peticiones: 18 (propias 0, externas 18); hosts externos: mt*.google.com ×18
+  [mapas base] peticiones: 96 (propias 0, externas 96); hosts externos: server.arcgisonline.com ×4, mt*.google.com ×44, *.basemaps.cartocdn.com ×16, *.tile.openstreetmap.fr ×32
+      mapas base probados: 7
+  [padrón (abrir)] peticiones: 0 (propias 0, externas 0); hosts externos: ninguno
+  [padrón (cargar)] peticiones: 1 (propias 1, externas 0); hosts externos: ninguno
+      API propia: POST /api/padron/importar-lote
+  [WhatsApp] peticiones: 2 (propias 1, externas 1); hosts externos: wa.me ×1
+      API propia: PUT /api/patients/pac-…/consentimiento
+      destino: https://wa.me/51*********  (el número del paciente va en la ruta)
+      mensaje enviado en la URL (286 caracteres): "*HOSPITAL DE APOYO HUARMEY* ⏎  ⏎ Estimado(a) paciente: ⏎ Le recordamos que su control periódico corresponde para la fecha *8/11/2026*. ⏎  ⏎ 🏥 *Lugar:* NUEVO HOSPITAL DE APOYO HUARMEY ⏎  ⏎ _Por favor responda a este mensaje con un *1* para CONFIRMAR su asisten"
+      ¿incluye nombre, DNI o diagnóstico? nombre: false · DNI: false · dirección: false · diagnóstico/CIE-10: false
+      lo recibe WhatsApp (Meta) apenas el usuario hace clic: número de teléfono del paciente + fecha de control + nombre del establecimiento
+  [tablero] peticiones: 1 (propias 1, externas 0); hosts externos: ninguno
+      API propia: GET /api/indicadores/convenio
+  [exportar] peticiones: 0 (propias 0, externas 0); hosts externos: ninguno
+      la exportación es local (Blob): archivo Padron_Cronicos_Huarmey_2026-11-04.xlsx; peticiones propias de la fase: 0
+
+=== 2. Hosts externos contactados (toda la sesión) ===
+  mt*.google.com                      283 peticiones · image · ruta tipo /vt/lyrs=m&hl=es&x=#&y=#&z=# · Referer: http://127.0.0.1:3261/
+  server.arcgisonline.com               4 peticiones · image · ruta tipo /ArcGIS/rest/services/World_Street_Map/MapServer/tile/#/#/# · Referer: http://127.0.0.1:3261/
+  *.basemaps.cartocdn.com              16 peticiones · image · ruta tipo /light_all/#/#/#.png · Referer: http://127.0.0.1:3261/
+  *.tile.openstreetmap.fr              32 peticiones · image · ruta tipo /hot/#/#/#.png · Referer: http://127.0.0.1:3261/
+  wa.me                                 1 peticiones · document · ruta tipo /# · Referer: http://127.0.0.1:3261/
+  Hosts propios: 127.0.0.1:3261
+  Peticiones fallidas por host (el entorno de prueba sale por un proxy): ["mt*.google.com×283","server.arcgisonline.com×4","*.basemaps.cartocdn.com×16","*.tile.openstreetmap.fr×32","wa.me×1"]
+  Tipos de recurso externos: image, document (ninguna fuente, script, hoja de estilos ni XHR/fetch externo: true)
+  URLs externas (ruta + consulta) con DNI, teléfono o nombre de algún paciente, salvo wa.me: 0
+  Peticiones externas con método distinto de GET: 0; con cuerpo/cookies de la aplicación: no (solo GET de mosaicos/imagen y la navegación a wa.me)
+  URLs externas con parámetros lat/lng explícitos: 0
+
+=== 3. Cache-Control de las respuestas de la API (¿se guardan en la caché HTTP del navegador?) ===
+  /api/auth → Cache-Control: no-store
+  /api/cronicos → Cache-Control: private, no-store
+  /api/indicadores → Cache-Control: private, no-store
+  /api/padron → Cache-Control: no-store
+  /api/patients → Cache-Control: no-store
+
+=== 4. Consola del navegador ===
+  mensajes: 312; distintos: 2
+    ×1 log: PWA Service Worker registrado
+    ×311 error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED
+  mensajes de consola que contienen DNI o nombres de pacientes: 0
+
+=== 5. Almacenamiento del navegador con la sesión del ADMIN abierta ===
+  localStorage: vacío
+  sessionStorage: [{"clave":"maxime_cronicos_sesion_v1","bytes":249,"forma":"token, expires_at, user{username,nombre,role,red}"}]
+    contenido de maxime_cronicos_sesion_v1 (token reemplazado): {"token":"***","expires_at":"2026-11-05T12:49:24.712Z","user":{"username":"admin","nombre":"ADMINISTRADOR","role":"ADMIN","red":null}}
+    caducidad del token: 479 minutos desde ahora (8 h)
+  IndexedDB: []
+  Cache Storage: {"maxime-cronicos-huarmey-v20261105-f4c":{"entradas":41,"api":0,"tipos":"/,html,json,png,css,js","conCuerpoDePacientes":0}}
+  document.cookie: ""; cookies del contexto: []
+  Service worker: ["http://127.0.0.1:3261/ activo=true"]; window.name: ""; history.state: null
+  ¿Hay DNI, nombres o teléfonos de pacientes en storage/cachés? DNI: 0; teléfonos: 0; palabras de nombres que coinciden: [] (coincidencias con texto de la propia sesión o de nombres de archivos, no con datos de pacientes)
+  El token vive en sessionStorage (accesible por cualquier script del mismo origen; la CSP script-src 'self' impide ejecutar scripts inyectados); no hay cookie (no hay CSRF clásico) y no se guarda en localStorage.
+  Memoria de la página: 22 pacientes en window.app.patients; 2 filas en PadronGridModal.patients
+
+=== 6. Qué queda después de «Cerrar sesión» ===
+  Pantalla de acceso visible = true; sessionStorage de sesión = borrado; localStorage: vacío; IndexedDB: []
+  El token anterior después de salir: GET /api/cronicos → HTTP 401 (revocado en el servidor = true)
+  Se borran de la memoria y la pantalla: pacientes=0, mapa de pacientes=0, pre-citas=0, tarjetas de la lista=0, ficha en el DOM=false, tarjeta de referencia=false, marcadores en el mapa=0, KPI total="0", tablero="—"
+  NO se borran: filas de la cuadrícula del padrón en memoria (PadronGridModal.patients) = 2; filas con DNI/nombres de pacientes en el DOM de la cuadrícula = true; cuadrícula con clase «active» = true; formulario de registro clínico con clase active = true y 6 campos de texto rellenos; elemento que recibe un clic en el centro de la pantalla = padron-grid-wrapper
+  Elemento que recibe el clic sobre el botón «Ingresar» de la pantalla de acceso: padron-grid-wrapper (la cuadrícula del padrón tiene z-index 99999 y la pantalla de acceso 3000)
+  Segundo usuario en el mismo navegador (Coordinador otra red, Coordinador · PACIFICO NORTE; 0 pacientes en su alcance): al abrir «Padrón» ve la cuadrícula del usuario anterior = true (2 filas: ["PACIENTE INVENTADO TRES","PACIENTE INVENTADO CUATRO"]; cabecera «Archivo: padron_inventado_2.xlsx · Hoja: "Padrón" · 2 pacientes»)
+  Cierre por inactividad con la cuadrícula del padrón abierta: pantalla de acceso = true («Sesión cerrada por inactividad (30 minutos sin uso»); la cuadrícula sigue con clase active = true y 2 filas en el DOM; elemento en el centro de la pantalla = padron-grid-wrapper; cuadrícula dentro de un contenedor inert = false (el .app-container inert = true)
