@@ -8,7 +8,7 @@ const leer = () => JSON.parse(fs.readFileSync(path.join(process.env.DATA_DIR, 's
 (async () => {
   const A = (await (await post('/api/auth/login', { username: 'admin', password: process.env.ADMIN_PASSWORD })).json()).token;
   const marca = 'f2.marca.' + Date.now().toString(36);
-  console.log('marca: crear usuario', marca, '→', (await post('/api/users', { username: marca, nombre: 'Marca F2', role: 'DIRECTOR', red: '156', password: 'Marca-F2-' + Date.now() }, A)).status);
+  console.log('marca: crear usuario', marca, '→', (await post('/api/users', { username: marca, nombre: 'Marca F2', correo: marca + '@prueba.example', role: 'DIRECTOR', red: '156', password: 'Marca-F2-' + Date.now() }, A)).status);
   await new Promise(r => setTimeout(r, 600));
   const tiene = l => l.some(x => x.evento === 'USUARIO_CREADO' && x.payload_json.includes(marca));
   console.log('antes: entradas', leer().length, '| ¿la marca está en la bitácora?', tiene(leer()));

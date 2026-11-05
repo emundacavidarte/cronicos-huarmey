@@ -10,8 +10,9 @@ Solo datos inventados (DNI `96…`) y la semilla de 20 pacientes simulados. El s
 | `03_cliente_navegador.js` | C-02, C-03, C-04, C-07, C-08, C-10, C-12, C-13, C-14, documento obligatorio y el cierre por inactividad | `out_03_cliente_navegador.txt` |
 | (curl, ver el informe) | Tamaño de los estáticos con y sin gzip, 304 y recorrido de rutas (S-08) | `out_04_gzip_estaticos.txt` |
 | `05_pwa.js` | Instalabilidad de la PWA y tamaño real de los íconos | `out_05_pwa.txt` |
+| `06_claves_navegador.js` | Alta con correo obligatorio, «¿Olvidó su contraseña?» con código (proveedor de correo falso local), cambiar mi contraseña y el móvil. Levantar el servidor con `EXTRA_ENV="MAIL_PROVIDER=resend MAIL_API_KEY=falsa MAIL_FROM=no-responder@prueba.example MAIL_API_URL=http://127.0.0.1:3299/emails"` | `out_06_claves_navegador.txt` |
 
-Las pruebas automáticas equivalentes corren con `npm test`: `server/tests/testCorreccionesF4.js` y `server/tests/testPersistenciaF4.js` (y el paso F2-17 de `testSeguridadF2.js` para la CSP).
+Las pruebas automáticas equivalentes corren con `npm test`: `server/tests/testCorreccionesF4.js`, `server/tests/testPersistenciaF4.js` y `server/tests/testClavesF4.js` (y el paso F2-17 de `testSeguridadF2.js` para la CSP).
 
 ## Cómo repetir
 

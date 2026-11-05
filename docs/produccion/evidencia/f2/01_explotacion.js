@@ -34,7 +34,7 @@ const log = (...a) => console.log(...a);
     ['f2.dir.ps', 'DIRECTOR', '156', {}]
   ];
   for (const [u, role, red, extra] of usuarios) {
-    const r = await call('POST', '/api/users', { token: A, body: { username: u, nombre: 'Prueba F2 ' + u, role, red, password: pass, ...extra } });
+    const r = await call('POST', '/api/users', { token: A, body: { username: u, nombre: 'Prueba F2 ' + u, correo: u + '@prueba.example', role, red, password: pass, ...extra } });
     if (r.status !== 201) log('crear', u, r.status, diag(r));
   }
   const tok = {};

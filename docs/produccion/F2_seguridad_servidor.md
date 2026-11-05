@@ -247,8 +247,8 @@ Los scripts y sus salidas están en `docs/produccion/evidencia/f2/` (ver su `REA
 **De Edward (no técnicos)**
 1. **Rotar secretos:** si alguna vez se desplegó con los valores del antiguo `.env.example`, cambiar `AUTH_SECRET` y la clave del ADMIN. Siguen en el historial de Git.
 2. ~~Pacientes sin documento~~ — **resuelto (05/11/2026): no; el documento es obligatorio.**
-3. **Integración HOSIX:** ¿llegarán carnés de extranjería o pasaportes? Hoy esa vía exige DNI.
-4. **Claves:** hoy solo el ADMIN fija y cambia las claves de todos, y no existe el cambio de clave por el propio usuario. ¿Se quiere ese cambio, y que la clave inicial sea obligatoria de cambiar?
+3. ~~Integración HOSIX~~ — **resuelto (05/11/2026): sí llegan; implementado en la Fase 4.**
+4. ~~Claves~~ — **resuelto (05/11/2026): correo obligatorio, cambio y recuperación por código; implementado en la Fase 4.**
 5. **Cifrado en reposo:** ¿quién custodia la clave?
 
 ## 8. Verificación

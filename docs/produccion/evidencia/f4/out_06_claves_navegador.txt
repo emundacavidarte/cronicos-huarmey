@@ -1,0 +1,13 @@
+OK    alta sin correo: la pantalla lo pide — Escriba un correo válido: es obligatorio y sirve para recuperar la contraseña.
+OK    alta con correo: el usuario queda registrado y la lista muestra su correo
+OK    el código llega al correo registrado — para lucia.f4@prueba.example · «Código para restablecer su contraseña — Crónicos Huarmey»
+OK    un código equivocado se rechaza — Código inválido o vencido. Pida uno nuevo si hace falta.
+OK    con el código correcto vuelve al acceso con aviso — Contraseña restablecida. Ingrese con su nueva contraseña.
+OK    entra con la contraseña restablecida
+OK    cambiar mi contraseña: aviso de éxito — Contraseña cambiada. Sus otras sesiones se cerraron.
+OK    la sesión sigue activa con el token nuevo — GET /api/auth/me → 200
+OK    entra con la contraseña nueva
+OK    móvil: el botón «Cambiar mi contraseña» se ve y el encabezado cabe en 390 px — {"x":163,"der":199,"vis":true} · encabezado 390
+OK    sin violaciones de la CSP ni errores de página
+
+11 correctas, 0 con falla

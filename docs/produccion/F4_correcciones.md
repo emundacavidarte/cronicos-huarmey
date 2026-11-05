@@ -121,7 +121,7 @@ Regla de evidencia: cada corrección tiene una prueba que falla antes y pasa des
 5. **Diagnósticos:** se acumulan; una importación o una atención no borran un diagnóstico anterior. Dar de baja un diagnóstico no tiene todavía una acción en la interfaz (definirlo con la licenciada).
 6. **Respaldos:** uno por día en el mismo disco, los últimos 14 (`RESPALDOS_DIARIOS`). Restaurar es copiar el archivo del día sobre `store.json` con el servidor detenido.
 
-Siguen pendientes de Edward las decisiones de la Fase 2: rotar secretos si se usaron los del ejemplo, carnés y pasaportes por HOSIX, y cambio de clave por el propio usuario.
+De las decisiones de la Fase 2 queda pendiente rotar los secretos si se usaron los del ejemplo. Las de carnés y pasaportes por HOSIX y del cambio de clave por el propio usuario ya se tomaron y están implementadas (sección 9).
 
 ## 6. Cambios de comportamiento (avisar)
 
@@ -155,3 +155,46 @@ Con las correcciones hechas, el plan sigue con la **Fase 3 reducida a lo clínic
 
 **Plantilla:**
 > Lee `docs/produccion/PLAN.md` y `docs/produccion/F4_correcciones.md`. Ejecuta la Fase 3 (lógica clínica y auditoría completa del cliente). Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
+
+## 9. Decisiones de Edward implementadas después (05/11/2026)
+
+### 9.1 Documento obligatorio
+No se registran pacientes sin documento (detalle en la sección 2.2). La pantalla marca la fila y deshabilita «Cargar»; el servidor rechaza toda fila sin número de documento. Verificado con `testCorreccionesF4.js` y en Chromium (03).
+
+### 9.2 Carné de extranjería y pasaporte también por HOSIX y FHIR
+
+| Qué | Cómo | Evidencia |
+|---|---|---|
+| Tipos | DNI (8 dígitos), carné de extranjería y pasaporte (6 a 15 letras o dígitos), en `server/utils/documentos.js` | `testCorreccionesF4.js` |
+| HOSIX, Galenos y Pakamuros | Leen el tipo en `TIPO_DOCUMENTO` (DNI, CE o PASAPORTE, o los códigos SUNAT 1, 4 y 7). Si no viene, lo infieren: 8 dígitos es DNI; solo dígitos, CE; con letras, pasaporte. **Es un supuesto:** confirmar con SIVSA cómo envía HOSIX el tipo de documento | 4 casos por HOSIX: CE, pasaporte inferido, pasaporte SUNAT 7 y DNI |
+| FHIR | Cada tipo con su identificador: DNI con el OID RENIEC y `NNPER`; CE con un sistema del hospital y `PRC`; pasaporte con un sistema del hospital y `PPN`. Para CE y pasaporte no se conoce un OID oficial peruano. La exportación usa el que corresponde | `GET /fhir/Patient/:id` en la prueba |
+| Seguridad | Un número con comillas, `< >` o `;` se rechaza **antes** de normalizar (no se «limpia» para volverlo un pasaporte válido) | Inyecciones por HOSIX y FHIR → 400 |
+| Registro Clínico | Busca y guarda CE y pasaporte con sus letras. El DNI se busca solo al escribir 8 dígitos; el CE o el pasaporte, con Enter o «Buscar» | Lectura y `npm test` |
+
+### 9.3 Correo obligatorio; cambiar y recuperar la contraseña
+
+| Qué | Cómo | Evidencia |
+|---|---|---|
+| Correo | Obligatorio y único al crear un usuario; el ADMIN puede cambiarlo («✉ Correo» en la lista). La lista avisa cuando un usuario no tiene correo. `ADMIN_EMAIL` define el del administrador inicial | `testClavesF4.js` y Chromium (06) |
+| Cambiar mi contraseña | Botón 🔑 en el encabezado. Pide la actual y una nueva distinta (mínimo 10 caracteres). Cierra las demás sesiones y la actual sigue con un token nuevo. Tras 10 intentos con la actual equivocada, se bloquea 15 minutos | `testClavesF4.js` y Chromium (06) |
+| ¿Olvidó su contraseña? | Se escribe el usuario o el correo y llega un **código de 6 dígitos** al correo registrado | `testClavesF4.js` (13 casos) y Chromium (06, 11 de 11) |
+| Seguridad de la recuperación | Ver la lista debajo de la tabla | `testClavesF4.js` |
+| Envío del correo | Proveedor con API HTTPS, sin dependencias nuevas: `MAIL_PROVIDER` (`resend` o `brevo`), `MAIL_API_KEY` y `MAIL_FROM`. Sin proveedor, «¿Olvidó su contraseña?» responde que no está disponible y que el ADMIN restablezca la clave. En producción no se permite el modo `consola` | Probado con un proveedor **falso** local (tipo Resend). **No se probó contra Resend ni Brevo reales**; Brevo, solo por lectura |
+
+**Seguridad de la recuperación:**
+- El código vence en 15 minutos, admite 5 intentos y sirve una sola vez.
+- En el servidor se guarda solo su huella (HMAC), nunca el código.
+- Como máximo 3 envíos cada 15 minutos y uno por minuto.
+- La respuesta es idéntica exista o no el usuario, y el correo sale en segundo plano (no se puede averiguar quién está registrado).
+- Al restablecer se cierran todas las sesiones.
+- Cupo de 30 por minuto por IP, compartido con el login.
+- La bitácora registra la solicitud y el cambio, sin el código.
+
+**Pendiente de Edward para activarlo en Render:**
+1. Elegir el proveedor (Resend o Brevo) y su plan; ambos tienen un nivel gratuito, a confirmar en su página.
+2. Verificar el dominio remitente en el proveedor.
+3. Cargar `MAIL_PROVIDER`, `MAIL_API_KEY` y `MAIL_FROM` en Render.
+4. Poner el correo a los usuarios que ya existan y definir `ADMIN_EMAIL`.
+
+**Cambio de comportamiento:** al crear usuarios el correo es obligatorio, también por la API. Las pruebas existentes se actualizaron para enviarlo.
+

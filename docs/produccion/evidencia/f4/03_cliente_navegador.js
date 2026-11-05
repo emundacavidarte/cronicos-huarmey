@@ -56,8 +56,8 @@ async function abrir(browser, usuario, clave, viewport, opciones = {}) {
 (async () => {
   const A = (await api('POST', '/api/auth/login', null, { username: 'admin', password: process.env.ADMIN_PASSWORD })).json.token;
   const clave = 'Clave-de-prueba-F4-1';
-  await api('POST', '/api/users', A, { username: 'f4.dir.ps', nombre: 'Directora de prueba', role: 'DIRECTOR', red: '156', password: clave });
-  await api('POST', '/api/users', A, { username: 'f4.dir.pn', nombre: "O'Brien & <i>Co</i>", role: 'DIRECTOR', red: '157', password: clave });
+  await api('POST', '/api/users', A, { username: 'f4.dir.ps', nombre: 'Directora de prueba', correo: 'f4.dir.ps@prueba.example', role: 'DIRECTOR', red: '156', password: clave });
+  await api('POST', '/api/users', A, { username: 'f4.dir.pn', nombre: "O'Brien & <i>Co</i>", correo: 'f4.dir.pn@prueba.example', role: 'DIRECTOR', red: '157', password: clave });
   const browser = await chromium.launch();
 
   // C-14 vista inicial, C-08 aviso de DNI existente, C-07 aviso sin ubicación, documento obligatorio

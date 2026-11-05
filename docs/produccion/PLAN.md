@@ -10,7 +10,8 @@ Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. 
 - Rama de trabajo: `claude/pensive-cray-3lwodm`. No tocar `main`. No abrir pull request salvo que Edward lo pida.
 - Regla de evidencia: nada se afirma sin haberlo ejecutado. Cada hallazgo se reproduce o se marca «solo por lectura».
 - **Capacidad (decisión de Edward, 05/11/2026):** la salida en Render es un **prototipo con un máximo de 5 usuarios concurrentes**. La **meta de escalada** es de más de 2 000 usuarios conectados a la vez; con la arquitectura actual (un proceso Node + `store.json`) eso **no se alcanza** (medido en la Fase 1: con 2 000 pacientes y 1 000 conexiones la mediana pasa de 17 s) y se trata como proyecto aparte. La Fase 5 deja documentados el umbral y la ruta de migración (base de datos real, varias instancias, `/api/cronicos` paginado o en caché, límite de tasa compartido); no se rediseña para esa meta en esta salida.
-- **Documento obligatorio (Edward, 05/11/2026):** para registrar a un paciente debe tener documento (DNI de 8 dígitos, carné de extranjería o pasaporte). No se registran pacientes sin documento: la interfaz, la plantilla y el servidor lo exigen.
+- **Contraseñas (Edward, 05/11/2026):** cada usuario se registra con correo (obligatorio y único), puede cambiar su contraseña y recuperarla con un código de 6 dígitos enviado a ese correo.
+- **Documento obligatorio (Edward, 05/11/2026):** para registrar a un paciente debe tener documento (DNI de 8 dígitos, carné de extranjería o pasaporte), también cuando llega por HOSIX o FHIR. No se registran pacientes sin documento: la interfaz, la plantilla y el servidor lo exigen.
 - **Requisito funcional (Edward, 05/11/2026):** al escribir el DNI para registrar una atención, el sistema debe **cargar los datos ya guardados del paciente**. Existe (`buscarPacientePorDni`, Registro Clínico) y la Fase 1 lo vio funcionar con el administrador; la Fase 3 debe validarlo por rol y red, y revisar los valores por defecto que rellena si faltan datos.
 
 ## Reglas para todas las ventanas
@@ -86,8 +87,8 @@ Un modelo distinto revisa el diff completo y la lista de hallazgos sin ver mis c
 - ~~Tamaño de la instancia~~ — con ≤ 5 usuarios la memoria no es un riesgo (70 MB al inicio); queda solo confirmar el plan de Render en la Fase 6.
 - Rotación de secretos (Fase 2): si alguna vez se desplegó con los valores del antiguo `.env.example`, cambiar `AUTH_SECRET` y la clave del ADMIN. Siguen en el historial de Git.
 - ~~Pacientes sin documento~~ — **RESUELTO el 05/11/2026 por Edward: para registrar a un paciente el documento es obligatorio** (DNI, carné de extranjería o pasaporte). La pantalla y el servidor rechazan «Sin documento».
-- Integración HOSIX (Fase 2): ¿llegarán carnés de extranjería o pasaportes? Hoy esa vía exige DNI de 8 dígitos.
-- Claves de usuario (Fase 2): solo el ADMIN fija y cambia las claves; ¿se quiere que cada usuario cambie la suya y que la inicial sea obligatoria de cambiar?
+- ~~Integración HOSIX~~ — **RESUELTO el 05/11/2026 por Edward: por HOSIX también llegan carnés de extranjería y pasaportes.** Implementado: los conectores y FHIR aceptan DNI, CE y pasaporte (ver `F4_correcciones.md`, sección 9). Falta confirmar con SIVSA cómo envía el tipo de documento.
+- ~~Claves de usuario~~ — **RESUELTO el 05/11/2026 por Edward: cada usuario se registra con correo, cambia su contraseña y la recupera con un código enviado al correo.** Implementado (sección 9 de `F4_correcciones.md`). **Falta elegir el proveedor de correo** (Resend o Brevo), verificar el dominio remitente y cargar `MAIL_PROVIDER`, `MAIL_API_KEY` y `MAIL_FROM` en Render. También falta poner el correo a los usuarios que ya existan y definir `ADMIN_EMAIL`.
 - Cifrado en reposo (Fase 2 → Fase 5): ¿quién custodia la clave? Si se pierde, se pierde el padrón. *Fase 4:* ya está implementado y apagado; se activa definiendo `STORE_KEY` en Render cuando se decida la custodia.
 - Decisiones aplicadas por defecto en la Fase 4 (confirmar o cambiar):
   - Sin internet, solo aviso y sin datos en el equipo.

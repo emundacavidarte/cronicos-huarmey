@@ -16,7 +16,7 @@ OK    ficha → pre-cita (cierra la ficha y abre la pre-cita)
 OK    cerrarModal pre-cita
 OK    cerrarModal ficha (✕)
 OK    ficha → Registrar Atención abre Registro Clínico con el DNI
-OK    ficha → Ubicar en Mapa (cierra y centra) — zoom 8 → 15.729460564915062
+OK    ficha → Ubicar en Mapa (cierra y centra) — zoom 8 → 15.656267752810107
 OK    tarjeta → Ver (centrarPaciente)
 OK    exportarPadronExcel descarga el .xlsx — Padron_Cronicos_Huarmey_2026-11-04.xlsx
 OK    abrirModalPadronGrid pide el archivo Excel
