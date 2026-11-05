@@ -207,13 +207,13 @@ function validarLotePadron(lista, db) {
 
 /**
  * Valida lo que devolvió fhirAdapter.processBundle (FHIR o webhooks). Los identificadores de FHIR son DNI (RENIEC):
- * 8 dígitos. Un paciente nuevo necesita DNI y nombre. Una Condition necesita un código CIE-10 (nunca se inventa).
+ * 8 dígitos. Un paciente nuevo necesita DNI y nombre. Un diagnóstico (Condition) necesita un código CIE-10 (nunca se inventa).
  */
 function validarFhir(parsedList, db) {
   parsedList.forEach((parsed, b) => {
     const pre = parsedList.length > 1 ? `Registro ${b + 1}, ` : '';
     (parsed.patients || []).forEach((p, i) => {
-      const donde = `${pre}Patient ${i + 1}`;
+      const donde = `${pre}Paciente ${i + 1} (Patient)`;
       const dni = texto(p.dni).trim();
       const id = texto(p.id).trim();
       if (!ID_REGEX.test(id)) throw new ErrorValidacion(`${donde}: id inválido.`);
@@ -227,8 +227,8 @@ function validarFhir(parsedList, db) {
         if (nombre.length < 3 || PLACEHOLDERS_NOMBRE.includes(nombre.toUpperCase())) throw new ErrorValidacion(`${donde}: un paciente nuevo necesita apellidos y nombres.`);
       }
       revisarTextoCorto(p.apellidos_nombres, 'nombre', donde, MAX_NOMBRE);
-      if (!vacio(p.fecha_nacimiento) && !fechaNacimientoValida(p.fecha_nacimiento)) throw new ErrorValidacion(`${donde}: birthDate debe ser una fecha real AAAA-MM-DD entre 1900 y hoy.`);
-      if (!vacio(p.puerta_entrada_id) && !RENIPRESS_REGEX.test(texto(p.puerta_entrada_id))) throw new ErrorValidacion(`${donde}: managingOrganization debe ser un código RENIPRESS de 8 dígitos.`);
+      if (!vacio(p.fecha_nacimiento) && !fechaNacimientoValida(p.fecha_nacimiento)) throw new ErrorValidacion(`${donde}: la fecha de nacimiento (birthDate) debe ser una fecha real AAAA-MM-DD entre 1900 y hoy.`);
+      if (!vacio(p.puerta_entrada_id) && !RENIPRESS_REGEX.test(texto(p.puerta_entrada_id))) throw new ErrorValidacion(`${donde}: el establecimiento (managingOrganization) debe ser un código RENIPRESS de 8 dígitos.`);
       for (const c of ['historia_clinica', 'telefono', 'sector_sanitario', 'financiador', 'distrito']) revisarTextoCorto(p[c], c, donde, 200);
       if (!vacio(p.direccion) && (typeof p.direccion !== 'string' || p.direccion.length > 300)) throw new ErrorValidacion(`${donde}: dirección inválida.`);
       for (const c of ['latitud', 'longitud']) {
@@ -241,30 +241,30 @@ function validarFhir(parsedList, db) {
       if (!ref || !ID_REGEX.test(ref)) throw new ErrorValidacion(`${d}: la referencia al paciente es inválida.`);
     };
     (parsed.conditions || []).forEach((c, i) => {
-      const d = `${pre}Condition ${i + 1}`;
+      const d = `${pre}Diagnóstico ${i + 1} (Condition)`;
       referencia(c, d);
       if (typeof c.cie10_cod !== 'string' || !CIE10_REGEX.test(c.cie10_cod)) throw new ErrorValidacion(`${d}: falta un código CIE-10 válido (por ejemplo I10 o E11.9).`);
       revisarTextoCorto(c.diagnostico, 'diagnóstico', d, 300);
-      if (!vacio(c.fecha_diagnostico) && !esFechaIso(c.fecha_diagnostico)) throw new ErrorValidacion(`${d}: onsetDateTime inválida.`);
+      if (!vacio(c.fecha_diagnostico) && !esFechaIso(c.fecha_diagnostico)) throw new ErrorValidacion(`${d}: la fecha del diagnóstico (onsetDateTime) no es una fecha real.`);
     });
     (parsed.observations || []).forEach((o, i) => {
-      const d = `${pre}Observation ${i + 1}`;
+      const d = `${pre}Control ${i + 1} (Observation)`;
       referencia(o, d);
-      if (!esFechaIso(o.fecha_registro)) throw new ErrorValidacion(`${d}: effectiveDateTime inválida.`);
+      if (!esFechaIso(o.fecha_registro)) throw new ErrorValidacion(`${d}: la fecha del control (effectiveDateTime) no es una fecha real.`);
       for (const c of NUMEROS_OBSERVACION) {
         if (!vacio(o[c]) && (typeof o[c] !== 'number' || !Number.isFinite(o[c]))) throw new ErrorValidacion(`${d}: ${c} debe ser un número.`);
       }
       for (const c of ['riesgo_cv', 'diagnostico_nutricional']) revisarTextoCorto(o[c], c, d, 60);
     });
     (parsed.appointments || []).forEach((a, i) => {
-      const d = `${pre}Appointment ${i + 1}`;
+      const d = `${pre}Cita ${i + 1} (Appointment)`;
       referencia(a, d);
-      if (!esFechaIso(a.fecha_cita)) throw new ErrorValidacion(`${d}: start inválida.`);
-      revisarTextoCorto(a.estado, 'status', d, 30);
-      if (!vacio(a.comentarios) && (typeof a.comentarios !== 'string' || a.comentarios.length > 500)) throw new ErrorValidacion(`${d}: comment inválido.`);
+      if (!esFechaIso(a.fecha_cita)) throw new ErrorValidacion(`${d}: la fecha de la cita (start) no es una fecha real.`);
+      revisarTextoCorto(a.estado, 'estado (status)', d, 30);
+      if (!vacio(a.comentarios) && (typeof a.comentarios !== 'string' || a.comentarios.length > 500)) throw new ErrorValidacion(`${d}: el comentario (comment) debe ser un texto de hasta 500 caracteres.`);
     });
     (parsed.medications || []).forEach((m, i) => {
-      const d = `${pre}Medication ${i + 1}`;
+      const d = `${pre}Medicación ${i + 1} (Medication)`;
       referencia(m, d);
       revisarTextoCorto(m.categoria, 'categoría', d, 20);
       if (!vacio(m.esquema) && (typeof m.esquema !== 'string' || m.esquema.length > 500)) throw new ErrorValidacion(`${d}: esquema inválido.`);

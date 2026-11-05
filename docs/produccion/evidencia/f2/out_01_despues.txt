@@ -10,13 +10,13 @@ H-02 POST pre-cita: DNI de otra red → 404 «Paciente no encontrado» | DNI ine
 H-02 GET /fhir/Patient (control): DNI de otra red → 404 «Paciente no encontrado en el Padrón Territorial» | DNI inexistente → 404 «Paciente no encontrado en el Padrón Territorial»
 H-03 ETag COORD red completa = W/"cronicos-v4-21-3ad3c987" (20 pacientes) | ETag COORD est. 00001741 = W/"cronicos-v4-21-0f13daad" (13)
 H-03 COORD est. 00001744 con If-None-Match del COORD de red completa → 200 | Cache-Control: private, no-store
-H-04 sin token: cuerpo chico → 401 en 2.9 ms | 9,5 MB → 401 en 23/27/22 ms
-H-04 20 cuerpos de 9,5 MB simultáneos a /fhir/auth/login sin sesión: RSS 162.3 → 169.8 MB
+H-04 sin token: cuerpo chico → 401 en 3.2 ms | 9,5 MB → 401 en 26/27/17 ms
+H-04 20 cuerpos de 9,5 MB simultáneos a /fhir/auth/login sin sesión: RSS 153 → 173.5 MB
 H-05 importar-lote con la clave "toString" sobre paciente existente → 400 «Fila 1: nombre de campo no permitido.»
 H-05 lote [nuevo válido, existente con "hasOwnProperty"] → 400 | ¿quedó guardado el primero pese al error? false
 H-06 Condition SIN código → status 400 | diagnósticos guardados undefined
 H-06 Condition con código HTML → status 400 | guardado undefined
-H-07 código CIE-10 numérico → 400 «Condition 1: falta un código CIE-10 válido (por ejemplo I10 o E11.9).»
+H-07 código CIE-10 numérico → 400 «Diagnóstico 1 (Condition): falta un código CIE-10 válido (por ejemplo I10 o E11.9).»
 H-07 patient_id objeto sin toString → 400 «patient_id válido es requerido»
 H-07 JSON roto → 400 «El cuerpo de la solicitud no es un JSON válido.»
 H-08 COORD fija actualizado_por="admin", fuente y un campo de 200 KB → 400 | guardado: actualizado_por = undefined | fuente = PADRON_ESTANDARIZADO | campo_arbitrario = 0 caracteres

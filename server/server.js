@@ -224,7 +224,7 @@ app.use('/fhir', apiRoutes.fhirRouter);
 app.use(['/api', '/fhir'], (req, res) => {
   res.status(404).json({
     resourceType: 'OperationOutcome',
-    issue: [{ severity: 'error', code: 'not-found', diagnostics: `Endpoint no encontrado: ${req.method} ${req.baseUrl}${req.path}` }]
+    issue: [{ severity: 'error', code: 'not-found', diagnostics: `Ruta no encontrada: ${req.method} ${req.baseUrl}${req.path}` }]
   });
 });
 
