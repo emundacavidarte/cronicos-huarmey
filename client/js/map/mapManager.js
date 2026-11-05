@@ -910,7 +910,7 @@ class MapManager {
       marker.bindTooltip(`
         <div style="font-weight:700; font-size:var(--font-sm); color:#ffffff;">${escapeHtml(p.apellidos_nombres)}</div>
         <div style="font-size:var(--font-xs); color:#cbd5e1;">DNI: <b>${escapeHtml(p.dni || '—')}</b> • HC: <b>${escapeHtml(p.historia_clinica || '—')}</b> • Seg: <b>${escapeHtml(p.financiador || 'SIS')}</b></div>
-        <div style="font-size:var(--font-xs); color:#e2e8f0; margin-top:2px;">Diag: <b>${(p.diagnosticos || []).join(', ')}</b> | PA: <b>${paPopTxt}</b> | Glu: <b>${gluOnlyTxt}</b> | HbA1c: <b>${a1cOnlyTxt}</b></div>
+        <div style="font-size:var(--font-xs); color:#e2e8f0; margin-top:2px;">Diag: <b>${escapeHtml((p.diagnosticos || []).join(', '))}</b> | PA: <b>${escapeHtml(paPopTxt)}</b> | Glu: <b>${escapeHtml(gluOnlyTxt)}</b> | HbA1c: <b>${escapeHtml(a1cOnlyTxt)}</b></div>
         <div style="font-size:var(--font-xs); color:#38bdf8;">${escapeHtml(p.puerta_entrada || '')} (${escapeHtml(p.sector_sanitario || '')})</div>
       `, {
         direction: 'top',
