@@ -40,6 +40,21 @@
     "P. S. Huamba (00001751, I-1)"
   ];
 
+  /**
+   * F-2: un establecimiento del catálogo oficial (establecimientos.js) escrito con su código entre paréntesis,
+   * por ejemplo «P. S. Culebras (00001743, I-2)», también es válido: es el formato que exporta el sistema y del que
+   * el servidor toma el establecimiento. La lista corta EESS sigue siendo la del distrito de Huarmey.
+   */
+  function codigoDelCatalogo(texto) {
+    const m = /\((\d{8})\b/.exec(String(texto || ''));
+    if (!m) return false;
+    let catalogo = (typeof window !== 'undefined' && window.ESTABLECIMIENTOS_HUARMEY) || null;
+    if (!catalogo && typeof require === 'function') {
+      try { catalogo = require('../map/establecimientos').DEFAULT_ESTABLISHMENTS; } catch (e) { catalogo = null; }
+    }
+    return Array.isArray(catalogo) && catalogo.some(e => e.cod_renipress === m[1]);
+  }
+
   const LISTAS = {
     TIPO_DOC: ["DNI", "Carné de extranjería", "Pasaporte", "Sin documento"],
     SEXO: ["Femenino", "Masculino"],
@@ -205,6 +220,12 @@
 
     const valStr = value !== null && value !== undefined ? String(value).trim() : '';
 
+    // Consentimiento pendiente (F-2): paciente que ya estaba en el sistema sin respuesta registrada; se le
+    // preguntará una sola vez en su primer WhatsApp. A los pacientes nuevos se les sigue exigiendo.
+    if (key === 'consentimiento' && !valStr && row && row._consentimientoPendiente) {
+      return null;
+    }
+
     // Requerido
     if (col.required && !valStr) {
       return `El campo "${col.label}" es obligatorio.`;
@@ -275,7 +296,7 @@
           return null;
         }
         if ((key === 'establecimiento_adscripcion' || key === 'establecimiento_control') &&
-            EESS.some(e => valStr.includes(e.split('(')[0].trim()))) {
+            (EESS.some(e => valStr.includes(e.split('(')[0].trim())) || codigoDelCatalogo(valStr))) {
           return null;
         }
         return `Opción no válida. Seleccione una opción de la lista oficial.`;

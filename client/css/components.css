@@ -1612,3 +1612,209 @@
 #modal-consentimiento {
   z-index: 1600;
 }
+
+/* ==========================================================================
+   FICHA CLÍNICA: CELDAS DE MEDICIÓN (O-1)
+   Estas clases las usa openPatientDetail() en main.js y no tenían estilo: los valores salían como texto apilado.
+   ========================================================================== */
+.hearts-grid-2,
+.hearts-grid-3,
+.hearts-grid-4,
+.hearts-anthro-grid {
+  display: grid;
+  gap: var(--space-2);
+}
+.hearts-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.hearts-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hearts-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.hearts-anthro-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+
+.hearts-metric-cell {
+  background: var(--slate-50);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+.hearts-metric-cell.is-ok { background: var(--hearts-green-bg); border-color: var(--hearts-green-border); }
+.hearts-metric-cell.is-warn { background: var(--hearts-yellow-bg); border-color: var(--hearts-yellow-border); }
+.hearts-metric-cell.is-alert { background: var(--hearts-red-bg); border-color: var(--hearts-red-border); }
+.hearts-metric-cell.is-empty { background: #FFFFFF; border-style: dashed; }
+
+.hearts-metric-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hearts-metric-label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: var(--lh-tight);
+}
+.hearts-metric-ref {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.hearts-metric-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hearts-metric-value {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: var(--lh-tight);
+  overflow-wrap: anywhere;
+}
+.hearts-unit {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+.hearts-empty-val {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.hearts-mini-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--slate-100);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.hearts-mini-pill.is-ok { background: var(--hearts-green); color: #FFFFFF; }
+.hearts-mini-pill.is-warn { background: var(--hearts-yellow-text); color: #FFFFFF; }
+.hearts-mini-pill.is-alert { background: var(--hearts-red); color: #FFFFFF; }
+
+.hearts-pa-title {
+  display: block;
+  font-size: var(--font-sm);
+  font-weight: 800;
+  color: var(--maxime-navy);
+}
+.hearts-pa-sub {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.hearts-pa-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+/* Ficha en pantallas angostas (R-4): las grillas fijas de 6 y 4 columnas se reacomodan */
+@media (max-width: 900px) {
+  .hearts-demo-grid-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hearts-demo-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hearts-clinical-columns { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .hearts-demo-grid-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hearts-grid-3,
+  .hearts-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hearts-quarters-grid { grid-template-columns: repeat(2, 1fr); }
+  .hearts-pa-hero { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+  .hearts-pa-right { align-items: flex-start; text-align: left; }
+  .hearts-section-header { flex-wrap: wrap; gap: 4px; padding: var(--space-2) var(--space-3); }
+  .hearts-section-body { padding: var(--space-2) var(--space-3); }
+}
+@media (max-width: 380px) {
+  .hearts-demo-grid-4,
+  .hearts-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   VENTANAS MODALES QUE CABEN EN CUALQUIER PANTALLA (R-4, R-9)
+   La caja nunca pasa del alto visible: la cabecera y el pie quedan fijos y solo el cuerpo se desplaza.
+   ========================================================================== */
+.modal-overlay {
+  height: 100vh;
+  height: 100dvh;
+}
+.modal-overlay.active > .modal-box {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2 * var(--space-4));
+  max-height: calc(100dvh - 2 * var(--space-4));
+}
+.modal-overlay.active > .modal-box > .modal-header,
+.modal-overlay.active > .modal-box > .hearts-ficha-header,
+.modal-overlay.active > .modal-box > .modal-footer {
+  flex-shrink: 0;
+}
+.modal-overlay.active > .modal-box > .modal-body,
+.modal-overlay.active > .modal-box > .hearts-ficha-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+.modal-footer {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px), (max-height: 500px) {
+  .modal-overlay { padding: var(--space-2); }
+  .modal-overlay.active > .modal-box {
+    max-height: calc(100vh - 2 * var(--space-2));
+    max-height: calc(100dvh - 2 * var(--space-2));
+  }
+  .modal-box,
+  .modal-box.hearts-ficha-modal { width: 100%; }
+  .hearts-ficha-header { padding: 10px 14px; gap: 8px; }
+  .hearts-ficha-kicker { font-size: 10px; }
+  .hearts-ficha-main-title { font-size: 15px; }
+  .hearts-ficha-body { padding: var(--space-2); }
+  .hearts-patient-banner { padding: var(--space-3); }
+  .modal-footer { padding: var(--space-2) var(--space-3); }
+  .modal-footer .btn-mini { flex: 1 1 calc(50% - var(--space-2)); justify-content: center; }
+}
+
+/* Los avisos (toasts) quedan por encima de cualquier ventana, incluidas la cuadrícula de Excel y el registro
+   clínico, que ahora avisan con toasts en lugar de la ventana de alerta del navegador (O-7). */
+.toast-container {
+  z-index: 100000 !important;
+}
+
+/* Botón ✕ visible sobre cabeceras blancas (cuadrícula de Excel y registro clínico): el estilo base es blanco
+   translúcido, pensado para cabeceras oscuras, y sobre fondo blanco casi no se veía. */
+.padron-modal-header .btn-close-accessible,
+.reg-modal-header .btn-close-accessible {
+  background: var(--slate-100);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.padron-modal-header .btn-close-accessible:hover,
+.reg-modal-header .btn-close-accessible:hover {
+  background: var(--slate-200);
+  color: var(--text-main);
+}
+
+/* Usuarios en pantallas angostas: los botones «Clave» y «Desactivar» bajan a su propia línea */
+@media (max-width: 600px) {
+  .usuario-fila { flex-wrap: wrap; }
+  .usuario-fila > :first-child { flex: 1 1 100%; min-width: 0; }
+  .usuario-acciones { flex-wrap: wrap; flex-shrink: 1; }
+}

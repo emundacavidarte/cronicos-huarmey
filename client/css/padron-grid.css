@@ -504,3 +504,19 @@
   background: #059669;
   transform: translateY(-1px);
 }
+
+/* Celular y tableta (R-6): la cabecera se acomoda en dos líneas y el botón de cerrar siempre se ve */
+@media (max-width: 768px) {
+  .padron-modal-overlay { padding: 8px; }
+  .padron-modal-box { width: 100%; height: 100%; border-radius: 10px; }
+  .padron-modal-header { padding: 10px 12px; gap: 8px; align-items: flex-start; }
+  .padron-header-left { min-width: 0; flex: 1 1 auto; }
+  .padron-title { font-size: 14px; }
+  .padron-subtitle { overflow-wrap: anywhere; }
+  .padron-header-right { gap: 8px; flex-shrink: 0; flex-direction: column-reverse; align-items: flex-end; }
+  .padron-toolbar { padding: 8px 12px; }
+  .padron-toolbar-filters { flex-wrap: wrap; }
+  .padron-modal-footer { padding: 10px 12px; gap: 10px; }
+  .padron-footer-buttons { width: 100%; }
+  .padron-footer-buttons > * { flex: 1 1 auto; }
+}

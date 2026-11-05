@@ -1,4 +1,4 @@
-# 🚦 COLA DE TRABAJO — LEER ESTO PRIMERO (actualizado 29/10/2026)
+# 🚦 COLA DE TRABAJO — LEER ESTO PRIMERO (actualizado 05/11/2026)
 
 > **Ahorro de tokens:** cuando el usuario diga **«continua»**, leer **solo este bloque (hasta la línea `FIN-COLA`)** y la ficha de la tarea que toca. **No leer el resto del archivo**: desde «# DOCUMENTO DE ENTREGA…» en adelante es histórico y contiene afirmaciones que esta revisión desmintió (ver T-16).
 
@@ -48,8 +48,8 @@
 | T-07 | La ingesta inventa datos clínicos (F1, F2, F3, F14, F16, N4). **No toca los conectores HOSIX** | Alta | T-06 | ✅ |
 | T-13 | Motor clínico y mensaje de WhatsApp (F12, F15, F20) | Media | T-00 | ⬜ |
 | T-14 | Cliente honesto ante fallos: API caída, pre-cita, fecha UTC, `.bat` (F13, N5, N6, N7) | Media | T-00 | ⬜ |
-| T-11 | Importación CSV: columnas mal repartidas y codificación (F9, F10). **DECISIÓN** | Media | T-07 | ⬜ |
-| T-04 | **SEGURIDAD, AL FINAL:** límite de peticiones por `/fhir`, rutas duplicadas, `trust proxy` (N1, F17, S9, N12) | Alta | todas las anteriores | ⬜ |
+| T-11 | Importación CSV: columnas mal repartidas y codificación (F9, F10). **DECISIÓN** | Media | T-07 | ✅ |
+| T-04 | **SEGURIDAD, AL FINAL:** límite de peticiones por `/fhir`, rutas duplicadas, `trust proxy` (N1, F17, S9, N12) | Alta | todas las anteriores | ✅ |
 | T-05 | **SEGURIDAD, AL FINAL:** endurecer `server.js`: comodín 404, mensajes de error, CORS/CSP (F18, S6, S7) | Media | T-04 | ⬜ |
 | T-10 | **SEGURIDAD, AL FINAL:** XSS y exportación CSV con fórmulas (S4, S5) | Alta | T-05 | ⬜ |
 | T-15 | **SEGURIDAD, AL FINAL:** privacidad de las respuestas por rol (S8) | Media | T-10 | ⬜ |
@@ -74,6 +74,7 @@
 | 27/10/2026 | Esquema v4 y Modal Excel | **Esquema nominal normativo v4 de 76 columnas (`padronSchema.js`).** Estructurado en 11 bloques clínicos y operacionales (A a K). Validador celda por celda y en caliente con catálogos oficiales de Huarmey. Parser SheetJS (`padronExcelParser.js`) y cuadrícula interactiva modal (`padronGridModal.js`) con cálculo automático de consistencia en pantalla y corrección in situ. |
 | 28/10/2026 | Calculadoras clínicas | **Motor de cálculo clínico automatizado (`padronCalculators.js`).** Filtrado glomerular TFGe con ecuación CKD-EPI 2021 (sin factor racial) y estadiaje ERC (G1-G5). Riesgo cardiovascular a 10 años con tablas OMS/OPS sin laboratorio (subregión AMR B Andina). Categorización nutricional por IMC. Suite `testPadronExcel.js` agregada. |
 | 29/10/2026 | Resolución de Hallazgos y Endurecimiento | **Resolución integral de hallazgos (`HALLAZGOS_VERIFICACION_29oct.md`).** Cabecera `Content-Type: application/json` explícita en subida de Excel; combinación incremental `upsertPatients` (10 base + 3 importados = 13); regla unificada de control en meta en tablero y semáforo (PA < 140/90 mmHg); exportación a Excel SheetJS (`exportarPadronExcel`); derivación de `diagnosticos` y signos vitales en `database.js` (`_enrichPatient`); soporte de alias de cabeceras DNI; cita oficial HEARTS / RM 031-2015/MINSA; RBAC granular hasta establecimiento y sector (`scope.js`); conectores HOSIX/Galenos/Pakamuros sin asumir I10 ni Controlado por defecto; inicialización de Git con `.gitignore` protegido (Ley N° 29733); suite `testExcelImportExportFix.js`. `npm test`: 12 suites, 152 pruebas en verde (0 fallas). |
+| 05/11/2026 | Prueba en navegador y correcciones | Recorrido completo en Chromium y en 9 tamaños de pantalla (`docs/REPORTE_PRUEBA_NAVEGADOR_2026-11-05.md`). Corregido: sin conexión (index.html borraba la caché vigente), CSV de HOSIX guardado en el servidor sin datos inventados (T-11: analizador por estados, BOM, UTF-8/Windows-1252), reimportación del Excel exportado (consentimiento pendiente para pacientes ya registrados, catálogo por código, semilla sin «0» meses), tablero del DIRECTOR con agregados del servidor (`resumenTablero.js` compartido), `bringToFront` en capas `layerGroup`, fecha real en WhatsApp y sin enlace a fallecidos, estilos faltantes de la ficha, indicadores con paneles abiertos, etiquetas, refresco tras guardar y pre-cita, período dinámico, avisos en vez de `alert()`, textos en inglés, adaptación a celulares y tabletas, T-04 (rutas dobles 404 y límite en `/fhir`), errores sin texto interno, `/fhir/Patient/:id` como recurso Patient, `.env.example` sin claves. Nueva suite `testCorrecciones05nov.js` (16 pruebas; 14 fallaban con el código anterior). Prueba de navegador del repo: corre en Linux y Mac (`NAVEGADOR=`). |
 
 
 

@@ -18,30 +18,22 @@
   <!-- Leaflet CSS (OpenSource GIS) -->
   <link rel="stylesheet" href="libs/leaflet.css">
 
-  <!-- Limpieza proactiva de caché de Service Worker en recarga -->
+  <!-- Busca una versión nueva del trabajador de servicio al cargar. Las cachés antiguas las borra sw.js al activarse:
+       aquí NO se borra ninguna, porque así se perdía la caché vigente y la aplicación no abría sin conexión (F-4). -->
   <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && navigator.onLine) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let r of registrations) { r.update(); }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) {
-          if (name !== 'maxime-cronicos-huarmey-v20261027-v30-syntaxfix') {
-            caches.delete(name);
-          }
-        }
+        for (let r of registrations) { r.update().catch(function () {}); }
       });
     }
   </script>
 
   <!-- Estilos Temáticos Oficiales MÁXIME Salud Digital y Layout Responsivo -->
   <link rel="stylesheet" href="css/georis-theme.css?v=20261027_v6">
-  <link rel="stylesheet" href="css/layout.css?v=20261030_r12">
-  <link rel="stylesheet" href="css/components.css?v=20261029_a8f">
-  <link rel="stylesheet" href="css/padron-grid.css?v=20261027_v6">
-  <link rel="stylesheet" href="css/registro-clinico.css?v=20261027_v6">
+  <link rel="stylesheet" href="css/layout.css?v=20261105_c1">
+  <link rel="stylesheet" href="css/components.css?v=20261105_c1">
+  <link rel="stylesheet" href="css/padron-grid.css?v=20261105_c1">
+  <link rel="stylesheet" href="css/registro-clinico.css?v=20261105_c1">
 </head>
 <body>
 
@@ -150,7 +142,7 @@
           <span class="rail-label">Mapa</span>
         </button>
 
-        <button class="rail-nav-item" id="rail-tab-dashboard" data-view="dashboard" title="Tablero de Indicadores y Dashboards" onclick="window.app.switchView('dashboard')">
+        <button class="rail-nav-item" id="rail-tab-dashboard" data-view="dashboard" title="Tablero de indicadores" onclick="window.app.switchView('dashboard')">
           <span class="rail-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="13" width="4.5" height="8" rx="1.5" fill="#1A73E8"/><rect x="9.75" y="8" width="4.5" height="13" rx="1.5" fill="#9334E6"/><rect x="16.5" y="3" width="4.5" height="18" rx="1.5" fill="#1E8E3E"/><path d="M3 11L9.5 5.5L14.5 9.5L21 3" stroke="#F29900" stroke-width="2" stroke-linecap="round"/></svg>
           </span>
@@ -198,7 +190,7 @@
           <div class="hud-kpi-dock" role="region" aria-label="Resumen de indicadores HEARTS">
             <span class="hud-kpi-dock-title">HEARTS</span>
             <div class="hud-kpi-strip" title="Haga clic en cualquier indicador para desplegar la lista de pacientes">
-              <div class="kpi-card" id="card-kpi-total" data-kpi="ALL" tabindex="0" role="button" aria-label="Ver todos los pacientes crónicos">
+              <div class="kpi-card" id="card-kpi-total" data-kpi="ALL" tabindex="0" role="button" title="Pacientes activos (no cuenta a los fallecidos). Clic: ver la lista completa" aria-label="Ver todos los pacientes; el número cuenta solo a los activos, sin fallecidos">
                 <span id="kpi-total" class="kpi-val">0</span>
                 <span class="kpi-label">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M16 21V19C16 16.8 14.2 15 12 15H5C2.8 15 1 16.8 1 19V21" stroke="#1A73E8" stroke-width="2"/><circle cx="8.5" cy="7" r="4" stroke="#1A73E8" stroke-width="2"/></svg> Total
@@ -444,9 +436,9 @@
               <button class="filter-chip active" data-filter-diag="ALL">Todos</button>
               <button class="filter-chip chip-hta" data-filter-diag="I10">HTA (I10)</button>
               <button class="filter-chip chip-dm" data-filter-diag="E11">DM2 (E11)</button>
-              <button class="filter-chip chip-green" data-filter-semaforo="green">Meta</button>
-              <button class="filter-chip chip-yellow" data-filter-semaforo="yellow">Próximos</button>
-              <button class="filter-chip chip-red" data-filter-semaforo="red">Vencidos</button>
+              <button class="filter-chip chip-green" data-filter-semaforo="green" title="Cita de control vigente (más de 7 días)">Cita vigente</button>
+              <button class="filter-chip chip-yellow" data-filter-semaforo="yellow" title="Cita en 7 días o menos">Próximos</button>
+              <button class="filter-chip chip-red" data-filter-semaforo="red" title="Cita vencida o sin control">Deserción</button>
               <button class="filter-chip chip-purple" data-filter-semaforo="purple">HOSIX</button>
             </div>
             <div class="filter-Status-row" style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
@@ -499,23 +491,23 @@
 
         </section>
 
-        <!-- VISTA 2: TABLERO DE INDICADORES Y DASHBOARDS (Capítulo Analítico) -->
-        <section id="view-dashboard" class="app-view" style="display:none;" aria-label="Tablero de Indicadores y Dashboards">
+        <!-- VISTA 2: TABLERO DE INDICADORES (Capítulo Analítico) -->
+        <section id="view-dashboard" class="app-view" style="display:none;" aria-label="Tablero de indicadores">
           <div class="dash-header-wrap">
             <div class="dash-title-group">
               <h2>Tablero Territorial de Indicadores HEARTS</h2>
               <p>Seguimiento Epidemiológico, Cobertura y Metas de Control Clínico • Red Integrada de Salud Pacífico Sur (N° 156)</p>
             </div>
-            <div style="display:flex; align-items:center; gap:12px;">
+            <div class="dash-header-actions">
               <span class="dash-period-badge">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#1A73E8" stroke-width="2"/><path d="M16 2V6M8 2V6M3 10H21" stroke="#1A73E8" stroke-width="2" stroke-linecap="round"/></svg>
-                Período Octubre 2026
+                <span id="dash-periodo-txt">Período actual</span>
               </span>
               <button class="georis-tool-btn" onclick="window.app.exportarPadronExcel()" title="Descargar Padrón Completo en Excel (.xlsx)" style="background:#1E8E3E; color:#ffffff; border-color:#1E8E3E; font-weight:600;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#FFFFFF" stroke-width="2"/><path d="M14 2V8H20" stroke="#FFFFFF" stroke-width="2"/><path d="M8 13H16M8 17H16M10 9H8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/></svg>
                 Exportar Padrón Excel
               </button>
-              <button class="georis-tool-btn" onclick="window.app.renderDashboard()" title="Actualizar indicadores">
+              <button class="georis-tool-btn" onclick="window.app.actualizarTablero()" title="Actualizar indicadores">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;"><path d="M23 4V10H17M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9A9 9 0 0 1 18.36 5.64L23 10M1 14L5.64 18.36A9 9 0 0 0 20.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Actualizar
               </button>
@@ -533,7 +525,7 @@
               </div>
               <div class="kpi-hero-value" id="dash-val-total">0</div>
               <div class="kpi-hero-footer">
-                <span>Pacientes con seguimiento nominal continuo</span>
+                <span>Pacientes en seguimiento (no incluye fallecidos)</span>
               </div>
             </div>
 
@@ -594,6 +586,7 @@
                   <div class="hearts-bar-segment seg-yellow" id="bar-seg-yellow" style="width:0%;"></div>
                   <div class="hearts-bar-segment seg-red" id="bar-seg-red" style="width:0%;"></div>
                   <div class="hearts-bar-segment seg-purple" id="bar-seg-purple" style="width:0%;"></div>
+                  <div class="hearts-bar-segment" id="bar-seg-gray" style="width:0%; background:#94a3b8;"></div>
                   <div class="hearts-bar-segment seg-black" id="bar-seg-black" style="width:0%;"></div>
                 </div>
                 <div class="hearts-bar-legend">
@@ -601,6 +594,7 @@
                   <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:var(--hearts-yellow);"></span> Próximo: <strong id="dash-count-yellow">0</strong></div>
                   <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:var(--hearts-red);"></span> Deserción: <strong id="dash-count-red">0</strong></div>
                   <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:var(--hearts-purple);"></span> HOSIX: <strong id="dash-count-purple">0</strong></div>
+                  <div class="hearts-legend-item" id="dash-legend-gray" style="display:none;"><span class="hearts-legend-dot" style="background:#94a3b8;"></span> Sin cita: <strong id="dash-count-gray">0</strong></div>
                   <div class="hearts-legend-item"><span class="hearts-legend-dot" style="background:#202124;"></span> Fallecidos: <strong id="dash-count-black">0</strong></div>
                 </div>
               </div>
@@ -843,7 +837,7 @@
                 <option value="">-- Seleccione --</option>
                 <option value="ADMIN">Administrador (control total, todas las redes)</option>
                 <option value="COORDINADOR">Coordinador (sube y edita información de su red)</option>
-                <option value="DIRECTOR">Director (solo dashboard de su red)</option>
+                <option value="DIRECTOR">Director (solo tablero de su red)</option>
               </select>
             </div>
             <div id="nuevo-usuario-establecimiento-wrap">
@@ -899,31 +893,32 @@
   <script src="js/map/establecimientos.js?v=20261026_v21"></script>
   <script src="js/map/georisAncashLayers.js?v=20261026_v21"></script>
   <script src="js/map/ancashGeocoder.js?v=20261026_v21"></script>
-  <script src="js/map/mapManager.js?v=20261021_v18"></script>
+  <script src="js/map/mapManager.js?v=20261105_c1"></script>
   <script src="js/auth/session.js?v=20261022_v20"></script>
-  <script src="js/auth/authUi.js?v=20261022_v20"></script>
+  <script src="js/auth/authUi.js?v=20261105_c1"></script>
   <script src="js/clinical/semaforo.js?v=20261021_v18"></script>
   <script src="js/clinical/heartsEngine.js?v=20261021_v18"></script>
   <script src="js/clinical/alertsManager.js?v=20261021_v18"></script>
-  <script src="js/clinical/whatsappNotifier.js?v=20261029_a8f"></script>
+  <script src="js/clinical/whatsappNotifier.js?v=20261105_c1"></script>
   <script src="js/clinical/indicadoresConvenio.js?v=20261029_a8f"></script>
-  <script src="js/data/hosixParser.js?v=20261021_v18"></script>
+  <script src="js/clinical/resumenTablero.js?v=20261105_c1"></script>
+  <script src="js/data/hosixParser.js?v=20261105_c1"></script>
 
   
   <!-- Librerías de Hojas de Cálculo y Auditoría Local-First -->
   <script src="libs/xlsx.full.min.js"></script>
-  <script src="js/data/padronSchema.js?v=20261029_a8f"></script>
+  <script src="js/data/padronSchema.js?v=20261105_c1"></script>
   <script src="js/data/padronExcelParser.js?v=20261029_a8f"></script>
   <script src="js/data/padronPlantillaV4.js?v=20261029_a8f"></script>
   <script src="js/data/padronExportV4.js?v=20261029_a8f"></script>
   <script src="js/clinical/padronCalculadora.js?v=20261027_v6"></script>
   <!-- UI Modals y Componentes Visuales -->
   <script src="js/ui/icons.js?v=20261027_v6"></script>
-  <script src="js/ui/padronGridModal.js?v=20261029_a8f"></script>
-  <script src="js/ui/registroClinicoModal.js?v=20261029_a8f"></script>
+  <script src="js/ui/padronGridModal.js?v=20261105_c1"></script>
+  <script src="js/ui/registroClinicoModal.js?v=20261105_c1"></script>
 
   <!-- Controlador Principal -->
-  <script src="js/main.js?v=20261029_a8f"></script>
+  <script src="js/main.js?v=20261105_c1"></script>
 
 </body>
 </html>

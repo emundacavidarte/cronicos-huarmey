@@ -239,14 +239,15 @@
         this.patients = parsed.patients;
         this.precargarConsentimiento();
         this.dom.fileInfo.textContent = `Archivo: ${this.currentFileName} · Hoja: "${parsed.sheetName}" · ${this.patients.length} pacientes` +
-          (this.consentimientosPrecargados ? ` · ${this.consentimientosPrecargados} con consentimiento ya registrado (precargado)` : '');
+          (this.consentimientosPrecargados ? ` · ${this.consentimientosPrecargados} con consentimiento ya registrado (precargado)` : '') +
+          (this.consentimientosPendientes ? ` · ${this.consentimientosPendientes} ya registrados sin consentimiento (se preguntará en su primer WhatsApp)` : '');
 
         this.validateAndUpdate();
         this.renderTableHeaders();
         this.renderTableRows();
       } catch (err) {
         console.error('Error al leer el archivo Excel:', err);
-        alert('Error al leer el archivo Excel: ' + err.message);
+        this.avisar('Error al leer el archivo Excel: ' + err.message, 'danger');
         this.close();
       }
     }
@@ -257,12 +258,22 @@
       }
     }
 
+    /** Aviso no bloqueante (toast) en lugar de la ventana de alerta del navegador (O-7). */
+    avisar(mensaje, tipo) {
+      if (window.app && typeof window.app.showToast === 'function') {
+        window.app.showToast(mensaje, tipo || 'info', tipo === 'danger' ? 8000 : 5000);
+      } else {
+        alert(mensaje);
+      }
+    }
+
     /**
      * Precarga el consentimiento: si la fila viene sin respuesta y el paciente ya lo tiene registrado en el sistema,
      * se toma ese valor (se pregunta una sola vez). Lo que el archivo trae escrito no se pisa.
      */
     precargarConsentimiento() {
       this.consentimientosPrecargados = 0;
+      this.consentimientosPendientes = 0;
       if (!window.app || typeof window.app.findPatient !== 'function') return;
       for (const r of this.patients) {
         if (String(r.consentimiento || '').trim()) continue;
@@ -271,6 +282,12 @@
         if (existente && (existente.consentimiento === 'Sí, firmado' || existente.consentimiento === 'No')) {
           r.consentimiento = existente.consentimiento;
           this.consentimientosPrecargados++;
+        } else if (existente) {
+          // F-2: paciente que ya está en el sistema sin consentimiento registrado (por ejemplo, el padrón inicial).
+          // No bloquea la carga: se le preguntará una sola vez, al enviar su primer recordatorio por WhatsApp.
+          // A un paciente NUEVO se le sigue exigiendo la respuesta en el archivo.
+          r._consentimientoPendiente = true;
+          this.consentimientosPendientes++;
         }
       }
     }
@@ -664,7 +681,7 @@
       });
       this.validateAndUpdate();
       this.renderTableRows();
-      alert(`Se completaron ${count} celdas de establecimiento con "${eessDef}".`);
+      this.avisar(`Se completaron ${count} celdas de establecimiento con "${eessDef}".`, 'success');
     }
 
     /**
@@ -697,7 +714,7 @@
      */
     async commitUpload() {
       if (this.validationResult.totalErrors > 0) {
-        alert('No se puede cargar: aún existen celdas con inconsistencias.');
+        this.avisar('No se puede cargar: aún existen celdas con inconsistencias.', 'warning');
         return;
       }
 
@@ -842,7 +859,7 @@
 
         this.close();
       } catch (err) {
-        alert('Error al consolidar la carga: ' + err.message);
+        this.avisar('Error al consolidar la carga: ' + err.message, 'danger');
         this.dom.btnCargar.disabled = false;
         this.dom.btnCargar.textContent = 'Intentar Cargar Nuevamente';
       }

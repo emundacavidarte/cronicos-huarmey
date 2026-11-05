@@ -106,7 +106,7 @@ class MapManager {
     const georisOficial = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       ...tilePerfOpts,
       maxNativeZoom: 17,
-      attribution: 'Tiles &copy; Esri, HERE, Garmin, USGS | GeoRIS MINSA'
+      attribution: 'Mosaicos &copy; Esri, HERE, Garmin, USGS | GeoRIS MINSA'
     });
 
     // B. Satelital HD Híbrido (Cobertura nativa hasta Zoom 20 en Huarmey con calles y etiquetas)
@@ -114,7 +114,7 @@ class MapManager {
       ...tilePerfOpts,
       subdomains: ['0', '1', '2', '3'],
       maxNativeZoom: 20,
-      attribution: 'Imagery &copy; Google, Maxar Technologies | GeoRIS'
+      attribution: 'Imágenes &copy; Google, Maxar Technologies | GeoRIS'
     });
 
     // C. Gris Claro Minimalista (CartoDB Positron HD - Cobertura nativa hasta Zoom 20 sin corte en Huarmey)
@@ -122,7 +122,7 @@ class MapManager {
       ...tilePerfOpts,
       subdomains: 'abcd',
       maxNativeZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      attribution: '&copy; colaboradores de OpenStreetMap &copy; CARTO'
     });
 
     // D. Modo Noche / Oscuro (CartoDB Dark Matter HD - Alto contraste hasta Zoom 20 sin corte en Huarmey)
@@ -130,7 +130,7 @@ class MapManager {
       ...tilePerfOpts,
       subdomains: 'abcd',
       maxNativeZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      attribution: '&copy; colaboradores de OpenStreetMap &copy; CARTO'
     });
 
     // E. Topográfico y Relieve (Relieve Topográfico HD con cobertura completa en Áncash)
@@ -138,7 +138,7 @@ class MapManager {
       ...tilePerfOpts,
       subdomains: ['0', '1', '2', '3'],
       maxNativeZoom: 19,
-      attribution: 'Terrain &copy; Google | GeoRIS'
+      attribution: 'Relieve &copy; Google | GeoRIS'
     });
 
     // F. Calles y Sentidos Viales (Cartografía vial detallada hasta Zoom 20)
@@ -146,7 +146,7 @@ class MapManager {
       ...tilePerfOpts,
       subdomains: ['0', '1', '2', '3'],
       maxNativeZoom: 20,
-      attribution: 'Map data &copy; Google | GeoRIS'
+      attribution: 'Datos del mapa &copy; Google | GeoRIS'
     });
 
     // G. OpenStreetMap Humanitario Salud (HOT)
@@ -154,7 +154,7 @@ class MapManager {
       ...tilePerfOpts,
       subdomains: 'abc',
       maxNativeZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors, Humanitarian OpenStreetMap Team'
+      attribution: '&copy; colaboradores de OpenStreetMap, Humanitarian OpenStreetMap Team'
     });
 
     this.baseLayers = {
@@ -798,7 +798,7 @@ class MapManager {
     const a1cOnlyTxt = escapeHtml(p.hba1c_texto || (p.hba1c != null && p.hba1c !== '' ? `${p.hba1c}%` : '—'));
     const diagBadge = (p.diagnosticos || []).map(d => `<span class="badge-diag badge-${escapeHtml(String(d).toLowerCase())}">${escapeHtml(d)}</span>`).join(' ');
     const noLabPopupAlert = !p.tiene_laboratorio
-      ? `<div style="background:${isPurple ? '#f5f3ff' : '#fffbeb'}; border:1px solid ${isPurple ? '#ddd6fe' : '#fde68a'}; color:${isPurple ? '#5b21b6' : '#78350f'}; padding:6px 10px; border-radius:6px; font-size:var(--font-xs); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px;">${window.AppIcons ? window.AppIcons.alertTriangle(12, isPurple ? '#5b21b6' : '#78350f') : ''} Sin datos de laboratorio — Empadronar en HEARTS</div>`
+      ? `<div style="background:${isPurple ? '#f5f3ff' : '#fffbeb'}; border:1px solid ${isPurple ? '#ddd6fe' : '#fde68a'}; color:${isPurple ? '#5b21b6' : '#78350f'}; padding:6px 10px; border-radius:6px; font-size:var(--font-xs); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px;">${window.AppIcons ? window.AppIcons.alertTriangle(12, isPurple ? '#5b21b6' : '#78350f') : ''} ${isPurple ? 'Sin datos de laboratorio — Empadronar en HEARTS' : 'Sin datos de laboratorio — Solicitar exámenes'}</div>`
       : '';
 
     const rawPhone = p.telefono ? String(p.telefono).replace(/\D/g, '') : '';
@@ -1071,16 +1071,23 @@ class MapManager {
       });
     }
 
-    // Asegurarse de que el orden de capas vectoriales se mantenga al frente
-    if (this.layers.limiteRis) this.layers.limiteRis.bringToFront();
-    if (this.layers.zonasSanitarias) this.layers.zonasSanitarias.bringToFront();
-    if (this.layers.sectoresSanitarios) this.layers.sectoresSanitarios.bringToFront();
-    if (this.layers.catastroUrbano) this.layers.catastroUrbano.bringToFront();
-    if (this.layers.referenciasLines) this.layers.referenciasLines.bringToFront();
-    if (this.layers.puertaEntrada) this.layers.puertaEntrada.bringToFront();
-    if (this.layers.zonaSanitaria) this.layers.zonaSanitaria.bringToFront();
-    if (this.layers.areaSanitaria) this.layers.areaSanitaria.bringToFront();
-    if (this.layers.pacientes) this.layers.pacientes.bringToFront();
+    // Asegurarse de que el orden de capas vectoriales se mantenga al frente (de la más baja a la más alta)
+    ['limiteRis', 'zonasSanitarias', 'sectoresSanitarios', 'catastroUrbano', 'referenciasLines',
+      'puertaEntrada', 'zonaSanitaria', 'areaSanitaria', 'pacientes'].forEach(nombre => this.traerAlFrente(this.layers[nombre]));
+  }
+
+  /**
+   * Trae una capa al frente. L.layerGroup no tiene bringToFront (solo FeatureGroup y los vectores):
+   * antes la llamada lanzaba un error que cortaba el cambio de mapa base (F-5). Los marcadores viven en
+   * su propio panel y no necesitan reordenarse.
+   */
+  traerAlFrente(capa) {
+    if (!capa) return;
+    if (typeof capa.bringToFront === 'function') {
+      capa.bringToFront();
+    } else if (typeof capa.eachLayer === 'function') {
+      capa.eachLayer(hija => this.traerAlFrente(hija));
+    }
   }
 
   /**

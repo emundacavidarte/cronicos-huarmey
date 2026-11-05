@@ -437,7 +437,9 @@
         // Sin respuesta del servidor la sesión no se puede confirmar: se descarta y se pide el acceso de nuevo
         session.logout();
         app.limpiarSesion();
-        mostrarLogin('No se pudo verificar su sesión. Ingrese nuevamente.');
+        mostrarLogin(navigator.onLine === false
+          ? 'Sin conexión a internet: los datos de pacientes necesitan el servidor. Ingrese cuando vuelva la conexión.'
+          : 'No se pudo verificar su sesión (el servidor no respondió o la sesión venció). Ingrese nuevamente.');
       }
     }
 

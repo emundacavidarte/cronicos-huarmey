@@ -20,12 +20,21 @@ const DNI_SYSTEM = 'urn:oid:2.16.840.1.113883.4.904';
 const KEY = 'maxime_cronicos_sesion_v1';
 const SHOTS = process.env.SHOTS_DIR || '';
 
+// Ruta propia con NAVEGADOR=<ruta al ejecutable>; si no, se busca Edge o Chrome en Windows, Linux y Mac
 const NAVEGADORES = [
+  process.env.NAVEGADOR || '',
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
-];
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/microsoft-edge',
+  '/snap/bin/chromium',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'
+].filter(Boolean);
 
 let passed = 0;
 let failed = 0;
@@ -74,9 +83,11 @@ function connect(wsUrl) {
 
 async function lanzarNavegador(userDir) {
   const exe = NAVEGADORES.find(p => fs.existsSync(p));
-  if (!exe) throw new Error('No se encontró Edge ni Chrome.');
+  if (!exe) throw new Error('No se encontró Edge ni Chrome. Indique la ruta con la variable NAVEGADOR.');
+  // En Linux, como administrador (root), Chrome exige --no-sandbox
+  const extra = (process.platform === 'linux' && typeof process.getuid === 'function' && process.getuid() === 0) ? ['--no-sandbox'] : [];
   const child = spawn(exe, [
-    '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+    ...extra, '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
     '--remote-debugging-port=' + CDP_PORT, '--user-data-dir=' + userDir, '--window-size=1280,800', 'about:blank'
   ], { stdio: 'ignore' });
   const limite = Date.now() + 20000;
@@ -244,7 +255,8 @@ async function main() {
   await step('COORDINADOR: ve la ingesta y exportar pre-citas, pero NO el botón Usuarios', async () => {
     assert.strictEqual(await P.oculto('tab-btn-ingesta'), false);
     assert.strictEqual(await P.oculto('btn-export-precitas'), false);
-    assert.strictEqual(await P.oculto('btn-toggle-hearts'), false);
+    // El padrón se abre desde la barra lateral (el antiguo botón de la cabecera está oculto por diseño)
+    assert.strictEqual(await P.oculto('rail-tab-padron'), false);
     assert.strictEqual(await P.oculto('btn-usuarios'), true);
     assert.strictEqual(await P.oculto('btn-usuarios-mobile'), true);
   });

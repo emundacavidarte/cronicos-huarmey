@@ -16,6 +16,8 @@ const pakamurosConnector = require('../fhir/connectors/pakamurosConnector');
 const { getLatestAppointment, getLatestObservation } = require('../utils/latestRecord');
 const semaforoHearts = require('../../client/js/clinical/semaforo');
 const indicadoresConvenio = require('../../client/js/clinical/indicadoresConvenio');
+const resumenTablero = require('../../client/js/clinical/resumenTablero');
+const { DEFAULT_ESTABLISHMENTS } = require('../../client/js/map/establecimientos');
 const auth = require('../auth/auth');
 const fechaLima = require('../../client/js/utils/fechaLima');
 const scope = require('../auth/scope');
@@ -113,7 +115,7 @@ router.get('/patients', requireScope(ROLES_PACIENTES), (req, res) => {
   });
 });
 
-router.get(['/cronicos', '/api/cronicos'], requireScope(ROLES_PACIENTES), (req, res) => {
+router.get('/cronicos', requireScope(ROLES_PACIENTES), (req, res) => {
   const etag = setScopedEtag(req, res);
   if (req.headers['if-none-match'] === etag && !Object.keys(req.query).length) {
     return res.status(304).end();
@@ -195,11 +197,13 @@ router.get('/alerts/summary', requireScope(ROLES_DASHBOARD), (req, res) => {
   let black = 0;
   const dniUnicos = new Set();
 
+  const conSemaforo = [];
   for (let i = 0; i < patients.length; i++) {
     const p = patients[i];
     if (p.dni) dniUnicos.add(String(p.dni).trim());
     // Misma función que /patients/geo y que el cliente: ya no depende del semáforo guardado
     const s = semaforoHearts.calcularSemaforo(p, hoy).semaforo;
+    conSemaforo.push(Object.assign({}, p, { semaforo: s }));
     if (s === 'purple') purple++;
     else if (s === 'black') black++;
     else if (s === 'green') green++;
@@ -221,7 +225,9 @@ router.get('/alerts/summary', requireScope(ROLES_DASHBOARD), (req, res) => {
       hosix_brecha_morado: purple,
       fallecidos_negro: black,
       sin_cita_gris: gray
-    }
+    },
+    // F-3: el tablero del DIRECTOR se arma con estos agregados (sin datos individuales)
+    tablero: resumenTablero.calcular(conSemaforo, DEFAULT_ESTABLISHMENTS)
   });
 });
 
@@ -357,7 +363,7 @@ router.post('/patients/:id/eventos', requireScope(ROLES_ESCRITURA), (req, res) =
   res.status(201).json({ success: true, data: result.event });
 });
 
-router.get(['/metadata', '/fhir/metadata'], (req, res) => {
+router.get('/metadata', (req, res) => {
   res.json({
     resourceType: 'CapabilityStatement',
     status: 'active',
@@ -383,7 +389,7 @@ router.get(['/metadata', '/fhir/metadata'], (req, res) => {
   });
 });
 
-router.get(['/Bundle', '/fhir/Bundle'], requireScope(ROLES_PACIENTES), (req, res) => {
+router.get('/Bundle', requireScope(ROLES_PACIENTES), (req, res) => {
   const allPatients = scope.filterPatients(req.user, db.getAllPatients());
   const filtered = filterAndPaginatePatients(allPatients, req.query);
   const host = `${req.protocol}://${req.get('host')}`;
@@ -434,7 +440,9 @@ router.get(['/Bundle', '/fhir/Bundle'], requireScope(ROLES_PACIENTES), (req, res
   res.json(bundle);
 });
 
-router.get(['/Patient/:id', '/Patient/:id/bundle', '/fhir/Patient/:id', '/fhir/Patient/:id/bundle'], requireScope(ROLES_PACIENTES), (req, res) => {
+// T-04: el router se monta en /api y en /fhir; las rutas ya no repiten el prefijo (antes existían /fhir/fhir/... y /api/api/...).
+// /Patient/:id entrega el recurso Patient (como pide FHIR R4) y /Patient/:id/bundle, el expediente completo.
+router.get(['/Patient/:id', '/Patient/:id/bundle'], requireScope(ROLES_PACIENTES), (req, res) => {
   const idOrDni = req.params.id;
   const patient = db.getPatientByIdOrDni(idOrDni);
   // Un paciente de otra red responde igual que uno inexistente (no se revela que existe)
@@ -444,10 +452,13 @@ router.get(['/Patient/:id', '/Patient/:id/bundle', '/fhir/Patient/:id', '/fhir/P
       issue: [{ severity: 'error', code: 'not-found', diagnostics: `Paciente ${idOrDni} no encontrado en el Padrón Territorial` }]
     });
   }
-  res.json(fhirAdapter.toFhirBundle(patient));
+  const bundle = fhirAdapter.toFhirBundle(patient);
+  if (req.path.endsWith('/bundle')) return res.json(bundle);
+  const recursoPaciente = (bundle.entry || []).map(e => e.resource).find(r => r && r.resourceType === 'Patient');
+  res.json(recursoPaciente || bundle);
 });
 
-router.get(['/loinc-catalog', '/fhir/loinc-catalog'], (req, res) => {
+router.get('/loinc-catalog', (req, res) => {
   res.json({
     standard: 'HL7 FHIR Release 4 / LOINC v2.78 / RENHICE MINSA Perú',
     catalog: fhirAdapter.LOINC
@@ -467,7 +478,7 @@ function persistParsedFhirResources(parsed) {
   });
 }
 
-router.post(['/Bundle', '/fhir/Bundle'], requireScope(ROLES_ESCRITURA), (req, res) => {
+router.post('/Bundle', requireScope(ROLES_ESCRITURA), (req, res) => {
   try {
     const bundle = req.body;
     const parsed = fhirAdapter.processBundle(bundle);

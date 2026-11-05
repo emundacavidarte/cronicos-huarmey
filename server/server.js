@@ -55,7 +55,8 @@ setInterval(() => {
   }
 }, RATE_WINDOW_MS).unref();
 
-app.use('/api', (req, res, next) => {
+// T-04: el límite aplica a /api y a /fhir (antes /fhir no tenía límite); ambos prefijos comparten el contador por IP
+app.use(['/api', '/fhir'], (req, res, next) => {
   const ip = req.ip || req.socket?.remoteAddress || '127.0.0.1';
   const isWrite = req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS';
   const key = `${ip}:${isWrite ? 'W' : 'R'}`;
@@ -167,18 +168,22 @@ app.get('*', (req, res) => {
 });
 
 // 9. Manejador Global de Errores JSON / HL7 FHIR OperationOutcome (sin exponer stack traces en producción)
+// T-05 (S7): el detalle técnico del error queda en el registro del servidor; al cliente solo va un mensaje claro
 app.use((err, req, res, next) => {
   const status = err.status || err.statusCode || 500;
-  res.status(status).json({
-    resourceType: 'OperationOutcome',
-    issue: [{
-      severity: 'error',
-      code: status === 413 ? 'too-costly' : 'exception',
-      diagnostics: status === 413
-        ? 'El tamaño del payload excede el límite permitido (10 MB).'
-        : (err.message || 'Error interno procesando la solicitud clínica.')
-    }]
-  });
+  let code = 'exception';
+  let diagnostics = 'Error interno procesando la solicitud clínica.';
+  if (status === 413) {
+    code = 'too-costly';
+    diagnostics = 'El tamaño del contenido excede el límite permitido (10 MB).';
+  } else if (err.type === 'entity.parse.failed') {
+    code = 'invalid';
+    diagnostics = 'El contenido enviado no es un JSON válido.';
+  } else if (status < 500 && err.expose && err.message) {
+    diagnostics = err.message;
+  }
+  if (status >= 500) console.error('[ERROR]', req.method, req.originalUrl, err && err.stack ? err.stack : err);
+  res.status(status).json({ resourceType: 'OperationOutcome', issue: [{ severity: 'error', code, diagnostics }] });
 });
 
 function startListening() {

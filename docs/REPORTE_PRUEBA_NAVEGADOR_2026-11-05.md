@@ -6,6 +6,8 @@
 **Navegador:** Chromium controlado de forma automática con la herramienta Playwright, sin ventana visible, con idioma español de Perú y zona horaria de Lima.
 **Capturas de pantalla:** carpeta [`reporte_navegador_2026-11-05/`](reporte_navegador_2026-11-05/). **Programas que hicieron el recorrido:** [`reporte_navegador_2026-11-05/scripts/`](reporte_navegador_2026-11-05/scripts/).
 
+> **Actualización del mismo día:** todos los hallazgos de este reporte se corrigieron y se volvieron a probar en el navegador y en los 9 tamaños de pantalla. El detalle está en la **sección 9**. Las secciones 1 a 8 describen el estado ANTES de las correcciones.
+
 > **Limitación del entorno de prueba:** la red del equipo de prueba bloquea los servidores de mapas externos (Esri, Google, CARTO y OpenStreetMap), así que en las capturas no se ve el mapa de fondo. Las capas propias del sistema (catastro, límites y líneas de referencia) sí cargan. Esto no es una falla del sistema.
 
 ---
@@ -152,3 +154,49 @@ Se recorrieron acceso, mapa, padrón, capas, ficha, registro, cuadrícula de Exc
 3. **F-5** (crear esas capas con un tipo que sí pueda traerse al frente, `L.featureGroup()`, o proteger la llamada) y **O-1** (agregar los estilos que faltan en la ficha).
 4. **Celulares:** R-1, R-2, R-3, R-4 y R-5. Cabecera plegable con el buscador en la barra inferior, panel a todo el ancho, ficha en 2 columnas y formulario de registro antes del panel de resultados.
 5. **F-4** (trabajo sin conexión), **F-6** (fecha del WhatsApp) y **O-8** (textos en inglés).
+
+---
+
+## 9. Correcciones aplicadas y verificación (05/11/2026)
+
+Se repitieron los mismos recorridos en el navegador con datos limpios y los 9 tamaños de pantalla.
+
+| Bloque | Antes | Después |
+|---|---|---|
+| Pruebas automáticas (`npm test`) | 226 de 226 | ✅ **242 de 242** (19 grupos; se agregó `testCorrecciones05nov.js` con 16 pruebas, de las cuales 14 fallaban con el código anterior) |
+| Prueba de navegador del repositorio | 14 de 15 y solo en Windows | ✅ **15 de 15**; ahora corre en Windows, Linux y Mac (variable `NAVEGADOR=` para indicar otro navegador) |
+| Errores de programa en la página | `bringToFront` en cada cambio de mapa | ✅ Ninguno en todo el recorrido |
+| Adaptación a pantallas | Fallaba en celulares, celular horizontal y tableta horizontal | ✅ Los 9 tamaños sin elementos fuera de la pantalla, con los 5 indicadores visibles y «Salir» siempre accesible |
+| Trabajo sin conexión | No abría | ✅ Abre con el servidor apagado (0 archivos fallidos) y muestra el acceso con un mensaje claro |
+
+### 9.1 Qué se corrigió en cada hallazgo
+
+| N.º | Corrección | Dónde |
+|---|---|---|
+| F-1 | El CSV de HOSIX / Galenos se envía al servidor (`/api/padron/importar-lote`). El aviso de éxito aparece solo cuando el servidor confirma. El analizador lee el texto completo: comillas con saltos de línea, marca BOM, `\r\n`, y UTF-8 o Windows-1252. Ya no inventa DNI («DNI-1»), nombre («PACIENTE REGISTRADO»), dirección ni diagnóstico («I10»): las filas sin documento o sin nombre se descartan y el aviso indica cuáles. El establecimiento sale de la columna `COD_IPRESS_ORIGEN` (cierra **T-11**). | `client/js/data/hosixParser.js`, `client/js/main.js` (`handleFileUpload`) |
+| F-2 | El Excel exportado se vuelve a importar 100 % válido. Un paciente que ya está en el sistema sin consentimiento puede cargarse y se le preguntará en su primer WhatsApp; a un paciente nuevo se le sigue exigiendo. Un establecimiento del catálogo oficial escrito con su código (por ejemplo, P. S. Culebras) se acepta. Se quitó el valor «0» de «meses de medicación» del padrón inicial ficticio, porque no existe en la lista oficial. | `client/js/ui/padronGridModal.js`, `client/js/data/padronSchema.js`, `server/db/padron_inicial.js` |
+| F-3 | El tablero del Director se arma con agregados que entrega el servidor en `/api/alerts/summary` (bloque `tablero`), sin datos individuales. El cálculo vive en un módulo único que usan el servidor y el navegador, así los números coinciden. | `client/js/clinical/resumenTablero.js` (nuevo), `server/routes/apiRoutes.js`, `client/js/main.js` |
+| F-4 | Se quitó el script de `index.html` que borraba en cada carga la caché vigente del trabajador de servicio (comparaba contra un nombre antiguo). La instalación guarda archivo por archivo y la lista de caché coincide con las versiones de la página. | `client/index.html`, `client/sw.js` |
+| F-5 | Las capas se traen al frente con una función que también recorre los grupos (`L.layerGroup` no tiene `bringToFront`). | `client/js/map/mapManager.js` (`traerAlFrente`) |
+| F-6 | El mensaje usa la cita real del paciente. Con cita futura dice «su próximo control es el *dd/mm/aaaa*»; con la cita vencida pide reprogramar; sin cita no inventa fecha; a un fallecido no se le envía nada. | `client/js/clinical/whatsappNotifier.js`, `client/js/main.js` |
+| O-1 | Se agregaron los 13 estilos que faltaban: la ficha muestra cada dato en su celda y se reacomoda en pantallas angostas. | `client/css/components.css` |
+| O-2 | Con el padrón o las capas abiertos, la barra de indicadores se centra en el espacio libre del mapa. | `client/css/layout.css` |
+| O-3 | «Total» y «Población crónica activa» ya no cuentan a los fallecidos, así que la suma de los semáforos da el total. «Sin cita» ya no se cuenta como «cita vigente». Los botones de filtro dicen «Cita vigente» y «Deserción», igual que los indicadores. | `resumenTablero.js`, `client/index.html`, LEEME |
+| O-4 | Después de guardar una atención o una pre-cita se recarga el padrón desde el servidor: la tarjeta muestra la presión y el control, y los indicadores cambian sin recargar la página. | `registroClinicoModal.js`, `main.js` (`confirmarPreCita`) |
+| O-5 | El período del tablero es el mes en curso en Lima («Período Noviembre 2026»). | `client/index.html`, `main.js` |
+| O-6 | La ventana del marcador dice «Solicitar exámenes» a los pacientes ya empadronados y «Empadronar en HEARTS» solo a la brecha HOSIX. | `mapManager.js` |
+| O-7 | El registro clínico y la cuadrícula de Excel avisan con mensajes en pantalla, no con la ventana de alerta del navegador. Los avisos quedan por encima de cualquier ventana. | `registroClinicoModal.js`, `padronGridModal.js`, `components.css` |
+| O-8 | «Director (solo tablero de su red)», «Tablero de indicadores» y créditos de mapas en español («Datos del mapa», «Mosaicos», «Imágenes», «Relieve», «colaboradores de OpenStreetMap»). | `index.html`, `mapManager.js` |
+| R-1 a R-10 | **Cabecera:** el buscador cede espacio y lo demás se oculta por tramos, solo cuando existe en otro lugar. **Celular:** los 5 indicadores en una fila, paneles a todo el ancho por encima de la barra inferior, ficha en 2 columnas, registro en una columna con «Guardar» fijo al pie, cuadrícula con ✕ visible, tablero y usuarios sin cortes. **Ventanas:** nunca superan el alto de la pantalla. **Pantallas bajas:** menú lateral compacto. **«Salir»:** visible desde 769 px y en la barra inferior hasta 768 px. | `layout.css`, `components.css`, `registro-clinico.css`, `padron-grid.css` |
+| Sección 6 | Las rutas con doble prefijo responden 404 y el límite de peticiones aplica también a `/fhir` (cierra **T-04**). Un JSON mal formado responde 400 con un mensaje claro, sin el texto interno del analizador, y los errores 5xx van al registro del servidor. `/fhir/Patient/:id` entrega un recurso `Patient` y `/bundle` el expediente. `.env.example` ya no trae claves. | `server/server.js`, `server/routes/apiRoutes.js`, `.env.example` |
+| Sección 7 | LEEME: 20 pacientes ficticios, significado de cada indicador, ruta genérica, trabajo sin conexión, consentimiento y CSV, y adaptación a pantallas. HANDOFF: T-04 y T-11 cerradas y una línea de registro. | `LEEME_INICIO_RAPIDO.md`, `docs/HANDOFF.md` |
+
+### 9.2 Lo que queda pendiente
+
+- `GET /fhir/metadata` sigue exigiendo credencial. Hacerlo público es una decisión de seguridad que debe tomar el equipo, no un error.
+- Siguen pendientes las tareas de seguridad que el equipo dejó para el final (T-05 en su parte de CSP y CORS, T-10 y T-15) y la carga de datos reales (T-18). Este reporte no las cubre.
+- En celular horizontal (390 px de alto) la ficha clínica se puede usar desplazándose, pero muestra poco contenido a la vez por el poco alto de la pantalla.
+
+### 9.3 Capturas después de las correcciones
+
+`12_despues_ficha_con_celdas.jpg`, `13_despues_indicadores_con_panel_abierto.jpg`, `14_despues_tablero_director.jpg`, `15_despues_reimportar_excel_100.jpg`, `16_despues_sin_conexion.jpg`, `17_despues_movil_360_mapa_padron_ficha_registro.jpg`, `18_despues_movil_360_excel_tablero_usuarios_precita.jpg`, `19_despues_movil_horizontal.jpg` y `20_despues_tablet_1024_con_salir.jpg`, en la carpeta [`reporte_navegador_2026-11-05/`](reporte_navegador_2026-11-05/).

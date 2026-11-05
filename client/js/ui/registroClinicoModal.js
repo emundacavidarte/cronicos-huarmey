@@ -1020,6 +1020,15 @@
       this.dom.liveQueLeFalta.textContent = calc.que_le_falta;
     }
 
+    /** Aviso no bloqueante (toast); si la aplicación no está cargada, cae en la alerta del navegador. */
+    avisar(mensaje, tipo) {
+      if (window.app && typeof window.app.showToast === 'function') {
+        window.app.showToast(mensaje, tipo || 'info', tipo === 'danger' ? 8000 : 5000);
+      } else {
+        alert(mensaje);
+      }
+    }
+
     /**
      * Guarda la atención y sincroniza con el Padrón Estandarizado y el mapa territorial
      */
@@ -1032,27 +1041,27 @@
 
       // Validaciones obligatorias
       if (dni.length !== 8) {
-        alert('El DNI debe tener exactamente 8 dígitos numéricos.');
+        this.avisar('El DNI debe tener exactamente 8 dígitos numéricos.', 'warning');
         this.dom.inputDni.focus();
         return;
       }
       if (!nombres) {
-        alert('Por favor ingrese los apellidos y nombres del paciente.');
+        this.avisar('Por favor ingrese los apellidos y nombres del paciente.', 'warning');
         this.dom.nombres.focus();
         return;
       }
       if (!this.dom.fechaNac.value) {
-        alert('Por favor ingrese la fecha de nacimiento.');
+        this.avisar('Por favor ingrese la fecha de nacimiento.', 'warning');
         this.dom.fechaNac.focus();
         return;
       }
       if (!direccion) {
-        alert('Por favor ingrese la dirección del paciente para su georreferenciación en Huarmey.');
+        this.avisar('Por favor ingrese la dirección del paciente para su georreferenciación en Huarmey.', 'warning');
         this.dom.direccion.focus();
         return;
       }
       if (!this.dom.consentimiento.value) {
-        alert('Pregunte al paciente si autoriza recordatorios por WhatsApp y registre su respuesta (Sí o No). Se pregunta una sola vez.');
+        this.avisar('Pregunte al paciente si autoriza recordatorios por WhatsApp y registre su respuesta (Sí o No). Se pregunta una sola vez.', 'warning');
         this.dom.consentimiento.focus();
         return;
       }
@@ -1152,29 +1161,18 @@
           throw new Error(`La atención no se guardó: ${motivo} (código ${respuesta ? respuesta.status : 'sin respuesta'}).`);
         }
 
-        // 2. Actualizar en Memoria y Mapa Territorial
+        // 2. Recargar el padrón desde el servidor (O-4): así la tarjeta muestra la presión, el control y el
+        //    semáforo que el servidor guardó, y no una copia incompleta armada en el navegador
+        this.close();
         if (window.app) {
-          const list = Array.isArray(window.app.patients) ? [...window.app.patients] : [];
-          const idx = list.findIndex(p => String(p.dni || p.nro_documento) === dni);
-          if (idx >= 0) {
-            list[idx] = fullPatient;
-          } else {
-            list.unshift(fullPatient);
+          if (typeof window.app.loadInitialData === 'function') {
+            await window.app.loadInitialData();
           }
-
-          window.app.setPatients(list);
-          window.app.render();
-
-          if (typeof window.app.showToast === 'function') {
-            window.app.showToast(`🎉 ¡Atención de ${nombres} guardada y georreferenciada en el Padrón Estandarizado!`, 'success', 5000);
-          }
+          this.avisar(`Atención de ${nombres} guardada en el Padrón Estandarizado.`, 'success');
         }
 
-        alert(`✅ ¡Atención de ${nombres} guardada con éxito en el Padrón Estandarizado!`);
-        this.close();
-
       } catch (err) {
-        alert('Error al guardar la atención: ' + err.message);
+        this.avisar('Error al guardar la atención: ' + err.message, 'danger');
       } finally {
         this.dom.btnGuardar.disabled = false;
         const iconSave = window.AppIcons ? window.AppIcons.checkCircle(16, '#FFFFFF') : '';

@@ -152,7 +152,7 @@ function rec(step, ok, detail) {
   });
   rec('7.1 Abrir ficha clínica', !!ficha && ficha.visible, ficha ? 'botones: ' + ficha.botones.join(' | ') : 'no se creó el modal');
   if (ficha) {
-    const campos = ['DNI', 'Historia Clínica', 'Edad', 'Sexo', 'Fecha de Nacimiento', 'Seguro', 'Teléfono', 'Dirección', 'Sector', 'IPRESS', 'Presión Arterial', 'Glucosa', 'HbA1c', 'Renal', 'Lipídico', 'Cronograma'];
+    const campos = ['DNI', 'Historia Clínica', 'Edad', 'Sexo', 'Fecha de Nacimiento', 'Seguro', 'Teléfono', 'Dirección', 'Sector', 'IPRESS', 'Presión Arterial', 'Glucosa', 'HbA1c', 'Renal', 'Lipídico', 'Evolución Trimestral'];
     const faltan = campos.filter(c => !ficha.text.toLowerCase().includes(c.toLowerCase()));
     rec('7.2 Campos de la ficha (según LEEME)', faltan.length === 0, faltan.length ? 'no aparecen: ' + faltan.join(', ') : 'los 16 campos aparecen');
     const undef = (ficha.text.match(/undefined|NaN|null\b|\[object Object\]/g) || []);

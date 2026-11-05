@@ -1118,7 +1118,6 @@ module.exports = [
     "tratamiento_dm": "",
     "estatina": "No",
     "aspirina_aas": "No",
-    "meses_medicacion": "0",
     "diagnosticos": [
       "I10"
     ],
@@ -1420,7 +1419,6 @@ module.exports = [
     "tratamiento_dm": "",
     "estatina": "No",
     "aspirina_aas": "No",
-    "meses_medicacion": "0",
     "diagnosticos": [
       "I10"
     ],
@@ -1576,7 +1574,6 @@ module.exports = [
     "tratamiento_dm": "",
     "estatina": "No",
     "aspirina_aas": "No",
-    "meses_medicacion": "0",
     "diagnosticos": [
       "I10",
       "I25.2"

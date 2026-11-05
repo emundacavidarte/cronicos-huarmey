@@ -37,6 +37,7 @@ async function login(page, user, pass) {
 }
 const kpis = page => page.evaluate(() => ['kpi-total', 'kpi-green', 'kpi-yellow', 'kpi-red', 'kpi-purple'].map(i => document.getElementById(i).textContent.trim()).join('/'));
 const lastDialog = () => dialogs.length ? dialogs[dialogs.length - 1] : '(ninguno)';
+const ultimoAviso = page => page.evaluate(() => { const t = document.querySelectorAll('#toast-container .toast'); return t.length ? t[t.length - 1].innerText.replace(/\s+/g, ' ').trim() : ''; });
 
 (async () => {
   const browser = await chromium.launch();
@@ -87,7 +88,8 @@ const lastDialog = () => dialogs.length ? dialogs[dialogs.length - 1] : '(ningun
   const nDlg = dialogs.length;
   await page.click('#reg-btn-guardar');
   await sleep(700);
-  rec('B5. Guardar sin nombre valida', dialogs.length > nDlg, lastDialog());
+  const avisoB5 = await ultimoAviso(page);
+  rec('B5. Guardar sin nombre valida (aviso, sin ventana de alerta)', /apellidos y nombres/.test(avisoB5) && dialogs.length === nDlg, avisoB5);
   await page.fill('#reg-apellidos-nombres', 'PRUEBA NAVEGADOR SINTETICO UNO');
   await page.fill('#reg-fecha-nacimiento', '1960-05-10');
   await page.fill('#reg-direccion', 'Jr. Pativilca 300');
@@ -105,7 +107,8 @@ const lastDialog = () => dialogs.length ? dialogs[dialogs.length - 1] : '(ningun
   const n2 = dialogs.length;
   await page.click('#reg-btn-guardar');
   await sleep(1200);
-  rec('B7. Guardar sin consentimiento valida', dialogs.length > n2, lastDialog());
+  const avisoB7 = await ultimoAviso(page);
+  rec('B7. Guardar sin consentimiento valida (aviso)', /autoriza recordatorios/.test(avisoB7) && dialogs.length === n2, avisoB7);
   await page.selectOption('#reg-consentimiento', 'Sí, firmado');
   const n3 = dialogs.length;
   const antes = await page.evaluate(() => window.app.patients.length);

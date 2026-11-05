@@ -214,6 +214,9 @@ class App {
       this.closeAllDrawers();
       this.renderDashboard();
       this.loadIndicadoresConvenio();
+      // El DIRECTOR no tiene lista de pacientes: se pide al servidor el resumen agregado al día
+      const per = this.permisos();
+      if (!per.verPacientes && per.verResumen) this.loadResumenDashboard();
     } else {
       if (viewDash) viewDash.classList.remove('active-view');
       if (viewMap) viewMap.classList.remove('is-hidden');
@@ -243,115 +246,73 @@ class App {
     }
   }
 
+  /**
+   * Resumen para el tablero y la barra de indicadores. Con lista de pacientes se calcula aquí; el DIRECTOR
+   * no recibe pacientes y usa el resumen agregado que entrega el servidor (F-3).
+   */
+  resumenActual() {
+    const lista = this.patients || [];
+    if (lista.length === 0 && this._resumenServidor && this._resumenServidor.tablero) {
+      return this._resumenServidor.tablero;
+    }
+    return window.ResumenTablero.calcular(lista, window.ESTABLECIMIENTOS_HUARMEY || []);
+  }
+
+  /** Botón «Actualizar» del tablero: el DIRECTOR vuelve a pedir el resumen; los demás recalculan con su lista. */
+  actualizarTablero() {
+    const per = this.permisos();
+    if (!per.verPacientes && per.verResumen) this.loadResumenDashboard();
+    this.renderDashboard();
+    this.loadIndicadoresConvenio();
+  }
+
   renderDashboard() {
-    const list = this.patients || [];
-    const total = list.length;
-    
-    // Contadores de semáforo
-    let green = 0, yellow = 0, red = 0, purple = 0, black = 0;
-    // Control de presión arterial: definición HEARTS = la última medición < 140/90, sobre quienes tienen una medición
-    let controlled = 0;
-    let conPa = 0;
-    
-    // Contadores por diagnóstico CIE-10
-    let countHTA = 0, countDM = 0, countERC = 0, countDislip = 0, countObes = 0;
-    
-    // Distribución por IPRESS
-    const ipressMap = new Map();
-
-    for (const p of list) {
-      if (p.fallecido || p.semaforo === 'black') black++;
-      else if (p.semaforo === 'green') green++;
-      else if (p.semaforo === 'yellow') yellow++;
-      else if (p.semaforo === 'red') red++;
-      else if (p.semaforo === 'purple' || p.fuente === 'HOSIX') purple++;
-      else green++;
-
-      const obs = (Array.isArray(p.observations) && p.observations.length > 0) ? p.observations[0] : null;
-      const pas = Number(p.pa_sistolica != null ? p.pa_sistolica : (obs ? obs.pa_sistolica : null));
-      const pad = Number(p.pa_diastolica != null ? p.pa_diastolica : (obs ? obs.pa_diastolica : null));
-      const hasValidBp = !isNaN(pas) && !isNaN(pad) && pas > 0 && pad > 0;
-      const isControlled = hasValidBp && pas < 140 && pad < 90;
-      const cuenta = !p.fallecido && p.semaforo !== 'black';
-      if (hasValidBp && cuenta) conPa++;
-      if (isControlled && cuenta) {
-        controlled++;
-      }
-
-      const diags = ((p.diagnosticos || []).concat((p.conditions || []).map(c => c.cie10_cod || ''))).join(' ');
-      if (diags.includes('I1')) countHTA++;
-      if (diags.includes('E1')) countDM++;
-      if (diags.includes('N18')) countERC++;
-      if (diags.includes('E78')) countDislip++;
-      if (diags.includes('E66')) countObes++;
-
-      const ipressName = p.puerta_entrada || p.establecimiento_adscripcion || 'Hospital de Apoyo Huarmey';
-      const ipressClave = p.puerta_entrada_id || ipressName;
-      if (!ipressMap.has(ipressClave)) {
-        // La categoría sale del catálogo oficial por código RENIPRESS, no del nombre
-        const cat = (window.ESTABLECIMIENTOS_HUARMEY || []).find(e => e.cod_renipress === p.puerta_entrada_id);
-        ipressMap.set(ipressClave, { nombre: cat && cat.nombre ? cat.nombre : ipressName, categoria: cat ? cat.categoria : null, total: 0, controlled: 0, conPa: 0, red: 0 });
-      }
-      const entry = ipressMap.get(ipressClave);
-      entry.total++;
-      if (hasValidBp && cuenta) entry.conPa++;
-      if (isControlled && cuenta) entry.controlled++;
-      if (p.semaforo === 'red') entry.red++;
+    // O-5: el período es el mes en curso en Lima (antes decía «Octubre 2026» fijo)
+    const periodo = document.getElementById('dash-periodo-txt');
+    if (periodo && window.FechaLima) {
+      const [anio, mes] = window.FechaLima.hoy().split('-').map(Number);
+      const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      periodo.textContent = `Período ${MESES[mes - 1]} ${anio}`;
     }
+    const r = this.resumenActual();
+    const s = r.semaforo;
+    const activos = r.activos;
+    const totalBarra = r.total_registros;
+    const pctControlled = r.presion.con_medicion > 0 ? Math.round((r.presion.controlados / r.presion.con_medicion) * 100) : 0;
 
-    const pctControlled = conPa > 0 ? Math.round((controlled / conPa) * 100) : 0;
+    // Tarjetas principales (población activa = sin fallecidos)
+    const poner = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    poner('dash-val-total', activos);
+    if (!this._heroDelServidor) poner('dash-val-control', `${pctControlled}%`);
+    poner('dash-val-desercion', s.red);
+    poner('dash-val-proximos', s.yellow);
 
-    // Actualizar Hero Cards
-    const elTotal = document.getElementById('dash-val-total');
-    const elControl = document.getElementById('dash-val-control');
-    const elDesercion = document.getElementById('dash-val-desercion');
-    const elProximos = document.getElementById('dash-val-proximos');
-    if (elTotal) elTotal.textContent = total;
-    if (elControl && !this._heroDelServidor) elControl.textContent = `${pctControlled}%`;
-    if (elDesercion) elDesercion.textContent = red;
-    if (elProximos) elProximos.textContent = yellow;
+    // Barra del semáforo (sobre todos los registros, fallecidos incluidos, para que sume 100 %)
+    ['green', 'yellow', 'red', 'purple', 'gray', 'black'].forEach(c => {
+      const seg = document.getElementById('bar-seg-' + c);
+      if (seg) seg.style.width = totalBarra > 0 ? `${(s[c] / totalBarra) * 100}%` : '0%';
+      poner('dash-count-' + c, s[c]);
+    });
+    const leyendaGris = document.getElementById('dash-legend-gray');
+    if (leyendaGris) leyendaGris.style.display = s.gray > 0 ? '' : 'none';
 
-    // Actualizar Barra HEARTS
-    const segGreen = document.getElementById('bar-seg-green');
-    const segYellow = document.getElementById('bar-seg-yellow');
-    const segRed = document.getElementById('bar-seg-red');
-    const segPurple = document.getElementById('bar-seg-purple');
-    const segBlack = document.getElementById('bar-seg-black');
-    if (total > 0) {
-      if (segGreen) segGreen.style.width = `${(green / total) * 100}%`;
-      if (segYellow) segYellow.style.width = `${(yellow / total) * 100}%`;
-      if (segRed) segRed.style.width = `${(red / total) * 100}%`;
-      if (segPurple) segPurple.style.width = `${(purple / total) * 100}%`;
-      if (segBlack) segBlack.style.width = `${(black / total) * 100}%`;
-    }
-    const cG = document.getElementById('dash-count-green');
-    const cY = document.getElementById('dash-count-yellow');
-    const cR = document.getElementById('dash-count-red');
-    const cP = document.getElementById('dash-count-purple');
-    const cB = document.getElementById('dash-count-black');
-    if (cG) cG.textContent = green;
-    if (cY) cY.textContent = yellow;
-    if (cR) cR.textContent = red;
-    if (cP) cP.textContent = purple;
-    if (cB) cB.textContent = black;
-
-    // Actualizar Lista de Patologías
+    // Patologías (sobre la población activa)
     const pathList = document.getElementById('dash-pathology-list');
     if (pathList) {
       const pathologies = [
-        { name: 'Hipertensión Arterial Esencial (I10)', count: countHTA, color: '#1A73E8' },
-        { name: 'Diabetes Mellitus Tipo 2 (E11)', count: countDM, color: '#F29900' },
-        { name: 'Enfermedad Renal Crónica (N18)', count: countERC, color: '#9334E6' },
-        { name: 'Dislipidemia Mixta / Hipercolesterolemia (E78)', count: countDislip, color: '#1E8E3E' },
-        { name: 'Obesidad y Sobrepeso Clínico (E66)', count: countObes, color: '#D93025' }
+        { name: 'Hipertensión Arterial Esencial (I10)', count: r.patologias.hta, color: '#1A73E8' },
+        { name: 'Diabetes Mellitus Tipo 2 (E11)', count: r.patologias.dm, color: '#F29900' },
+        { name: 'Enfermedad Renal Crónica (N18)', count: r.patologias.erc, color: '#9334E6' },
+        { name: 'Dislipidemia Mixta / Hipercolesterolemia (E78)', count: r.patologias.dislipidemia, color: '#1E8E3E' },
+        { name: 'Obesidad y Sobrepeso Clínico (E66)', count: r.patologias.obesidad, color: '#D93025' }
       ];
       pathList.innerHTML = pathologies.map(item => {
-        const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+        const pct = activos > 0 ? Math.round((item.count / activos) * 100) : 0;
         return `
           <div>
-            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px;">
+            <div style="display:flex; justify-content:space-between; gap:8px; font-size:12.5px; margin-bottom:4px;">
               <span style="font-weight:500; color:var(--text-main);">${item.name}</span>
-              <span style="font-weight:600; color:var(--text-secondary);">${item.count} pac. (${pct}%)</span>
+              <span style="font-weight:600; color:var(--text-secondary); white-space:nowrap;">${item.count} pac. (${pct}%)</span>
             </div>
             <div style="height:6px; border-radius:3px; background:var(--slate-100); overflow:hidden;">
               <div style="height:100%; width:${pct}%; background:${item.color}; border-radius:3px;"></div>
@@ -361,21 +322,19 @@ class App {
       }).join('');
     }
 
-    // Actualizar Tabla por IPRESS
+    // Tabla por IPRESS (el DIRECTOR no tiene lista de pacientes: sin botón «Ver en mapa»)
     const ipressTbody = document.getElementById('dash-ipress-tbody');
     if (ipressTbody) {
-      const rows = [];
-      ipressMap.forEach((data) => {
-        const name = data.nombre;
-        const pct = data.conPa > 0 ? Math.round((data.controlled / data.conPa) * 100) : null;
-        const categoria = data.categoria || 'Sin dato';
-        rows.push(`
+      const verMapa = this.permisos().verPacientes;
+      ipressTbody.innerHTML = r.ipress.map(data => {
+        const pct = data.con_medicion > 0 ? Math.round((data.controlados / data.con_medicion) * 100) : null;
+        return `
           <tr>
-            <td><strong>${window.escapeHtml(name)}</strong></td>
-            <td><span class="badge-diag">${categoria}</span></td>
+            <td><strong>${window.escapeHtml(data.nombre)}</strong></td>
+            <td><span class="badge-diag">${window.escapeHtml(data.categoria || 'Sin dato')}</span></td>
             <td><strong>${data.total}</strong></td>
-            <td><span style="color:var(--hearts-green-text); font-weight:600;">${data.controlled}</span></td>
-            <td><span style="color:var(--hearts-red-text); font-weight:600;">${data.red}</span></td>
+            <td><span style="color:var(--hearts-green-text); font-weight:600;">${data.controlados}</span></td>
+            <td><span style="color:var(--hearts-red-text); font-weight:600;">${data.desercion}</span></td>
             <td>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-weight:600; min-width:32px;">${pct === null ? 'Sin dato' : pct + '%'}</span>
@@ -384,13 +343,10 @@ class App {
                 </div>
               </div>
             </td>
-            <td>
-              <button class="btn-export-mini" onclick="window.app.switchView('mapa'); window.app.toggleHeartsPanel(true);" title="Ver pacientes en mapa">Ver en Mapa</button>
-            </td>
+            <td>${verMapa ? `<button class="btn-export-mini" onclick="window.app.switchView('mapa'); window.app.toggleHeartsPanel(true);" title="Ver pacientes en el mapa">Ver en mapa</button>` : '—'}</td>
           </tr>
-        `);
-      });
-      ipressTbody.innerHTML = rows.join('');
+        `;
+      }).join('');
     }
   }
 
@@ -479,6 +435,7 @@ class App {
    */
   limpiarSesion() {
     this._heroDelServidor = false;
+    this._resumenServidor = null;
     this.patients = [];
     this.patientMap.clear();
     this.semaforosCorregidos = 0;
@@ -535,8 +492,15 @@ class App {
       }
       const r = await res.json();
       if (this.session.getToken() !== token) return;
-      const a = r.alertas || {};
-      this._setKpiValores(r.total_pacientes || 0, a.vigentes_verde || 0, a.proximos_amarillo || 0, a.desertores_rojo || 0, a.hosix_brecha_morado || 0);
+      this._resumenServidor = r;
+      if (r.tablero) {
+        this.updateKpis();
+        const dash = document.getElementById('view-dashboard');
+        if (dash && dash.classList.contains('active-view')) this.renderDashboard();
+      } else {
+        const a = r.alertas || {};
+        this._setKpiValores((r.total_pacientes || 0) - (r.fallecidos || 0), a.vigentes_verde || 0, a.proximos_amarillo || 0, a.desertores_rojo || 0, a.hosix_brecha_morado || 0);
+      }
     } catch (e) {
       this.showToast('No se pudo conectar con el servidor para cargar el resumen.', 'warning', 5000);
     }
@@ -931,29 +895,9 @@ class App {
   }
 
   updateKpis() {
-    const total = this.patients.length;
-    let green = 0, yellow = 0, red = 0, purple = 0;
-
-    for (let i = 0; i < total; i++) {
-      const p = this.patients[i];
-      if (p.fallecido) continue; // los fallecidos no cuentan como desertores ni como pendientes
-      if (p.semaforo === 'purple' || p.fuente === 'HOSIX') purple++;
-      else if (p.semaforo === 'green') green++;
-      else if (p.semaforo === 'yellow') yellow++;
-      else if (p.semaforo === 'red') red++;
-    }
-
-    const elTotal = document.getElementById('kpi-total');
-    const elGreen = document.getElementById('kpi-green');
-    const elYellow = document.getElementById('kpi-yellow');
-    const elRed = document.getElementById('kpi-red');
-    const elPurple = document.getElementById('kpi-purple');
-
-    if (elTotal) elTotal.textContent = total;
-    if (elGreen) elGreen.textContent = green;
-    if (elYellow) elYellow.textContent = yellow;
-    if (elRed) elRed.textContent = red;
-    if (elPurple) elPurple.textContent = purple;
+    // Mismo cálculo que el tablero: «Total» = pacientes activos (sin fallecidos); los demás son su semáforo (O-3)
+    const r = this.resumenActual();
+    this._setKpiValores(r.activos, r.semaforo.green, r.semaforo.yellow, r.semaforo.red, r.semaforo.purple);
   }
 
   findPatient(idOrDni) {
@@ -1866,7 +1810,10 @@ class App {
     }
 
     this.showToast(mensaje, tipo, 5000);
-    this.render();
+    // O-4: con la pre-cita guardada en el servidor se recarga el padrón para que el semáforo y los indicadores
+    // reflejen la nueva cita sin tener que recargar la página
+    if (tipo === 'success') await this.loadInitialData();
+    else this.render();
   }
 
   enviarWhatsApp(idOrDni) {
@@ -1885,11 +1832,13 @@ class App {
       return;
     }
 
-    const fechaSugerida = new Date();
-    fechaSugerida.setDate(fechaSugerida.getDate() + 3);
-    const fechaStr = fechaSugerida.toLocaleDateString('es-PE');
+    if (p.fallecido) {
+      this.showToast('El paciente figura como fallecido: no se envían recordatorios.', 'warning', 4000);
+      return;
+    }
 
-    const url = window.WhatsappNotifier.generarEnlace(p, fechaStr);
+    // F-6: el mensaje usa la cita real del paciente (fecha_limite), no una fecha inventada
+    const url = window.WhatsappNotifier.generarEnlace(p);
     if (!url) {
       this.showToast(`El paciente ${p.apellidos_nombres} no registra número celular válido en el Padrón ni en HOSIX.`, "warning", 4000);
       return;
@@ -2155,10 +2104,16 @@ class App {
       }
     }
 
-    // 2. Si es archivo de texto / CSV
+    // 2. Archivo de texto / CSV: se lee como UTF-8 y, si no lo es, como Windows-1252 (Excel en Windows) (T-11, F10)
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target.result;
+    reader.onload = async (e) => {
+      const bytes = new Uint8Array(e.target.result);
+      let text;
+      try {
+        text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch (err) {
+        text = new TextDecoder('windows-1252').decode(bytes);
+      }
 
       // Si es un CSV con las columnas del Padrón Estandarizado, abrir en el editor interactivo
       if ((text.includes('Fecha de captación') || text.includes('N.º de documento') || text.includes('Tipo de documento')) && window.PadronGridModal) {
@@ -2167,18 +2122,51 @@ class App {
         return;
       }
 
-      // De lo contrario, procesar con el parser HOSIX / Galenos
+      // De lo contrario, formato HOSIX / Galenos: se guarda en el servidor (F-1). Antes solo quedaba en pantalla.
       const records = window.HosixParser.parseCSV(text);
       if (records.length === 0) {
         this.showToast('El archivo no contiene filas válidas o el formato no es compatible.', 'danger');
         return;
       }
-      const processed = window.HosixParser.processRecords(records);
-      this.upsertPatients(processed);
-      this.render();
-      this.showToast(`¡Ingesta exitosa! Se procesaron y georreferenciaron ${processed.length} pacientes.`, 'success', 5000);
+      const { validos, descartados } = window.HosixParser.procesarParaServidor(records);
+      const detalleDescartes = descartados.length
+        ? ` ${descartados.length} fila(s) no se cargaron: ${descartados.slice(0, 5).map(d => `fila ${d.fila} (${d.motivo})`).join(', ')}${descartados.length > 5 ? '…' : ''}.`
+        : '';
+      if (validos.length === 0) {
+        this.showToast(`Ninguna fila tiene número de documento y nombre válidos.${detalleDescartes}`, 'danger', 7000);
+        return;
+      }
+
+      const token = this.session.getToken();
+      this.showToast(`Guardando ${validos.length} paciente(s) en el servidor…`, 'info', 2500);
+      let res;
+      try {
+        res = await this.session.authFetch('/api/padron/importar-lote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ patients: validos })
+        });
+      } catch (err) {
+        this.showToast('Sin conexión con el servidor: el archivo NO se guardó. Intente de nuevo cuando haya conexión.', 'danger', 7000);
+        return;
+      }
+      if (this.session.getToken() !== token) return;
+      if (!res.ok) {
+        let motivo = `código ${res.status}`;
+        try {
+          const cuerpo = await res.json();
+          const d = cuerpo && cuerpo.issue && cuerpo.issue[0] && cuerpo.issue[0].diagnostics;
+          if (typeof d === 'string' && d) motivo = `${d} (código ${res.status})`;
+        } catch (err) { /* sin cuerpo */ }
+        if (res.status !== 401) this.showToast(`El servidor no guardó el archivo: ${motivo}.`, 'danger', 7000);
+        return;
+      }
+
+      // Solo con la confirmación del servidor se recarga el padrón y se avisa el éxito
+      await this.loadInitialData();
+      this.showToast(`Se guardaron ${validos.length} paciente(s) en el servidor.${detalleDescartes}`, descartados.length ? 'warning' : 'success', 6000);
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   }
 
   /**
