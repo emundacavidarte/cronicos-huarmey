@@ -25,8 +25,7 @@ _CLAUDE/
 .env.local
 .env.production
 
-# Capas oficiales descargadas por tools/comparar_georis_oficial.js (se regeneran)
-georis_oficial/
+# georis_oficial/ SÍ se versiona: son capas públicas del MINSA (sin datos personales) que se suben para compararlas.
 
 # Archivos temporales de pruebas y auditorías
 *.tmp

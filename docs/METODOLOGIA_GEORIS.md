@@ -114,7 +114,7 @@ De acuerdo al marco metodológico del MINSA para la delimitación de RIS:
 
 ## 5. Verificación de las capas GeoRIS del prototipo (05/11/2026)
 
-> **Contraste con la fuente oficial en línea:** el servidor `geominsa.minsa.gob.pe` está detrás de Cloudflare y rechaza las conexiones desde servidores en la nube. Para compararlo y actualizar el bundle, ejecute en la PC de la oficina (con el proyecto y Node.js): `COMPARAR_GEORIS_OFICIAL.bat` (solo compara) o `COMPARAR_GEORIS_OFICIAL.bat --actualizar` (además reemplaza las capas por las oficiales, con copia de respaldo). Deja el informe en `docs/COMPARACION_GEORIS_OFICIAL.md`. Luego `npm test` y subir los cambios.
+> **Contraste con la fuente oficial en línea:** el servidor `geominsa.minsa.gob.pe` está detrás de Cloudflare y rechaza las conexiones desde servidores en la nube. Para obtener las capas oficiales desde el navegador de la oficina siga `georis_oficial/LEEME.md` (guion de consola `tools/descargar_georis_en_navegador.js`). Para compararlo y actualizar el bundle, ejecute en la PC de la oficina (con el proyecto y Node.js): `COMPARAR_GEORIS_OFICIAL.bat` (solo compara) o `COMPARAR_GEORIS_OFICIAL.bat --actualizar` (además reemplaza las capas por las oficiales, con copia de respaldo). Deja el informe en `docs/COMPARACION_GEORIS_OFICIAL.md`. Luego `npm test` y subir los cambios.
 
 Medición automática sobre el bundle del repositorio y sobre el mapa dibujado en el navegador (sin acceso al servidor `geominsa.minsa.gob.pe` desde el entorno de verificación; no se comparó contra la fuente en línea):
 
