@@ -100,6 +100,8 @@
       return Number.isFinite(exp) && exp > now();
     }
 
+    let vencidaAlCargar = false;
+
     function cargar() {
       let raw = null;
       try { raw = storage.getItem(STORAGE_KEY); } catch (e) { raw = null; }
@@ -109,6 +111,8 @@
       if (vigente(parsed)) {
         session = { token: parsed.token, expires_at: parsed.expires_at, user: limpiarUsuario(parsed.user) };
       } else {
+        // C-14: había una sesión guardada pero ya venció: la pantalla de acceso lo dice
+        vencidaAlCargar = !!(parsed && parsed.token);
         borrarAlmacenado();
       }
     }
@@ -131,7 +135,8 @@
           cache: 'no-store'
         });
       } catch (e) {
-        return { ok: false, status: 0, message: 'No se pudo conectar con el servidor. Verifique que esté encendido.' };
+        const sinRed = typeof navigator !== 'undefined' && navigator.onLine === false;
+        return { ok: false, status: 0, message: sinRed ? 'Sin conexión a internet. El sistema necesita conexión para ingresar.' : 'No se pudo conectar con el servidor. Verifique que esté encendido.' };
       }
       let body = null;
       try { body = await res.json(); } catch (e) { body = null; }
@@ -215,6 +220,7 @@
     cargar();
 
     return {
+      vencioAlCargar: () => vencidaAlCargar,
       login,
       logout,
       authFetch,

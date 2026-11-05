@@ -1612,3 +1612,6 @@
 #modal-consentimiento {
   z-index: 1600;
 }
+
+/* Tablero del DIRECTOR: detalle no disponible para su rol (C-03) */
+.dash-no-disponible { padding: 12px; font-size: var(--font-sm, 13px); color: #5F6368; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 6px; }

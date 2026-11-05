@@ -13,6 +13,9 @@ const APP_CONFIG = {
   HOSPITAL_COD_RENIPRESS: "00001741",
   RIS_ID_DEFAULT: 156, // RIS Pacífico Sur
   
+  // Minutos sin uso tras los que se cierra la sesión (equipos compartidos)
+  INACTIVIDAD_MINUTOS: 30,
+
   // Modos de Conexión: 'LOCAL_MOCK', 'LOCAL_SERVER', 'CLOUD_PRODUCTION'
   ENV_MODE: 'LOCAL_SERVER',
 

@@ -687,6 +687,13 @@ router.post('/padron/importar-lote', requireScope(ROLES_ESCRITURA), (req, res) =
       if (!p.diagnosticos && Array.isArray(p.conditions)) {
         p.diagnosticos = p.conditions.map(c => c.cie10_cod);
       }
+      // Los diagnósticos se acumulan (igual que los registros de Condition): una importación o una atención que no
+      // repite un diagnóstico ya no lo borra. Antes se perdía, por ejemplo, la dislipidemia (C-08).
+      const previo = (p.dni && db.getPatientByDni(p.dni)) || (p.id && db.getPatientByIdOrDni(p.id)) || null;
+      if (previo && Array.isArray(previo.diagnosticos) && previo.diagnosticos.length > 0) {
+        const nuevos = Array.isArray(p.diagnosticos) ? p.diagnosticos : [];
+        p.diagnosticos = [...new Set(previo.diagnosticos.concat(nuevos).map(String))];
+      }
       if (p.pa_sistolica == null && Array.isArray(p.observations) && p.observations[0]) {
         p.pa_sistolica = p.observations[0].pa_sistolica;
         p.pa_diastolica = p.observations[0].pa_diastolica;

@@ -701,6 +701,7 @@
         return;
       }
 
+      const textoBotonCargar = this.dom.btnCargar.textContent;
       this.dom.btnCargar.disabled = true;
       this.dom.btnCargar.textContent = '⏳ Geocodificando y persistiendo en el sistema...';
 
@@ -709,8 +710,19 @@
         const hearts = window.HeartsEngine || { evaluatePatient: () => ({ semaforo: 'green', estado_control: 'Controlado' }) };
 
         // 1. Transformar filas limpias en pacientes con recursos clínicos FHIR y coordenadas
+        const esquema = window.PadronSchema;
+        // Id estable de un paciente sin documento: huella de nombre, fecha de nacimiento y sexo (reimportar no lo duplica)
+        const huellaSinDocumento = r => {
+          const base = [r.apellidos_nombres, r.fecha_nacimiento, r.sexo].map(v => String(v || '').trim().toUpperCase()).join('|');
+          let h = 0x811c9dc5;
+          for (let i = 0; i < base.length; i++) { h ^= base.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+          return 'pac-sd-' + h.toString(16).padStart(8, '0');
+        };
+        const calcEdad = window.PadronCalculadora && window.PadronCalculadora.calcularEdad;
         const processedPatients = this.patients.map((r, idx) => {
-          const dni = String(r.nro_documento || '').replace(/\D/g, '');
+          // DNI solo dígitos; carné de extranjería y pasaporte conservan sus letras; «Sin documento» no lleva número
+          const dni = esquema && esquema.documentoNormalizado ? esquema.documentoNormalizado(r) : String(r.nro_documento || '').replace(/\D/g, '');
+          const sinDocumento = esquema && esquema.tipoDocumento ? esquema.tipoDocumento(r) === 'SIN' : false;
           const direccion = r.direccion || '';
           const geo = geocoder.geocode(direccion || 'Huarmey');
 
@@ -730,7 +742,7 @@
           const fechaProxima = r.proxima_cita || null;
 
           const pObj = {
-            id: `pac-00001741-${dni}`,
+            id: sinDocumento ? huellaSinDocumento(r) : `pac-00001741-${dni}`,
             dni,
             tipo_documento: r.tipo_documento || 'DNI',
             historia_clinica: r.historia_clinica || '',
@@ -792,13 +804,29 @@
             glucosa: glucosa,
             diagnosticos: pObj.conditions.map(c => c.cie10_cod),
             sector: pObj.sector_sanitario,
-            edad: r.edad ? parseInt(r.edad, 10) : (r.fecha_nacimiento ? (new Date().getFullYear() - new Date(r.fecha_nacimiento).getFullYear()) : null),
+            // C-06: edad cumplida a hoy (antes: año actual menos año de nacimiento)
+            edad: (r.fecha_nacimiento && calcEdad) ? calcEdad(r.fecha_nacimiento) : (r.edad ? parseInt(r.edad, 10) : null),
             estado_paciente: r.estado_paciente || 'Activo',
             tratamiento_hta: r.tratamiento_hta || '',
             tratamiento_dm: r.tratamiento_dm || '',
             consentimiento: r.consentimiento || ''
           };
         });
+
+        // C-08: avisar ANTES de cargar si hay documentos que ya están en el padrón (sus datos se actualizarán)
+        const existentes = processedPatients.filter(p => p.dni && window.app && window.app.patientMap && window.app.patientMap.has(String(p.dni)));
+        if (existentes.length > 0) {
+          const muestra = existentes.slice(0, 5).map(p => `${p.dni} ${p.apellidos_nombres}`).join('\n');
+          const resto = existentes.length > 5 ? `\n… y ${existentes.length - 5} más` : '';
+          const seguir = window.confirm(`${existentes.length} paciente(s) del archivo ya están en el padrón:\n${muestra}${resto}\n\nSus datos se ACTUALIZARÁN con los del archivo (los diagnósticos previos se conservan). ¿Continuar?`);
+          if (!seguir) {
+            this.dom.btnCargar.disabled = false;
+            this.dom.btnCargar.textContent = textoBotonCargar;
+            return;
+          }
+        }
+        // C-07: pacientes cuya dirección no se pudo ubicar en el mapa
+        const sinUbicar = processedPatients.filter(p => p.latitud === null || p.latitud === undefined || p.longitud === null || p.longitud === undefined);
 
         // 2. Persistir en Backend a través de la API
         let savedInBackend = false;
@@ -833,6 +861,9 @@
 
           if (savedInBackend) {
             window.app.showToast(`🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron ${processedPatients.length} pacientes en el servidor.`, 'success', 6000);
+            if (sinUbicar.length > 0) {
+              window.app.showToast(`⚠️ ${sinUbicar.length} paciente(s) no se pudieron ubicar en el mapa por su dirección (no aparecen como pin): ${sinUbicar.slice(0, 3).map(p => p.apellidos_nombres).join(', ')}${sinUbicar.length > 3 ? '…' : ''}. Revise la dirección en su ficha.`, 'warning', 9000);
+            }
           } else if (backendErrorMsg) {
             window.app.showToast(`⚠️ Pacientes cargados en pantalla, pero el servidor reportó: ${backendErrorMsg}`, 'warning', 7000);
           } else {

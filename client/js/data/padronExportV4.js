@@ -49,6 +49,15 @@
       case 'hba1c': return tiene(p.hba1c) ? p.hba1c : (obs && tiene(obs.hba1c) ? obs.hba1c : '');
       case 'glucosa': return tiene(p.glucosa) ? p.glucosa : (obs && tiene(obs.glucosa) ? obs.glucosa : '');
       case 'estado_paciente': return p.fallecido ? 'Fallecido' : (p.estado_paciente || 'Activo');
+      // C-09: el sistema guarda M/F (FHIR); la lista del padrón usa Femenino/Masculino
+      case 'sexo': {
+        const sx = String(p.sexo || '').trim().toUpperCase();
+        if (sx === 'F' || sx.startsWith('FEM')) return 'Femenino';
+        if (sx === 'M' || sx.startsWith('MAS')) return 'Masculino';
+        return '';
+      }
+      // C-09: «0» meses no es una opción de la lista (1, 2 o 3): vacío significa que no se entregó medicación
+      case 'meses_medicacion': return tiene(p.meses_medicacion) && String(p.meses_medicacion) !== '0' ? p.meses_medicacion : '';
       default: return tiene(p[key]) ? p[key] : '';
     }
   }

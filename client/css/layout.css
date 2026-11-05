@@ -1050,3 +1050,41 @@
     scrollbar-width: none;
   }
 }
+
+/* ==========================================================================
+   MÓVIL (C-10, C-14): encabezado en dos filas con el buscador siempre visible, panel de pacientes al ancho de
+   la pantalla, avisos y controles del mapa por encima de la barra inferior, botones de cierre visibles.
+   ========================================================================== */
+@media (max-width: 768px) {
+  .georis-header {
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding: 6px 10px;
+    gap: 6px 8px;
+  }
+  .georis-brand { flex: 1 1 auto; min-width: 0; }
+  .georis-subtitle { display: none; }
+  .georis-main-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .georis-toolbar { flex: 0 0 auto; gap: 4px; }
+  /* El mapa base se cambia desde «Capas» (barra inferior); en el encabezado no cabe */
+  .georis-toolbar .basemap-selector-wrap { display: none; }
+  .user-chip-text { display: none; }
+  .google-header-search { order: 3; flex: 1 1 100%; max-width: none; }
+
+  .hearts-panel {
+    top: 8px;
+    bottom: 64px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+  .hearts-panel.collapsed { transform: translateX(110%); }
+
+  .toast-container { bottom: 72px; left: 8px; right: 8px; }
+  .georis-map-controls { bottom: 72px; right: 10px; }
+
+  .btn-close-accessible { min-width: 36px; min-height: 36px; opacity: 1; color: #202124; }
+  .modal-footer { flex-wrap: wrap; gap: 6px; }
+  .modal-footer > button { flex: 1 1 140px; }
+}

@@ -417,6 +417,20 @@
       // Al volver a la pestaña o cada minuto: si el token venció, cerrar la sesión sin esperar a la próxima llamada
       document.addEventListener('visibilitychange', () => { if (!document.hidden) session.checkExpiry(); });
       setInterval(() => session.checkExpiry(), 60000);
+
+      // Cierre por inactividad (equipos compartidos del hospital): sin uso durante INACTIVIDAD_MINUTOS se cierra la
+      // sesión en el servidor y se borran los datos de la pantalla. Valor por defecto: 30 minutos (config.js).
+      const minutos = (root.APP_CONFIG && Number(root.APP_CONFIG.INACTIVIDAD_MINUTOS)) || 30;
+      let ultimaActividad = Date.now();
+      ['click', 'keydown', 'mousemove', 'touchstart', 'wheel'].forEach(tipo =>
+        document.addEventListener(tipo, () => { ultimaActividad = Date.now(); }, { passive: true, capture: true }));
+      setInterval(() => {
+        if (session.isLoggedIn() && Date.now() - ultimaActividad > minutos * 60000) {
+          session.logout();
+          app.limpiarSesion();
+          mostrarLogin(`Sesión cerrada por inactividad (${minutos} minutos sin uso). Ingrese nuevamente.`);
+        }
+      }, 30000);
       actualizarCampoRed();
       aplicarRol();
     }
@@ -425,11 +439,20 @@
     async function iniciar() {
       bind();
       if (!session.isLoggedIn()) {
-        mostrarLogin('');
+        // C-14: si la sesión guardada ya venció, la pantalla de acceso lo dice
+        const vencio = typeof session.vencioAlCargar === 'function' && session.vencioAlCargar();
+        mostrarLogin(vencio ? 'Su sesión venció. Ingrese nuevamente.' : '');
         return;
       }
       avisoMostrado = false;
       setInert(true);
+      // C-02: sin internet no se puede confirmar la sesión ni traer datos. No se descarta la sesión ni se guardan
+      // datos de pacientes en el equipo: se avisa y se reintenta solo cuando vuelve la conexión.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        mostrarLogin('Sin conexión a internet. El sistema necesita conexión para mostrar los datos; se reintentará al volver la conexión.');
+        window.addEventListener('online', () => window.location.reload(), { once: true });
+        return;
+      }
       const u = await session.restore();
       if (u) {
         entrar();

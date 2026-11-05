@@ -184,19 +184,47 @@
   });
 
   // 4. Motor de Validación de Celdas y Filas
+  /**
+   * Fecha real del calendario en AAAA-MM-DD o DD/MM/AAAA (C-05). Rechaza fechas imposibles como 31/02/1960
+   * (JavaScript las corría al 3 de marzo) y textos sueltos que Date() interpretaba a su manera.
+   */
   function parseDateOnly(str) {
     if (!str) return null;
-    if (str instanceof Date && !isNaN(str.getTime())) return str;
-    const parts = String(str).trim().split(/[-/]/);
-    if (parts.length === 3) {
-      if (parts[0].length === 4) { // YYYY-MM-DD
-        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      } else if (parts[2].length === 4) { // DD/MM/YYYY
-        return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-      }
-    }
-    const d = new Date(str);
-    return isNaN(d.getTime()) ? null : d;
+    if (str instanceof Date) return isNaN(str.getTime()) ? null : str;
+    const t = String(str).trim();
+    let y, m, d;
+    let x = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/.exec(t);
+    if (x) { y = +x[1]; m = +x[2]; d = +x[3]; }
+    else if ((x = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(t))) { d = +x[1]; m = +x[2]; y = +x[3]; }
+    else return null;
+    const f = new Date(y, m - 1, d);
+    return (f.getFullYear() === y && f.getMonth() === m - 1 && f.getDate() === d) ? f : null;
+  }
+
+  // Catálogo de establecimientos (navegador o Node) para aceptar cualquier EESS con su código RENIPRESS (C-09)
+  function establecimientoConocido(texto) {
+    const m = /\((\d{8})\b/.exec(String(texto));
+    if (!m) return false;
+    let cat = null;
+    if (typeof window !== 'undefined' && window.EstablecimientosHuarmey) cat = window.EstablecimientosHuarmey;
+    else if (typeof require === 'function') { try { cat = require('../map/establecimientos'); } catch (e) { cat = null; } }
+    return !!(cat && typeof cat.getByCode === 'function' && cat.getByCode(m[1]));
+  }
+
+  /** Tipo de documento normalizado: 'DNI' (o vacío), 'SIN' (sin documento) u 'OTRO' (carné de extranjería, pasaporte). */
+  function tipoDocumento(row) {
+    const t = row && row.tipo_documento ? String(row.tipo_documento).trim().toUpperCase() : 'DNI';
+    if (!t || t === 'DNI') return 'DNI';
+    if (t.startsWith('SIN')) return 'SIN';
+    return 'OTRO';
+  }
+
+  /** Número de documento que se guarda: DNI solo dígitos; CE o pasaporte conservan sus letras (en mayúsculas). */
+  function documentoNormalizado(row) {
+    const v = row && row.nro_documento !== undefined && row.nro_documento !== null ? String(row.nro_documento).trim() : '';
+    const tipo = tipoDocumento(row);
+    if (tipo === 'SIN') return '';
+    return tipo === 'DNI' ? v.replace(/\D/g, '') : v.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   }
 
   function validateCell(key, value, row, dniCounts) {
@@ -205,8 +233,9 @@
 
     const valStr = value !== null && value !== undefined ? String(value).trim() : '';
 
-    // Requerido
-    if (col.required && !valStr) {
+    // Requerido (el número de documento no lo es si el tipo es «Sin documento»)
+    const sinDocumento = key === 'nro_documento' && tipoDocumento(row) === 'SIN';
+    if (col.required && !valStr && !sinDocumento) {
       return `El campo "${col.label}" es obligatorio.`;
     }
 
@@ -214,15 +243,17 @@
 
     // 1. Validación de DNI
     if (key === 'nro_documento') {
-      const tipo = (row && row.tipo_documento) ? String(row.tipo_documento).toUpperCase() : 'DNI';
-      if (tipo === 'DNI') {
-        const clean = valStr.replace(/\D/g, '');
-        if (clean.length !== 8) {
-          return `El DNI debe tener exactamente 8 dígitos numéricos (actual: ${clean.length}).`;
-        }
-        if (dniCounts && dniCounts.get(clean) > 1) {
-          return `DNI repetido en el archivo (${dniCounts.get(clean)} veces).`;
-        }
+      const tipo = tipoDocumento(row);
+      if (tipo === 'SIN') return 'Con «Sin documento» deje vacío el número de documento.';
+      const clean = documentoNormalizado({ tipo_documento: row && row.tipo_documento, nro_documento: valStr });
+      if (tipo === 'DNI' && clean.length !== 8) {
+        return `El DNI debe tener exactamente 8 dígitos numéricos (actual: ${clean.length}).`;
+      }
+      if (tipo === 'OTRO' && !/^[A-Z0-9]{6,15}$/.test(clean)) {
+        return 'El carné de extranjería o pasaporte debe tener de 6 a 15 letras o dígitos.';
+      }
+      if (dniCounts && dniCounts.get(clean) > 1) {
+        return `Documento repetido en el archivo (${dniCounts.get(clean)} veces).`;
       }
       return null;
     }
@@ -253,10 +284,11 @@
 
     // 3. Validación de Números y Rangos
     if (col.tipo === 'number') {
-      const num = parseFloat(valStr.replace(',', '.'));
-      if (isNaN(num)) {
+      // C-05: «12abc» o «150<img…>» ya no pasan como 12 o 150
+      if (!/^-?\d+([.,]\d+)?$/.test(valStr)) {
         return `Debe ser un valor numérico válido.`;
       }
+      const num = parseFloat(valStr.replace(',', '.'));
       if (col.min !== undefined && num < col.min) {
         return `Valor mínimo permitido es ${col.min} (ingresó ${num}).`;
       }
@@ -275,7 +307,7 @@
           return null;
         }
         if ((key === 'establecimiento_adscripcion' || key === 'establecimiento_control') &&
-            EESS.some(e => valStr.includes(e.split('(')[0].trim()))) {
+            (EESS.some(e => valStr.includes(e.split('(')[0].trim())) || establecimientoConocido(valStr))) {
           return null;
         }
         return `Opción no válida. Seleccione una opción de la lista oficial.`;
@@ -317,7 +349,7 @@
     // 1. Contar frecuencias de DNI para detectar duplicados
     const dniCounts = new Map();
     rows.forEach(r => {
-      const dni = r.nro_documento ? String(r.nro_documento).replace(/\D/g, '').trim() : '';
+      const dni = documentoNormalizado(r);
       if (dni) {
         dniCounts.set(dni, (dniCounts.get(dni) || 0) + 1);
       }
@@ -351,6 +383,8 @@
     validateCell,
     validateRow,
     validateBatch,
-    parseDateOnly
+    parseDateOnly,
+    tipoDocumento,
+    documentoNormalizado
   };
 });

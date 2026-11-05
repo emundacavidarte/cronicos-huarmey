@@ -12,7 +12,7 @@ const ASSETS_TO_CACHE = [
   './assets/images/logo_maxime.png',
   './assets/images/favicon.png',
   './css/georis-theme.css?v=20261026_premium',
-  './css/layout.css?v=20261030_r12',
+  './css/layout.css?v=20261105_f4',
   './css/components.css?v=20261029_a8f',
   './css/padron-grid.css?v=20261027_v4',
   './css/registro-clinico.css?v=20261027_v4',

@@ -1127,6 +1127,10 @@
         if (formData.cie10_erc) {
           fullPatient.conditions.push({ cie10_cod: formData.cie10_erc.split('–')[0].trim(), diagnostico: 'Enfermedad Renal Crónica' });
         }
+        // Antes no se enviaba: guardar una atención borraba la dislipidemia (E78) de los diagnósticos del paciente
+        if (formData.cie10_dislipidemia) {
+          fullPatient.conditions.push({ cie10_cod: formData.cie10_dislipidemia.split('–')[0].trim(), diagnostico: 'Dislipidemia' });
+        }
 
         // 1. Enviar al servidor: solo se da por guardado si el servidor lo confirma
         if (!(window.app && window.app.session && window.app.session.authFetch)) {

@@ -244,6 +244,11 @@ class App {
   }
 
   renderDashboard() {
+    // C-03: el DIRECTOR no carga pacientes; su tablero se arma con los totales de su red (no con ceros engañosos)
+    if (this.session && this.session.getUser() && !this.permisos().verPacientes) {
+      this._renderTableroResumen();
+      return;
+    }
     const list = this.patients || [];
     const total = list.length;
     
@@ -449,7 +454,8 @@ class App {
   onLogin(user) {
     this.limpiarSesion();
     const p = this.permisos();
-    this.showToast(`Bienvenido(a), ${escapeHtml(user.nombre)}`, 'info', 3000);
+    // C-12: showToast usa textContent; escapar aquí mostraba &amp; y &#39; en pantalla
+    this.showToast(`Bienvenido(a), ${user.nombre}`, 'info', 3000);
     if (p.verPacientes) {
       this.loadInitialData();
     } else if (p.verResumen) {
@@ -479,6 +485,8 @@ class App {
    */
   limpiarSesion() {
     this._heroDelServidor = false;
+    this._resumenRed = null;
+    this._limpiarTablero();
     this.patients = [];
     this.patientMap.clear();
     this.semaforosCorregidos = 0;
@@ -522,6 +530,59 @@ class App {
     });
   }
 
+  /**
+   * Tablero del DIRECTOR (C-03): totales de su red recibidos de /api/alerts/summary. Lo que necesita datos
+   * nominales (distribución por diagnóstico, tabla por IPRESS de la ficha) se muestra como no disponible, nunca en 0.
+   */
+  _renderTableroResumen() {
+    const r = this._resumenRed;
+    const txt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const val = n => (r ? n : '—');
+    txt('dash-val-total', val(r && r.total));
+    txt('dash-val-desercion', val(r && r.red));
+    txt('dash-val-proximos', val(r && r.yellow));
+    const pares = [['green', 'green'], ['yellow', 'yellow'], ['red', 'red'], ['purple', 'purple'], ['black', 'black']];
+    for (const [color, clave] of pares) {
+      txt(`dash-count-${color}`, val(r && r[clave]));
+      const seg = document.getElementById(`bar-seg-${color}`);
+      if (seg) seg.style.width = r && r.total > 0 ? `${(r[clave] / r.total) * 100}%` : '0%';
+    }
+    const aviso = 'Su rol ve solo los totales de su red: este detalle necesita datos de cada paciente.';
+    const pathList = document.getElementById('dash-pathology-list');
+    if (pathList) pathList.innerHTML = `<div class="dash-no-disponible">${escapeHtml(aviso)}</div>`;
+    const ipressTbody = document.getElementById('dash-ipress-tbody');
+    if (ipressTbody) ipressTbody.innerHTML = `<tr><td colspan="6">${escapeHtml(aviso)}</td></tr>`;
+  }
+
+  /** C-04: deja el tablero y los indicadores sin cifras de la sesión anterior. */
+  _limpiarTablero() {
+    ['dash-val-total', 'dash-val-control', 'dash-val-desercion', 'dash-val-proximos', 'dash-count-green', 'dash-count-yellow',
+      'dash-count-red', 'dash-count-purple', 'dash-count-black', 'dash-foot-control', 'ind-periodo'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    ['bar-seg-green', 'bar-seg-yellow', 'bar-seg-red', 'bar-seg-purple', 'bar-seg-black'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = '0%';
+    });
+    ['dash-pathology-list', 'dash-ipress-tbody', 'ind-convenio-tbody', 'ind-est-tbody'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '';
+    });
+  }
+
+  /** C-14: la vista inicial muestra a todos los pacientes con ubicación (antes quedaban 3 de 20 pines a la vista). */
+  ajustarVistaAPacientes(list) {
+    const mm = this.mapManager;
+    if (!mm || !mm.map || !window.L) return;
+    const puntos = (list || [])
+      .filter(p => p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined)
+      .map(p => [Number(p.latitud), Number(p.longitud)])
+      .filter(([la, lo]) => Number.isFinite(la) && Number.isFinite(lo));
+    if (puntos.length === 0) return;
+    mm.map.fitBounds(window.L.latLngBounds(puntos), { padding: [40, 40], maxZoom: 15 });
+  }
+
   /** DIRECTOR: solo totales de su red (GET /api/alerts/summary), sin datos individuales. */
   async loadResumenDashboard() {
     const token = this.session.getToken();
@@ -537,6 +598,11 @@ class App {
       if (this.session.getToken() !== token) return;
       const a = r.alertas || {};
       this._setKpiValores(r.total_pacientes || 0, a.vigentes_verde || 0, a.proximos_amarillo || 0, a.desertores_rojo || 0, a.hosix_brecha_morado || 0);
+      this._resumenRed = {
+        total: r.total_pacientes || 0, green: a.vigentes_verde || 0, yellow: a.proximos_amarillo || 0,
+        red: a.desertores_rojo || 0, purple: a.hosix_brecha_morado || 0, black: a.fallecidos_negro || 0
+      };
+      this.renderDashboard();
     } catch (e) {
       this.showToast('No se pudo conectar con el servidor para cargar el resumen.', 'warning', 5000);
     }
@@ -889,6 +955,7 @@ class App {
         const list = Array.isArray(data) ? data : (data.data || []);
         this.setPatients(list);
         this.render();
+        this.ajustarVistaAPacientes(list);
         if (list.length === 0) this.showToast('No hay pacientes registrados para su red.', 'info', 4000);
       } else if (response.status === 403) {
         this.showToast('Su rol no tiene permiso para ver el padrón nominal.', 'warning', 5000);
@@ -1433,7 +1500,7 @@ class App {
               </div>
               <div class="hearts-id-item">
                 <span class="hearts-id-label">Seguro de Salud</span>
-                <span class="hearts-id-val">${escapeHtml(p.financiador || 'SIS')}</span>
+                <span class="hearts-id-val">${escapeHtml(p.financiador || p.seguro_salud || p.seguro || 'No registrado')}</span>
               </div>
             </div>
 
@@ -1840,7 +1907,7 @@ class App {
     // Sincronizar con el servidor HL7 FHIR / Base de Datos (con el token de la sesión; el servidor valida la red)
     const token = this.session.getToken();
     const precitaUrl = this.apiEndpoints().API_PRECITAS || '/api/appointments/pre-cita';
-    let mensaje = `Pre-cita registrada en Admisión HOSIX (${escapeHtml(p.apellidos_nombres)} — ${escapeHtml(fecha)})`;
+    let mensaje = `Pre-cita registrada en Admisión HOSIX (${p.apellidos_nombres} — ${fecha})`;
     let tipo = 'success';
 
     try {
@@ -1850,12 +1917,14 @@ class App {
         body: JSON.stringify({
           patient_id: p.id,
           fecha_sugerida: fecha,
-          comentario: `Pre-cita HEARTS (${consultorio}) para paciente ${p.apellidos_nombres} (DNI: ${p.dni})`
+          // Sin nombre ni DNI: la cita ya está unida al paciente por su id (minimización de datos)
+          comentario: `Pre-cita HEARTS (${consultorio})`
         })
       });
       if (this.session.getToken() !== token) return; // la sesión se cerró mientras se enviaba
-      if (res.status === 403) {
-        mensaje = 'El servidor no autorizó la pre-cita: el paciente no pertenece a su red. Quedó solo en esta sesión.';
+      if (res.status === 403 || res.status === 404) {
+        // Desde la Fase 2 un paciente fuera del alcance responde 404, igual que uno que ya no existe
+        mensaje = 'El servidor no encontró a este paciente en su alcance (otra red o ya no está en el padrón). La pre-cita quedó solo en esta sesión.';
         tipo = 'warning';
       } else if (!res.ok && res.status !== 401) {
         mensaje = `La pre-cita no se pudo guardar en el servidor (código ${res.status}). Quedó solo en esta sesión.`;

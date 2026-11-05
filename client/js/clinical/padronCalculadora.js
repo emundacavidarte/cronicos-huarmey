@@ -19,7 +19,9 @@
    */
   function calcularEdad(fechaNac, fechaRef = new Date()) {
     if (!fechaNac) return null;
-    const nac = new Date(fechaNac);
+    // AAAA-MM-DD se lee como fecha LOCAL: new Date('1966-12-25') es medianoche UTC y en Lima cae el 24 (C-06)
+    const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(fechaNac));
+    const nac = iso ? new Date(+iso[1], +iso[2] - 1, +iso[3]) : new Date(fechaNac);
     if (isNaN(nac.getTime())) return null;
     let edad = fechaRef.getFullYear() - nac.getFullYear();
     const m = fechaRef.getMonth() - nac.getMonth();
