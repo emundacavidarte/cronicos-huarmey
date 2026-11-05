@@ -16,6 +16,7 @@
 
   // Catálogo maestro oficial de la Microrred Huarmey (Zona Sanitaria 6 - RIS Pacífico Sur N° 156)
   // Coordenadas verificadas al 100% contra GeoRIS MINSA (georisDataBundle.js) y RENIPRESS SUSALUD.
+  // Direcciones: las registradas en GeoRIS (campo «direccion» del bundle oficial), redactadas para lectura.
   // Rol GeoRIS según el bundle oficial: Puertas de Entrada (p_ent = SI) = La Victoria, Culebras, Huamba, Huayán y
   // Huanchay; los demás puestos son Establecimientos Vinculados (p_vin = SI) a la puerta indicada en vinculado_a.
   // Nota: Hospital 00001741 apunta al Nuevo Hospital de Apoyo Huarmey (detrás de Hotel La Siesta).
@@ -31,7 +32,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Huarmey",
-      direccion: "AA.HH. Santo Domingo Ampliación Mz. P´ Lte. 1 / Miramar (detrás de Hotel La Siesta)",
+      direccion: "AA.HH. Santo Domingo Ampliación Mz. P´ Lote 1 (detrás del Hotel La Siesta), Miramar, Huarmey",
       latitud: -10.04780,
       longitud: -78.15480
     },
@@ -46,7 +47,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Huarmey",
-      direccion: "Av. Alberto Reyes s/n - La Victoria",
+      direccion: "Jr. Áncash s/n, Huarmey",
       latitud: -10.055462,
       longitud: -78.159814
     },
@@ -61,7 +62,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Huarmey",
-      direccion: "Calle Grau s/n - Puerto Huarmey",
+      direccion: "Localidad Puerto Huarmey, Huarmey",
       latitud: -10.098216,
       longitud: -78.161813
     },
@@ -76,7 +77,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Culebras",
-      direccion: "Caleta Culebras s/n",
+      direccion: "Av. Celestino Zapata s/n, Culebras",
       latitud: -9.950048,
       longitud: -78.221874
     },
@@ -91,7 +92,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Culebras",
-      direccion: "Caserío El Molino s/n",
+      direccion: "Mz. B Lote 85, El Molino, Culebras",
       latitud: -9.881821,
       longitud: -78.114691
     },
@@ -106,7 +107,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Culebras",
-      direccion: "Caserío Quian s/n",
+      direccion: "Localidad de Quian, Culebras",
       latitud: -9.773745,
       longitud: -77.949487
     },
@@ -121,7 +122,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Huarmey",
-      direccion: "Valle Huamba s/n",
+      direccion: "Carretera a Aija s/n, Huarmey",
       latitud: -9.965200,
       longitud: -77.856912
     },
@@ -136,7 +137,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Huayan",
-      direccion: "Plaza Principal Huayán s/n",
+      direccion: "Localidad Huayán, Huayán",
       latitud: -9.875857,
       longitud: -77.707839
     },
@@ -151,7 +152,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Malvas",
-      direccion: "Plaza Principal Malvas s/n",
+      direccion: "Localidad Malvas, Malvas",
       latitud: -9.926268,
       longitud: -77.657878
     },
@@ -166,7 +167,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Malvas",
-      direccion: "Caserío San Miguel s/n",
+      direccion: "Jr. San Juan s/n, Malvas",
       latitud: -9.945159,
       longitud: -77.746954
     },
@@ -181,7 +182,7 @@
       microrred: "Huarmey",
       provincia: "Huaraz",
       distrito: "Huanchay",
-      direccion: "Caserío Raypa s/n",
+      direccion: "Av. San Miguel s/n, Huanchay (Huaraz)",
       latitud: -9.745963,
       longitud: -77.881366
     },
@@ -196,7 +197,7 @@
       microrred: "Huarmey",
       provincia: "Huaraz",
       distrito: "Huanchay",
-      direccion: "Av. Principal Huanchay s/n",
+      direccion: "Jr. Moscú s/n, Huanchay (Huaraz)",
       latitud: -9.724693,
       longitud: -77.820581
     },
@@ -211,7 +212,7 @@
       microrred: "Huarmey",
       provincia: "Huarmey",
       distrito: "Cochapeti",
-      direccion: "Plaza Principal Cochapetí s/n",
+      direccion: "Faldas del cerro Nununcayoc s/n, Cochapetí",
       latitud: -9.985718,
       longitud: -77.645025,
       is_enclave: true,

@@ -105,6 +105,7 @@ class FhirAdapter {
     let lng = null;
     let sector = null;
     let financiador = null;
+    let precisionGeo = null;
 
     if (addressObj.extension) {
       const geoExt = addressObj.extension.find(e => e.url?.includes('geolocation'));
@@ -117,6 +118,8 @@ class FhirAdapter {
 
       const sectorExt = addressObj.extension.find(e => e.url?.includes('sector-sanitario'));
       if (sectorExt) sector = sectorExt.valueString;
+      const precExt = addressObj.extension.find(e => e.url?.includes('precision-geolocalizacion'));
+      if (precExt && typeof precExt.valueString === 'string') precisionGeo = precExt.valueString.trim().toLowerCase();
     }
 
     if (Array.isArray(resource.extension)) {
@@ -171,6 +174,9 @@ class FhirAdapter {
       distrito: addressObj.district || addressObj.city || null,
       latitud: lat,
       longitud: lng,
+      // Precisión de la ubicación (calle, sector, localidad…). Una «exacta» (gps/mapa/manual) que llegue en un lote
+      // no se acepta: database.js la descarta; la ubicación exacta solo se fija con PUT /api/patients/:id/ubicacion.
+      ...(precisionGeo ? { precision_geo: precisionGeo } : {}),
       sector_sanitario: sector || null,
       puerta_entrada_id: puertaRef
     };
@@ -361,6 +367,10 @@ class FhirAdapter {
             ...(p.sector_sanitario ? [{
               url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario',
               valueString: p.sector_sanitario
+            }] : []),
+            ...((p.precision_geo && typeof p.latitud === 'number') ? [{
+              url: 'http://minsa.gob.pe/georis/StructureDefinition/precision-geolocalizacion',
+              valueString: p.precision_geo
             }] : [])
           ]
         }

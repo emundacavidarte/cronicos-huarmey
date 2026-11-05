@@ -117,6 +117,8 @@ const HUARMEY_TOPONYMS = [
   { keywords: ["AH MIRAMAR", "MIRAMAR"], lat: -10.04850, lng: -78.15600, sector: "Sector 68", es: EST_HOSPITAL.es, precision: "sector", localidad: HUARMEY },
   { keywords: ["AH SANTO DOMINGO", "PJ SANTO DOMINGO", "SANTO DOMINGO"], lat: -10.0682, lng: -78.1495, sector: "Sector 69", es: EST_HOSPITAL.es, precision: "sector", localidad: HUARMEY },
   { keywords: ["CS LA VICTORIA"], lat: EST_VICTORIA.lat, lng: EST_VICTORIA.lng, sector: "Sector 65", es: EST_VICTORIA.es, precision: "calle", localidad: HUARMEY },
+  // Jr. Áncash: vía del C. S. La Victoria según su dirección en GeoRIS (sin trazo con nombre en el catastro)
+  { keywords: ["JR ANCASH", "CALLE ANCASH"], lat: EST_VICTORIA.lat, lng: EST_VICTORIA.lng, sector: "Sector 65", es: EST_VICTORIA.es, precision: "calle", localidad: HUARMEY },
   { keywords: ["CALLE 9 DE OCTUBRE", "JR 9 DE OCTUBRE", "9 DE OCTUBRE"], lat: -10.0715, lng: -78.1475, sector: "Sector 69", es: EST_VICTORIA.es, precision: "calle", localidad: HUARMEY },
   { keywords: ["AH BUENA VILLA", "BUENA VILLA", "BUENAVILLA"], lat: -10.0750, lng: -78.1455, sector: "Sector 69", es: EST_VICTORIA.es, precision: "sector", localidad: HUARMEY },
   { keywords: ["CALLE BELEN", "JR BELEN", "PSJ BELEN"], lat: -10.0745, lng: -78.1470, sector: "Sector 66", es: EST_VICTORIA.es, precision: "calle", localidad: HUARMEY },
@@ -130,7 +132,9 @@ const HUARMEY_TOPONYMS = [
   { keywords: ["MUELLE PUERTO HUARMEY", "PLAYA PUERTO HUARMEY", "MUELLE PUERTO", "PLAYA PUERTO"], lat: -10.1010, lng: -78.1650, sector: "Sector 66", es: EST_PUERTO.es, precision: "sector", localidad: "PUERTO HUARMEY" },
 
   // 4. Distrito de Culebras (Sector 62 GeoRIS)
-  { keywords: ["CALETA CULEBRAS", "PS CULEBRAS", "DISTRITO DE CULEBRAS", "CP CULEBRAS", "CULEBRAS"], lat: EST_CULEBRAS.lat, lng: EST_CULEBRAS.lng, sector: "Sector 62", es: EST_CULEBRAS.es, precision: "localidad", localidad: "CULEBRAS" },
+  { keywords: ["CALETA CULEBRAS", "PS CULEBRAS", "DISTRITO DE CULEBRAS", "CP CULEBRAS", "CULEBRAS"], lat: EST_CULEBRAS.lat, lng: EST_CULEBRAS.lng, sector: "Sector 62", es: EST_CULEBRAS.es, precision: "localidad", localidad: "CULEBRAS" , distrito: true },
+  // Av. Celestino Zapata: vía del P. S. Culebras según GeoRIS
+  { keywords: ["AV CELESTINO ZAPATA", "CELESTINO ZAPATA"], lat: EST_CULEBRAS.lat, lng: EST_CULEBRAS.lng, sector: "Sector 62", es: EST_CULEBRAS.es, precision: "calle", localidad: "CULEBRAS" },
   { keywords: ["CASERIO EL MOLINO", "PS MOLINO", "MOLINO CULEBRAS", "EL MOLINO"], lat: EST_MOLINO.lat, lng: EST_MOLINO.lng, sector: "Sector 62", es: EST_MOLINO.es, precision: "localidad", localidad: "EL MOLINO" },
 
   // 5. Quian y Raypa (Sector 64 GeoRIS)
@@ -143,11 +147,13 @@ const HUARMEY_TOPONYMS = [
   { keywords: ["CASERIO CONGON", "FUNDO CONGON", "CONGON"], lat: -10.0350, lng: -78.0920, sector: "Sector 69", es: EST_HOSPITAL.es, precision: "localidad", localidad: "CONGON" },
 
   // 7. Zona andina de la cuenca
-  { keywords: ["PS HUAYAN", "DISTRITO DE HUAYAN", "HUAYAN"], lat: EST_HUAYAN.lat, lng: EST_HUAYAN.lng, sector: "Sector 72", es: EST_HUAYAN.es, precision: "localidad", localidad: "HUAYAN" },
-  { keywords: ["PS MALVAS", "DISTRITO DE MALVAS", "MALVAS"], lat: EST_MALVAS.lat, lng: EST_MALVAS.lng, sector: "Sector 71", es: EST_MALVAS.es, precision: "localidad", localidad: "MALVAS" },
+  { keywords: ["PS HUAYAN", "DISTRITO DE HUAYAN", "HUAYAN"], lat: EST_HUAYAN.lat, lng: EST_HUAYAN.lng, sector: "Sector 72", es: EST_HUAYAN.es, precision: "localidad", localidad: "HUAYAN" , distrito: true },
+  { keywords: ["PS MALVAS", "DISTRITO DE MALVAS", "MALVAS"], lat: EST_MALVAS.lat, lng: EST_MALVAS.lng, sector: "Sector 71", es: EST_MALVAS.es, precision: "localidad", localidad: "MALVAS" , distrito: true },
   { keywords: ["SAN MIGUEL MALVAS", "PS SAN MIGUEL", "CASERIO SAN MIGUEL"], lat: EST_SAN_MIGUEL.lat, lng: EST_SAN_MIGUEL.lng, sector: "Sector 71", es: EST_SAN_MIGUEL.es, precision: "localidad", localidad: "SAN MIGUEL" },
-  { keywords: ["PS COCHAPETI", "DISTRITO DE COCHAPETI", "ENCLAVE COCHAPETI", "COCHAPETI"], lat: EST_COCHAPETI.lat, lng: EST_COCHAPETI.lng, sector: "Sector 71", es: EST_COCHAPETI.es, precision: "localidad", localidad: "COCHAPETI" },
-  { keywords: ["PS HUANCHAY HZ", "PS HUANCHAY", "DISTRITO DE HUANCHAY", "HUANCHAY"], lat: EST_HUANCHAY.lat, lng: EST_HUANCHAY.lng, sector: "Sector 63", es: EST_HUANCHAY.es, precision: "localidad", localidad: "HUANCHAY" },
+  { keywords: ["PS COCHAPETI", "DISTRITO DE COCHAPETI", "ENCLAVE COCHAPETI", "COCHAPETI"], lat: EST_COCHAPETI.lat, lng: EST_COCHAPETI.lng, sector: "Sector 71", es: EST_COCHAPETI.es, precision: "localidad", localidad: "COCHAPETI" , distrito: true },
+  { keywords: ["PS HUANCHAY HZ", "PS HUANCHAY", "DISTRITO DE HUANCHAY", "HUANCHAY"], lat: EST_HUANCHAY.lat, lng: EST_HUANCHAY.lng, sector: "Sector 63", es: EST_HUANCHAY.es, precision: "localidad", localidad: "HUANCHAY" , distrito: true },
+  // Jr. Moscú: vía del P. S. Huanchay según GeoRIS
+  { keywords: ["JR MOSCU"], lat: EST_HUANCHAY.lat, lng: EST_HUANCHAY.lng, sector: "Sector 63", es: EST_HUANCHAY.es, precision: "calle", localidad: "HUANCHAY" },
 
   // 8. Otras ciudades de Áncash (la ciudad, no una vía con su nombre)
   { keywords: ["CIUDAD DE CASMA", "DISTRITO DE CASMA", "PROVINCIA DE CASMA", "CASMA CIUDAD", "CASMA"], lat: EST_CASMA.lat, lng: EST_CASMA.lng, sector: "Sector 56", es: EST_CASMA.es, precision: "localidad", localidad: "CASMA", ciudad: true },
@@ -227,6 +233,7 @@ class AncashGeocoder {
             precision: item.precision || 'calle',
             localidad: item.localidad || HUARMEY,
             ciudad: !!item.ciudad,
+            distrito: !!item.distrito,
             viaLarga: !!item.viaLarga
           });
         }
@@ -416,8 +423,11 @@ class AncashGeocoder {
       return { ...none };
     }
 
-    // 2. Primero la localidad: si se nombra una localidad distinta del casco urbano, solo valen sus topónimos
-    const otraLocalidad = hits.find(h => h.localidad !== HUARMEY);
+    // 2. Primero la localidad: si se nombra una localidad distinta del casco urbano, solo valen sus topónimos.
+    //    Un centro poblado (Quian, Raypa, El Molino…) es más específico que el distrito que lo contiene
+    //    («Localidad de Quian, Culebras» es Quian, no la capital de Culebras).
+    const otraLocalidad = hits.find(h => h.localidad !== HUARMEY && !h.distrito && !h.ciudad)
+      || hits.find(h => h.localidad !== HUARMEY);
     const candidatos = otraLocalidad ? hits.filter(h => h.localidad === otraLocalidad.localidad) : hits;
     const item = candidatos[0];
 

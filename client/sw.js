@@ -4,7 +4,7 @@
  * MÁXIME Salud Digital - Puesta en Marcha de Hospitales (v20: acceso con usuario y clave, T-03b)
  */
 
-const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-geo3';
+const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-geo4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -28,16 +28,16 @@ const ASSETS_TO_CACHE = [
   './js/main.js?v=20261105_geo3',
   './js/map/mapManager.js?v=20261105_geo3',
   './js/map/geoUbicacion.js?v=20261105_geo3',
-  './js/map/establecimientos.js?v=20261105_geo',
+  './js/map/establecimientos.js?v=20261105_geo4',
   './js/map/georisAncashLayers.js?v=20261105_geo2',
-  './js/map/ancashGeocoder.js?v=20261105_geo3',
+  './js/map/ancashGeocoder.js?v=20261105_geo4',
   './js/clinical/semaforo.js?v=20261021_v18',
   './js/clinical/heartsEngine.js?v=20261021_v18',
   './js/clinical/alertsManager.js?v=20261021_v18',
   './js/clinical/whatsappNotifier.js?v=20261029_a8f',
   './js/clinical/indicadoresConvenio.js?v=20261029_a8f',
   './js/data/hosixParser.js?v=20261105_geo',
-  './js/data/padronSchema.js?v=20261029_a8f',
+  './js/data/padronSchema.js?v=20261105_geo4',
   './js/data/padronExcelParser.js?v=20261029_a8f',
   './js/data/padronPlantillaV4.js?v=20261029_a8f',
   './js/data/padronExportV4.js?v=20261029_a8f',

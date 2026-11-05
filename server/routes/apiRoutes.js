@@ -497,6 +497,10 @@ router.get(['/Bundle', '/fhir/Bundle'], requireScope(ROLES_PACIENTES), (req, res
             ...(p.sector_sanitario ? [{
               url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario',
               valueString: p.sector_sanitario
+            }] : []),
+            ...((p.precision_geo && typeof p.latitud === 'number') ? [{
+              url: 'http://minsa.gob.pe/georis/StructureDefinition/precision-geolocalizacion',
+              valueString: p.precision_geo
             }] : [])
           ]
         }]

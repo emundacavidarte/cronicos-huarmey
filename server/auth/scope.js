@@ -132,6 +132,14 @@ function checkWrite(user, parsedList) {
     }
 
     const existing = findExistingPatient(p);
+    // Usuario limitado a un sector: el paciente no puede quedar fuera de él por el sector que se registra ni por la
+    // geocodificación que hace el servidor (el sector se simula sin guardar nada)
+    if ((user.sector_sanitario || user.sector) && typeof db.simularSector === 'function') {
+      const sectorFinal = db.simularSector(p);
+      if (!canSeePatient(user, { ...(existing || {}), ...p, sector_sanitario: sectorFinal, sector: (existing && existing.sector) || p.sector })) {
+        return `El paciente quedaría en ${sectorFinal}, fuera de su ámbito asignado.`;
+      }
+    }
     if (existing) {
       if (!canSeePatient(user, existing)) return 'No puede modificar pacientes fuera de su alcance.';
     } else if (patientRed(p) !== userRed) {

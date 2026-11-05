@@ -274,6 +274,11 @@
         if (key === 'sector' && SECTORES_HUARMEY.some(s => valStr.toLowerCase().includes(s.toLowerCase().split('–')[0].trim()))) {
           return null;
         }
+        // El sector sanitario oficial GeoRIS («Sector 67») también es válido: es lo que exporta el sistema cuando el
+        // paciente no tiene sector local y su ubicación cae en un polígono GeoRIS (ida y vuelta Excel sin rechazos)
+        if (key === 'sector' && /^sector\s+\d{1,3}$/i.test(valStr)) {
+          return null;
+        }
         if ((key === 'establecimiento_adscripcion' || key === 'establecimiento_control') &&
             EESS.some(e => valStr.includes(e.split('(')[0].trim()))) {
           return null;

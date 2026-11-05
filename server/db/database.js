@@ -520,7 +520,8 @@ class Database {
     return byDni ? String(byDni.id) : key;
   }
 
-  upsertPatient(patientData) {
+  /** Copia saneada de un registro entrante (id, coordenadas, campos que no se importan) y el paciente que ya existe. */
+  _prepararEntrante(patientData) {
     const clean = sanitizeRecord(patientData);
     const dniKey = clean.dni ? String(clean.dni).trim() : '';
     // El id viaja a la pantalla (botones, enlaces): solo letras, números, punto, guion y guion bajo (como fhirAdapter)
@@ -531,14 +532,25 @@ class Database {
     // La ubicación exacta solo se fija con setPatientLocation (usuario y fecha del servidor): un lote no puede
     // declararse «gps» ni «mapa» por su cuenta, ni traer quién o cuándo la registró.
     if (geoUbicacion.esPrecisionExacta(clean.precision_geo)) delete clean.precision_geo;
-    delete clean.geo_fecha;
-    delete clean.geo_registrado_por;
-    delete clean.sector_por_ubicacion;
-    delete clean.ubicacion_por_verificar;
-    delete clean.geo_anterior;
-    delete clean.precision_geo_revisada;
-
+    for (const k of ['geo_fecha', 'geo_registrado_por', 'sector_por_ubicacion', 'ubicacion_por_verificar', 'geo_anterior', 'precision_geo_revisada']) delete clean[k];
     const existing = (dniKey && this.patientByDniMap.get(dniKey)) || this.patientByIdMap.get(idKey);
+    return { clean, dniKey, idKey, existing };
+  }
+
+  /**
+   * Sector sanitario con que quedaría un paciente si se guardara este registro (sin guardar nada): el servidor puede
+   * geocodificar la dirección o derivar el sector de las coordenadas. Lo usa el control de alcance por sector.
+   */
+  simularSector(patientData) {
+    const { clean, existing } = this._prepararEntrante(patientData);
+    const copia = existing ? JSON.parse(JSON.stringify(existing)) : null;
+    this._resolverUbicacion(clean, copia);
+    if (copia) return hasRealValue('sector_sanitario', clean.sector_sanitario) ? clean.sector_sanitario : copia.sector_sanitario;
+    return hasRealValue('sector_sanitario', clean.sector_sanitario) ? clean.sector_sanitario : PATIENT_DEFAULTS.sector_sanitario;
+  }
+
+  upsertPatient(patientData) {
+    const { clean, dniKey, idKey, existing } = this._prepararEntrante(patientData);
     this._resolverUbicacion(clean, existing);
     if (existing) {
       // Actualiza solo los campos con valor real; conserva lo ya guardado en el resto.

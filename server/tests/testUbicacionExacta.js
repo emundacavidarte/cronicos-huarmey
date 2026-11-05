@@ -17,6 +17,8 @@ const assert = require('assert');
 // La semilla (20 pacientes SINTÉTICOS) se lee antes de cargar la base en memoria, que bloquea ese archivo
 const padron = require('../db/padron_inicial');
 const hosix = require('../../client/js/data/hosixParser.js'); // se carga antes: memoryDb bloquea client/js/data
+const padronSchema = require('../../client/js/data/padronSchema.js');
+const fhirAdapter = require('../fhir/fhirAdapter');
 const { db, resetDb } = require('./helpers/memoryDb');
 const { startServer } = require('./helpers/realServer');
 const G = require('../../client/js/map/geoUbicacion');
@@ -177,6 +179,21 @@ async function unitarias() {
         for (let i = 0; i < l.length - 1; i++) d = Math.min(d, distSeg([t.lng, t.lat], l[i], l[i + 1]));
       }
       assert.ok(d <= 30, `${kw}: ${Math.round(d)} m de ${calle}`);
+    }
+  });
+  await step('un centro poblado manda sobre el distrito que lo contiene («Localidad de Quian, Culebras» es Quian)', async () => {
+    assert.strictEqual(geocoder.geocode('Localidad de Quian, Culebras').localidad, 'QUIAN');
+    assert.strictEqual(geocoder.geocode('Caserío Raypa, Huanchay').localidad, 'RAYPA');
+    assert.strictEqual(geocoder.geocode('El Molino - Culebras').localidad, 'EL MOLINO');
+    assert.strictEqual(geocoder.geocode('Jr. Grau 5 Culebras').localidad, 'CULEBRAS');
+  });
+  await step('las direcciones de los establecimientos son las de GeoRIS y se ubican en su propio punto', async () => {
+    const victoria = est.getByCode('00001744');
+    assert.strictEqual(victoria.direccion, 'Jr. Áncash s/n, Huarmey');
+    for (const code of ['00001741', '00001744', '00001742', '00001743', '00001745', '00001746', '00001748']) {
+      const e = est.getByCode(code);
+      const g = geocoder.geocode(e.direccion);
+      assert.ok(g.matched && G.distanciaMetros(g.lat, g.lng, e.latitud, e.longitud) < 50, `${e.nombre}: «${e.direccion}» → ${g.toponym}`);
     }
   });
   await step('puerta de entrada: la IPRESS oficial del sector o el puesto de la localidad (catálogo de la red)', async () => {
@@ -415,6 +432,28 @@ async function unitarias() {
     assert.ok(t.sectores_con_poligono >= 72, 'deben estar al menos los 72 sectores de Pacífico Sur');
   });
 
+  console.log('G-09: intercambio (Excel y FHIR)');
+  await step('Excel: el sector GeoRIS («Sector 67») pasa la validación del padrón (ida y vuelta sin rechazos)', async () => {
+    assert.strictEqual(padronSchema.validateCell('sector', 'Sector 67'), null);
+    assert.strictEqual(padronSchema.validateCell('sector', 'Sector I – Centro'), null);
+    assert.notStrictEqual(padronSchema.validateCell('sector', 'Sin sector GeoRIS'), null, 'sin sector hay que completarlo');
+  });
+  await step('FHIR: exporta la precisión de la ubicación; al importar, una precisión aproximada se conserva y una exacta no', async () => {
+    resetDb();
+    db.upsertPatient({ id: 'pac-00001741-91000020', dni: '91000020', apellidos_nombres: 'FHIR PRECISION', direccion: 'Jr. Bolognesi 120' });
+    const b = fhirAdapter.toFhirBundle(db.getPatientByDni('91000020'));
+    const pat = b.entry.map(e => e.resource).find(r => r.resourceType === 'Patient');
+    const ext = pat.address[0].extension.find(e => /precision-geolocalizacion/.test(e.url));
+    assert.ok(ext && ext.valueString === 'calle', JSON.stringify(pat.address[0].extension));
+    const vuelta = fhirAdapter.parsePatient(pat);
+    assert.strictEqual(vuelta.precision_geo, 'calle');
+    const conGps = JSON.parse(JSON.stringify(pat));
+    conGps.address[0].extension.find(e => /precision-geolocalizacion/.test(e.url)).valueString = 'gps';
+    resetDb();
+    db.upsertPatient(fhirAdapter.parsePatient(conGps));
+    assert.strictEqual(db.getPatientByDni('91000020').precision_geo, undefined, 'un lote no puede declarar una ubicación exacta');
+  });
+
   console.log('G-07: alcance por sector');
   await step('un usuario del «Sector 6» no ve pacientes del «Sector 67» (antes se comparaba por subcadena)', async () => {
     const u = { role: 'COORDINADOR', red: 'PACIFICO SUR', sector_sanitario: 'Sector 6' };
@@ -507,6 +546,16 @@ async function http() {
       const dentro = await call('PUT', '/api/patients/92000001/ubicacion', { token: coordSector, body: { latitud: -10.06993, longitud: -78.1498, precision_geo: 'mapa' } });
       assert.strictEqual(dentro.status, 200, dentro.text);
       assert.strictEqual(dentro.json.data.sector_sanitario, 'Sector 69');
+    });
+
+    await step('un coordinador limitado a su sector no puede importar pacientes que el servidor ubicaría en otro sector', async () => {
+      const otro = await call('POST', '/api/padron/importar-lote', { token: coordSector, body: { patients: [{ id: 'pac-00001741-92000050', dni: '92000050', apellidos_nombres: 'SECTOR AJENO', direccion: 'Jr. Bolognesi 300', puerta_entrada_id: '00001741', red_salud: 'PACIFICO SUR' }] } });
+      assert.strictEqual(otro.status, 403, otro.text);
+      assert.ok(/Sector 67/.test(otro.text), otro.text);
+      const propio = await call('POST', '/api/padron/importar-lote', { token: coordSector, body: { patients: [{ id: 'pac-00001741-92000051', dni: '92000051', apellidos_nombres: 'SECTOR PROPIO', direccion: 'Jr. Casma 200', puerta_entrada_id: '00001741', red_salud: 'PACIFICO SUR' }] } });
+      assert.strictEqual(propio.status, 200, propio.text);
+      const mover = await call('POST', '/api/padron/importar-lote', { token: coordSector, body: { patients: [{ id: 'pac-00001741-92000051', dni: '92000051', direccion: 'Jr. Bolognesi 300' }] } });
+      assert.strictEqual(mover.status, 403, 'mudarlo a otro sector por una importación también se rechaza');
     });
 
     await step('un GPS de más de 50 m responde 400', async () => {
