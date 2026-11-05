@@ -27,10 +27,10 @@ Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. 
 | 0 | Plan y traspaso | Sonnet 5.5 | este archivo | HECHO |
 | 1 | Diagnóstico en vivo | Sonnet 5.5 | `F1_diagnostico.md` | HECHO (05/11/2026) |
 | 2 | Auditoría de seguridad y privacidad del servidor | Opus 5.5 | `F2_seguridad_servidor.md` | HECHO con correcciones (05/11/2026) |
-| 3 | Auditoría del cliente, PWA y lógica clínica | Opus 5.5 | `F3_cliente_clinica.md` | PENDIENTE |
-| 4 | Correcciones críticas y altas | Opus 5.5 (seguridad) y Sonnet 5.5 (resto) | `F4_correcciones.md` | PENDIENTE (las del servidor ya se hicieron en la Fase 2) |
-| 5 | Persistencia, respaldos y migración de datos reales | Opus 5.5 | `F5_datos_respaldos.md` | PENDIENTE |
-| 6 | Infraestructura: Render, CI, repositorio | Sonnet 5.5 | `F6_infraestructura.md` | PENDIENTE |
+| 3 | Auditoría del cliente, PWA y lógica clínica | Opus 5.5 | `F3_cliente_clinica.md` | PENDIENTE (reducida: lógica clínica y auditoría completa del cliente; los hallazgos C-xx ya se corrigieron en la Fase 4) |
+| 4 | Correcciones críticas y altas | Opus 5.5 (seguridad) y Sonnet 5.5 (resto) | `F4_correcciones.md` | HECHO (05/11/2026; también medias y bajas) |
+| 5 | Persistencia, respaldos y migración de datos reales | Opus 5.5 | `F5_datos_respaldos.md` | PENDIENTE (avanzada en la Fase 4: guardado con espera máxima, respaldos diarios, prueba de restauración, cifrado opcional) |
+| 6 | Infraestructura: Render, CI, repositorio | Sonnet 5.5 | `F6_infraestructura.md` | PENDIENTE (avanzada en la Fase 4: lockfile, Node 22, gzip de estáticos, README) |
 | 7 | Staging, puesta en producción y runbook | Sonnet 5.5 (Haiku 5.5 para documentos) | `F7_produccion.md`, `RUNBOOK.md` | PENDIENTE |
 | 8 | Revisión final independiente y Go/No-Go | Fable 5.1 | `F8_go_no_go.md` | PENDIENTE |
 
@@ -52,11 +52,22 @@ Incluye la **precarga por DNI** del Registro Clínico (requisito de Edward, ver 
 ### Fase 4 — Correcciones críticas y altas
 Corregir en orden de gravedad con prueba que falla antes y pasa después. Seguridad y datos primero. Lo medio y bajo queda en lista, no se mezcla.
 *Nota (Fase 2):* las correcciones del servidor (S-01 a S-07, S-11 a S-13, S-16, C-01 y los hallazgos F2) ya están hechas y probadas. La Fase 4 queda para lo que encuentre la Fase 3 en el cliente y la lógica clínica, salvo que esa fase también corrija.
+**Resultado (05/11/2026):** ver `F4_correcciones.md`. Por instrucción de Edward («Corrige todo») se corrigió todo lo abierto de las Fases 1 y 2 que no depende de la licenciada ni de Render:
+- La CSP queda sin scripts en línea (69 manejadores pasados a delegación; un HTML inyectado ya no ejecuta código).
+- C-02 a C-14 corregidos. El consentimiento sigue obligatorio al importar (requisito A12).
+- Pendientes del cliente de la Fase 2 resueltos.
+- Persistencia: espera máxima de 2 s (L-04), un solo formato (S-14), transacciones todo o nada, respaldo diario con prueba de restauración (S-09 local) y cifrado en reposo **opcional** con `STORE_KEY` (apagado por defecto).
+- Instalación: gzip de estáticos (≈6,4 → ≈1,4 MB), `npm ci` y Node 22 (S-10), y sin cifras sin sustento (L-11).
+- 3 hallazgos nuevos corregidos. El más grave, F4-02: cada atención en Registro Clínico borraba la dislipidemia.
+- `npm test`: 283 correctas, 0 fallas. Chromium: 32 de 32 acciones y 19 de 19 comprobaciones del cliente, sin violaciones de la CSP.
+- Decisiones tomadas por defecto (sin internet solo aviso, cifrado apagado, id de «Sin documento», 30 min de inactividad, diagnósticos acumulados): sección 5 del informe.
 
 ### Fase 5 — Persistencia, respaldos y datos reales
+*Ya hecho en la Fase 4:* espera máxima del guardado, formato único, transacciones con reversión, respaldo diario local con prueba de restauración y cifrado opcional (`STORE_KEY`). Falta: copia cifrada **fuera** del servidor, retención de la bitácora, procedimiento de carga del padrón real y umbral o ruta de migración (L-05, L-07, L-08).
 `DATA_DIR` en el disco de Render, escritura atómica y recuperación (`store.json.bak`), crecimiento de `store.json` y de la bitácora, respaldo automático y cifrado fuera del servidor, **prueba de restauración**, procedimiento de carga del padrón real (sin pasar por Git), umbral para migrar a SQLite o Postgres.
 
 ### Fase 6 — Infraestructura
+*Ya hecho en la Fase 4:* lockfile único con `npm ci` (S-10), Node 22 fijado, gzip de estáticos (S-08), `.env.example` sin claves y README de despliegue actualizado. Falta: `render.yaml`, GitHub Actions, Dependabot, escaneo de secretos, `LICENSE` y verificar `TRUST_PROXY` en Render (L-10).
 `render.yaml` (Blueprint), versión de Node fija, `package-lock.json` único, healthcheck, variables de entorno (`AUTH_SECRET`, `ADMIN_PASSWORD`, `TRUST_PROXY`, `DATA_DIR`), `.env.example` sin claves reales, `LICENSE`, GitHub Actions con `npm test`, Dependabot, escaneo de secretos, README de despliegue.
 
 ### Fase 7 — Staging y producción
@@ -76,7 +87,12 @@ Un modelo distinto revisa el diff completo y la lista de hallazgos sin ver mis c
 - Pacientes sin documento (Fase 2): ¿se registran? Hoy el servidor rechaza esas filas porque el cliente les pone a todas el mismo id; hace falta definir su identificador.
 - Integración HOSIX (Fase 2): ¿llegarán carnés de extranjería o pasaportes? Hoy esa vía exige DNI de 8 dígitos.
 - Claves de usuario (Fase 2): solo el ADMIN fija y cambia las claves; ¿se quiere que cada usuario cambie la suya y que la inicial sea obligatoria de cambiar?
-- Cifrado en reposo (Fase 2 → Fase 5): ¿quién custodia la clave? Si se pierde, se pierde el padrón.
+- Cifrado en reposo (Fase 2 → Fase 5): ¿quién custodia la clave? Si se pierde, se pierde el padrón. *Fase 4:* ya está implementado y apagado; se activa definiendo `STORE_KEY` en Render cuando se decida la custodia.
+- Decisiones aplicadas por defecto en la Fase 4 (confirmar o cambiar):
+  - Sin internet, solo aviso y sin datos en el equipo.
+  - «Sin documento» con un id calculado con nombre, fecha de nacimiento y sexo.
+  - Cierre por inactividad a los 30 minutos.
+  - Los diagnósticos se acumulan (dar de baja un diagnóstico se define con la licenciada).
 
 ## Plantilla para abrir cada ventana
 > Lee `docs/produccion/PLAN.md` y el informe de la fase anterior. Ejecuta la Fase N. Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.

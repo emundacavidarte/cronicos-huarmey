@@ -1,0 +1,3 @@
+errores de instalabilidad: []
+ícono: assets/images/icono-192.png declarado 192x192, real 192x192
+ícono: assets/images/icono-512.png declarado 512x512, real 512x512

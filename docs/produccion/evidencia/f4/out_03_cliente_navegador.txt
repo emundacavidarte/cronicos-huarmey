@@ -1,0 +1,21 @@
+OK    C-14 la vista inicial muestra a todos los pacientes ubicados — 20 de 20
+OK    C-08 avisa antes de actualizar un DNI que ya está en el padrón; si se cancela no se envía nada — envíos: 0
+OK    C-07 avisa cuántos pacientes no se pudieron ubicar en el mapa — ⚠️ 1 paciente(s) no se pudieron ubicar en el mapa por su dirección (no aparecen como pin): PACIENTE INVENTADO SIN UBICAR. Revise la dirección en su ficha.
+OK    «Sin documento» se guarda con un id propio — pac-sd-b6a10703
+OK    C-04 tras «Salir» el tablero no conserva cifras del usuario anterior — ADMIN veía 22; después: — — — | filas IPRESS: 0
+OK    C-03 el tablero del DIRECTOR muestra los totales de su red (no ceros) — total 22 (servidor 22), verdes 10
+OK    C-03 lo que necesita datos nominales dice «no disponible», no 0 — Su rol ve solo los totales de su red: este detalle necesita 
+OK    C-13 el DIRECTOR no ve «Exportar Padrón Excel»
+OK    C-12 el aviso de bienvenida muestra el nombre tal cual (sin &amp; ni &#39;) — Bienvenido(a), O'Brien & <i>Co</i>
+OK    C-14 al recargar con la sesión vencida, el acceso lo dice — Su sesión venció. Ingrese nuevamente.
+OK    C-02 la caché del service worker ya no se borra en cada recarga — 43 → 43 entradas
+OK    C-02 sin conexión la página abre desde la caché y avisa — HTTP 200 · «Sin conexión a internet. El sistema necesita conexión para mostrar los»
+OK    C-02 no quedan respuestas de /api (datos de pacientes) en la caché — 0 entradas de /api
+OK    C-10 el encabezado cabe en 390 px — ancho del encabezado 390
+OK    C-10 el buscador está visible y dentro de la pantalla — {"x":10,"der":380,"vis":true}
+OK    C-10 «Cerrar sesión» está dentro de la pantalla — {"x":266,"der":302,"vis":true}
+OK    C-10 el panel de pacientes queda dentro de la pantalla — {"x":8,"der":382}
+OK    C-14 se permite ampliar con los dedos (sin user-scalable=no) — width=device-width, initial-scale=1.0
+OK    la sesión se cierra tras 30 minutos sin uso — Sesión cerrada por inactividad (30 minutos sin uso). Ingrese nuevament
+
+19 correctas, 0 con falla

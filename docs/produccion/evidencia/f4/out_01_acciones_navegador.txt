@@ -1,0 +1,34 @@
+OK    la CSP no permite scripts en línea — script-src 'self'
+OK    toggleNavRail (☰)
+OK    switchView dashboard
+OK    loadIndicadoresConvenio pide /api/indicadores/convenio
+OK    switchView mapa
+OK    toggleHeartsPanel
+OK    switchHeartsTab ingesta
+OK    switchHeartsTab pacientes
+OK    mapaAcercar y mapaAlejar — 12 → 13 → 12
+OK    toggleLeftSidebar (capas)
+OK    capa pacientes (quitar y volver a poner) — 227 → 206 → 227
+OK    selectRis (cambio)
+OK    setBaseMapGlobal cambia el mapa base — mt2.google.com → server.arcgisonline.com
+OK    tarjeta → openPatientDetail abre la ficha
+OK    ficha → pre-cita (cierra la ficha y abre la pre-cita)
+OK    cerrarModal pre-cita
+OK    cerrarModal ficha (✕)
+OK    ficha → Registrar Atención abre Registro Clínico con el DNI
+OK    ficha → Ubicar en Mapa (cierra y centra) — zoom 8 → 15.729460564915062
+OK    tarjeta → Ver (centrarPaciente)
+OK    exportarPadronExcel descarga el .xlsx — Padron_Cronicos_Huarmey_2026-11-04.xlsx
+OK    abrirModalPadronGrid pide el archivo Excel
+OK    popup de Leaflet → trazarReferenciaHaciaHospital
+OK    quitarElemento cierra el inspector de referencia
+OK    registrarConsentimiento envía el PUT
+OK    clicEn btn-usuarios (gestión de usuarios)
+OK    irAlInicio (logo)
+OK    móvil: navMovil pacientes marca su botón
+OK    móvil: navMovil ingesta marca su botón
+OK    móvil: navMovil capas marca su botón
+OK    móvil: navMovil mapa marca su botón
+OK    sin violaciones de la CSP ni errores de página
+
+32 correctas, 0 con falla

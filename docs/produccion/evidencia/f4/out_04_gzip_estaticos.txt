@@ -1,0 +1,10 @@
+archivo | sin gzip | con gzip | Content-Encoding | Content-Type
+/data/georis/georisDataBundle.js | 3031785 | 676074 | application/javascript; gzip 
+/data/georis/huarmeyCadastreBundle.js | 2154815 | 270226 | application/javascript; gzip 
+/libs/xlsx.full.min.js | 944491 | 332846 | application/javascript; gzip 
+/libs/leaflet.js | 147552 | 42494 | application/javascript; gzip 
+/index.html | 66715 | 14221 | text/html; gzip 
+/js/main.js | 108618 | 27375 | application/javascript; gzip 
+/css/layout.css | 24073 | 5128 | text/css; gzip 
+304 con ETag: 304
+recorrido de rutas: 404 404
