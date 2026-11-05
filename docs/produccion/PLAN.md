@@ -1,7 +1,23 @@
 # Plan de paso a producción — Crónicos Huarmey
 
 Documento de traspaso entre ventanas. **Cada fase se ejecuta en una ventana nueva** (sesión limpia).
-Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. Al terminar: marcar la fase aquí, commit y push.
+Al empezar una ventana: **primero el arranque de abajo** (rama y dependencias), y solo entonces leer este archivo y los que la fase pide. Al terminar: marcar la fase aquí, commit y push.
+
+## Arranque de ventana (hacer ANTES de leer nada)
+Una ventana nueva puede abrir en **otra rama** (la que le asigne el entorno, por ejemplo `claude/practical-pasteur-…`) y **sin dependencias instaladas**. En ese caso `docs/produccion/` no existe y `npm test` falla con `MODULE_NOT_FOUND`. Pasó al abrir la Fase 3 (05/11/2026). Se evita así:
+
+```bash
+git fetch origin
+git checkout -B claude/pensive-cray-3lwodm origin/claude/pensive-cray-3lwodm
+npm ci --prefix server
+git branch --show-current          # debe decir claude/pensive-cray-3lwodm
+ls docs/produccion/PLAN.md         # debe existir
+```
+
+- Se hace `git fetch origin` **completo**: un `fetch` de una sola rama no siempre crea la referencia remota y el `checkout` posterior falla.
+- `checkout -B` reinicia la rama local sobre la remota: vale en una ventana nueva (no hay commits locales). Si hubiera commits sin subir, usar `git checkout claude/pensive-cray-3lwodm && git pull --ff-only`.
+- Si el entorno asigna otra rama de trabajo, **manda la de este plan**: es la que lleva todo el trabajo y a ella se hace el push (`git push -u origin claude/pensive-cray-3lwodm`). No trabajar ni subir en la rama asignada por el entorno, ni en `main`.
+- `npm test` debe dar 0 fallas **antes de tocar nada** (línea base). Si no, anotarlo en el informe de la fase.
 
 ## Decisiones tomadas (no reabrir sin motivo)
 - Plataforma: **Render, plan Starter (pago) + disco persistente**. El plan gratuito se usa solo como staging con los 20 pacientes simulados.
@@ -96,4 +112,5 @@ Un modelo distinto revisa el diff completo y la lista de hallazgos sin ver mis c
   - Los diagnósticos se acumulan (dar de baja un diagnóstico se define con la licenciada).
 
 ## Plantilla para abrir cada ventana
-> Lee `docs/produccion/PLAN.md` y el informe de la fase anterior. Ejecuta la Fase N. Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
+> Primero el arranque: `git fetch origin && git checkout -B claude/pensive-cray-3lwodm origin/claude/pensive-cray-3lwodm && npm ci --prefix server`. Comprueba que `git branch --show-current` dice `claude/pensive-cray-3lwodm` (la ventana puede abrir en otra rama) y que existe `docs/produccion/PLAN.md`; confirma que `npm test` da 0 fallas.
+> Después: lee `docs/produccion/PLAN.md` (sección «Arranque de ventana») y el informe de la fase anterior. Ejecuta la Fase N. Trabajo y push en la rama `claude/pensive-cray-3lwodm`, no en la que asigne el entorno. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.

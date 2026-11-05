@@ -158,12 +158,14 @@ Este bloque resume todo lo hecho el 05/11/2026: las Fases 0, 1, 2 y 4 del plan d
 | `RECUPERACION_VIGENCIA_MIN` | Vigencia del código, en minutos; 15 por defecto |
 
 ### Cómo retomar en cualquier momento
-1. `git fetch origin claude/pensive-cray-3lwodm && git checkout claude/pensive-cray-3lwodm`
-2. `npm install`, y luego `npm test`: debe dar 298 correctas y 0 fallas.
+0. **La ventana puede abrir en otra rama y sin dependencias** (el entorno asigna una rama propia, por ejemplo `claude/practical-pasteur-…`; ahí no existe `docs/produccion/` y `npm test` falla con `MODULE_NOT_FOUND`). Pasó al abrir la Fase 3. El detalle está en la sección «Arranque de ventana» de `docs/produccion/PLAN.md`.
+1. `git fetch origin` (completo, no solo la rama) y luego `git checkout -B claude/pensive-cray-3lwodm origin/claude/pensive-cray-3lwodm`. Comprobar con `git branch --show-current`. Trabajo y push van a esta rama, no a la que asigne el entorno ni a `main`.
+2. `npm ci --prefix server`, y luego `npm test`: debe dar 0 fallas (al 05/11/2026: 298 correctas) **antes de tocar nada**.
 3. Leer `docs/produccion/PLAN.md` y la sección 8 de `docs/produccion/F4_correcciones.md`.
 4. Para ver la evidencia en el navegador, seguir `docs/produccion/evidencia/f4/README.md`: levanta un servidor de prueba con `srv.sh`, en una carpeta temporal y con datos inventados.
 5. Abrir la siguiente ventana con esta plantilla:
-   > Lee `docs/produccion/PLAN.md` y `docs/produccion/F4_correcciones.md`. Ejecuta la Fase 3 (lógica clínica y auditoría completa del cliente). Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
+   > Primero el arranque: `git fetch origin && git checkout -B claude/pensive-cray-3lwodm origin/claude/pensive-cray-3lwodm && npm ci --prefix server`. Comprueba que `git branch --show-current` dice `claude/pensive-cray-3lwodm` (la ventana puede abrir en otra rama) y que existe `docs/produccion/PLAN.md`; confirma que `npm test` da 0 fallas.
+   > Después: lee `docs/produccion/PLAN.md` (sección «Arranque de ventana») y `docs/produccion/F4_correcciones.md`. Ejecuta la Fase 3 (lógica clínica y auditoría completa del cliente). Trabajo y push en la rama `claude/pensive-cray-3lwodm`, no en la que asigne el entorno. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
 
 ### Lo que falta
 
