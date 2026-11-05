@@ -1,0 +1,6 @@
+1) el ADMIN cambia su clave por la interfaz → 200
+   login con la clave nueva → 200
+2) reinicio con ADMIN_RESET=true aún en el entorno:
+   login con la clave nueva → 200 | con la clave del entorno → 401
+   token emitido antes del reinicio → 200
+   registro: [AUTH] ADMIN_RESET=true sigue en el entorno, pero esa clave ya se aplicó: no se restableció de nuevo. Quite ADMIN_RESET del entorno.

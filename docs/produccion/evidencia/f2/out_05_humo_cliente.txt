@@ -1,0 +1,7 @@
+1) login ADMIN y padrón cargado: 20 pacientes
+2) importación por la cuadrícula Excel: 23 pacientes en el servidor | avisos: ["Bienvenido(a), ADMINISTRADOR","Abriendo auditoría y corrector de Padrón en pantalla...","🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron 3 pacientes en el servidor."] | ultima_modificacion_por: admin | diagnósticos: ["I10.X"]
+3) Registro Clínico → Guardar: POST /api/padron/importar-lote → 200
+4) C-01 ficha, texto de las etiquetas: <img src=x onerror="window.__xss_cod=1">: <img src=x onerror="window.__xss_txt=1">
+   C-01 banderas __xss ejecutadas: ninguna
+5) escrituras a la API: ["POST /api/auth/login → 200","POST /api/padron/importar-lote → 200","POST /api/padron/importar-lote → 200"]
+6) violaciones de la CSP: ninguna | errores de página: ninguno

@@ -1,0 +1,6 @@
+CSP: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mt0.google.com https://mt1.google.com https://mt2.google.com https://mt3.google.com https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.fr https://server.arcgisonline.com; connect-src 'self'; font-src 'self' data:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+1) manejador en línea inyectado (onerror): SE EJECUTÓ
+2) fetch a origen ajeno: BLOQUEADO por connect-src
+3) baliza por imagen a origen ajeno: BLOQUEADA por img-src
+4) mosaico de CartoDB: permitido por la CSP
+violaciones registradas: ["connect-src → https://exfil.f2.invalid/t?x=1","img-src → https://exfil.f2.invalid/pixel.gif?t=1"]
