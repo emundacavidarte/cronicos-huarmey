@@ -61,7 +61,7 @@ Corregir en orden de gravedad con prueba que falla antes y pasa después. Seguri
 - Persistencia: espera máxima de 2 s (L-04), un solo formato (S-14), transacciones todo o nada, respaldo diario con prueba de restauración (S-09 local) y cifrado en reposo **opcional** con `STORE_KEY` (apagado por defecto).
 - Instalación: gzip de estáticos (≈6,4 → ≈1,4 MB), `npm ci` y Node 22 (S-10), y sin cifras sin sustento (L-11).
 - 3 hallazgos nuevos corregidos. El más grave, F4-02: cada atención en Registro Clínico borraba la dislipidemia.
-- `npm test`: 283 correctas, 0 fallas. Chromium: 32 de 32 acciones y 19 de 19 comprobaciones del cliente, sin violaciones de la CSP.
+- `npm test`: 283 correctas, 0 fallas (con las decisiones de Edward de la sección 9: 22 suites, 298 correctas, 0 fallas). Chromium: 32 de 32 acciones y 19 de 19 comprobaciones del cliente, sin violaciones de la CSP.
 - Decisiones tomadas por defecto (sin internet solo aviso, cifrado apagado, 30 min de inactividad, diagnósticos acumulados): sección 5 del informe. Para «Sin documento», Edward decidió después que el documento es obligatorio.
 
 ### Fase 5 — Persistencia, respaldos y datos reales

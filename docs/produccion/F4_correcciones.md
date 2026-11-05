@@ -10,7 +10,7 @@ Regla de evidencia: cada corrección tiene una prueba que falla antes y pasa des
 
 ## 1. Resultado
 
-- **`npm test`: 283 correctas, 0 con falla** (21 suites). Al cerrar la Fase 2 eran 263. Las suites nuevas son `testCorreccionesF4.js` (10) y `testPersistenciaF4.js` (9). Antes de corregir fallaban 6 de 8 y 8 de 8 de sus casos (medido antes de agregar las pruebas de gzip, de `STORE_KEY` y de restauración).
+- **`npm test`: 283 correctas, 0 con falla** (21 suites). Tras las decisiones de Edward de la sección 9 (suite `testClavesF4.js`): **22 suites, 298 correctas, 0 con falla**. Al cerrar la Fase 2 eran 263. Las suites nuevas son `testCorreccionesF4.js` (10) y `testPersistenciaF4.js` (9). Antes de corregir fallaban 6 de 8 y 8 de 8 de sus casos (medido antes de agregar las pruebas de gzip, de `STORE_KEY` y de restauración).
 - **Chromium** con el servidor corregido:
   - 32 de 32 acciones de la interfaz funcionan con la CSP estricta.
   - 19 de 19 comprobaciones de los hallazgos del cliente.

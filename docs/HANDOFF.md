@@ -1,4 +1,230 @@
-# 🚦 COLA DE TRABAJO — LEER ESTO PRIMERO (actualizado 29/10/2026)
+# 🚦 COLA DE TRABAJO — LEER ESTO PRIMERO (actualizado 05/11/2026)
+
+## 🧭 ESTADO AL 05/11/2026 — PASO A PRODUCCIÓN (leer esto primero)
+
+Este bloque resume todo lo hecho el 05/11/2026: las Fases 0, 1, 2 y 4 del plan de paso a producción y las decisiones de Edward. La cola T-xx / G-xx de más abajo es la anterior y sus estados se actualizaron con lo que estas fases cerraron. El detalle completo está en `docs/produccion/`.
+
+### Dónde está el trabajo
+- **Rama:** `claude/pensive-cray-3lwodm`, con 25 commits sobre `main` (este es el último). `main` no tiene nada de esto. No hay pull request: se abre solo si Edward lo pide.
+- **Documento rector:** `docs/produccion/PLAN.md`, con las fases, las decisiones tomadas y los pendientes de Edward.
+- **Informes:**
+  - `docs/produccion/F1_diagnostico.md`: los 38 hallazgos de la Fase 1, con severidad y pasos para reproducirlos.
+  - `docs/produccion/F2_seguridad_servidor.md`: los 21 hallazgos de seguridad del servidor y su corrección.
+  - `docs/produccion/F4_correcciones.md`: qué se corrigió, qué no y por qué, y las decisiones por defecto. La sección 9 recoge las decisiones de Edward ya implementadas.
+- **Evidencia ejecutable:** `docs/produccion/evidencia/f1/`, `f2/` y `f4/`, cada una con su `README.md`. Usa solo datos inventados.
+- **Pruebas:** `npm test` da **22 suites, 298 correctas y 0 fallas** (05/11/2026). `npm audit` da 0 vulnerabilidades. Las dependencias siguen siendo solo `express` y `cors`. Node 22.
+
+### Fases del plan
+| Fase | Estado al 05/11/2026 |
+|---|---|
+| 0 · Plan y traspaso | Hecha |
+| 1 · Diagnóstico en vivo | Hecha. 38 hallazgos: 2 críticos, 6 altos, 19 medios y 11 bajos |
+| 2 · Seguridad y privacidad del servidor | Hecha y corregida. 21 hallazgos, todos corregidos; F2-17, la CSP, se cerró en la Fase 4 |
+| 3 · Cliente, PWA y lógica clínica | **Pendiente: es la siguiente.** Quedó reducida a la validación clínica y a la auditoría completa del cliente |
+| 4 · Correcciones | Hecha, también las medias y bajas, y además las decisiones de Edward |
+| 5 · Persistencia, respaldos y datos reales | Pendiente, ya avanzada en la Fase 4 |
+| 6 · Infraestructura (Render, CI) | Pendiente, ya avanzada en la Fase 4 |
+| 7 · Staging y producción | Pendiente |
+| 8 · Revisión final (Go/No-Go) | Pendiente |
+
+**Balance de los 38 hallazgos de la Fase 1:**
+- Corregidos: 31.
+- En parte (2):
+  - S-09: hay respaldo diario, pero falta la copia fuera del servidor.
+  - L-06: la bitácora ya no se vacía, pero falta definir su retención.
+- Aceptado (1): L-09.
+- Pendientes (4): L-05, L-07, L-08 y L-10. Son de capacidad o de plataforma.
+
+### Decisiones de Edward (05/11/2026)
+1. Se usa Render Starter con disco, como prototipo para **5 usuarios a la vez como máximo**. La meta de más de 2 000 usuarios es un proyecto aparte.
+2. Al escribir el DNI para registrar una atención, se cargan los datos ya guardados del paciente. Ya existe; la Fase 3 lo valida por rol y red.
+3. Ordenó «Ejecuta todas las correcciones» y «Corrige todo»: las fases auditan **y** corrigen.
+4. **El documento es obligatorio** para registrar a un paciente: DNI de 8 dígitos, carné de extranjería o pasaporte. Se quitó «Sin documento».
+5. **Por HOSIX y FHIR también llegan carnés de extranjería y pasaportes.**
+6. **Cada usuario se registra con correo**, obligatorio y único. Puede cambiar su contraseña y recuperarla con un código enviado a ese correo.
+7. Todo se comunica en español.
+
+### Qué se corrigió (resumen; los IDs y la evidencia están en los informes)
+
+**Seguridad del servidor (Fase 2)**
+- **Secretos:**
+  - `.env.example` ya no trae valores utilizables (F2-01, crítico).
+  - El servidor no arranca con secretos de ejemplo, con «CAMBIAR», repetitivos o cortos.
+  - Si falta algo, da un error de una sola línea (F2-02).
+- **Alcance por red:**
+  - `importar-lote` ya no escribe en pacientes de otra red (F2-03).
+  - Un paciente fuera del alcance responde 404, igual que uno que no existe, así que no se puede averiguar quién está registrado (F2-04).
+  - El sector se compara de forma exacta (F2-12).
+  - El ETag es distinto para cada usuario (F2-06).
+- **Entradas:**
+  - Todo se valida antes de escribir y las transacciones son todo o nada (F2-08, F2-09, F2-11).
+  - El servidor ya no inventa I10 ni DNI.
+  - El código CIE-10 debe tener formato válido.
+  - El cuerpo se lee después de autenticar: 10 KB como máximo en el login y 415 si no es JSON (F2-07).
+- **Límites de tasa:**
+  - Cubren `/api` y `/fhir`: por usuario con sesión y por IP sin ella.
+  - El login tiene su propio cupo, de 30 por minuto, compartido con la recuperación de contraseña (F2-14).
+- **Rutas y errores:** se eliminaron las rutas duplicadas, las rutas inexistentes dan 404 en JSON y los errores no muestran texto interno (F2-10, F2-15).
+- **Bitácora:**
+  - Guarda como máximo 500 inicios de sesión fallidos, así que ya no se vacía.
+  - Registra las lecturas: una por usuario, recurso y hora.
+  - Registra qué pacientes tocó cada importación (F2-13).
+- **Otros:**
+  - Nombres de usuario reservados como `__proto__` (F2-16).
+  - `ADMIN_RESET` funciona una sola vez (F2-19).
+  - Los archivos de datos tienen permisos 600 (F2-18).
+  - CORS está cerrado salvo `CORS_ORIGINS`.
+- **XSS:** se corrigió el XSS almacenado por el diagnóstico CIE-10 (C-01, crítico).
+
+**Cliente (Fase 4)**
+- **CSP estricta (`script-src 'self'`):** los 69 manejadores en línea pasaron a una delegación con una lista cerrada de acciones (`client/js/ui/acciones.js`). Un HTML inyectado ya no ejecuta código.
+- **Hallazgos C-xx corregidos:**
+  - C-02: sin internet, la página abre desde la caché y avisa, sin guardar datos de pacientes en el equipo.
+  - C-03: el tablero del DIRECTOR muestra los totales reales de su red.
+  - C-04: el tablero se limpia al salir.
+  - C-05: se rechazan fechas y números imposibles.
+  - C-06: la edad es la cumplida, con la hora de Lima.
+  - C-07: avisa qué pacientes no se pudieron ubicar.
+  - C-08: avisa qué documentos ya están registrados.
+  - C-09: la exportación se vuelve a importar sin errores.
+  - C-10: el móvil de 390 px se ve completo.
+  - C-12: sin doble escape en los avisos.
+  - C-13: el DIRECTOR no ve «Exportar».
+  - C-14: zoom con los dedos, vista inicial y aviso de «Su sesión venció».
+- **Otros:**
+  - La sesión se cierra tras 30 minutos sin uso.
+  - La pre-cita dice la verdad si el servidor falla y usa la fecha de Lima.
+  - El CSV de pre-citas marca las que no se guardaron.
+  - Los íconos de la PWA son reales.
+- **Errores nuevos encontrados y corregidos:**
+  - F4-01: cambiar el mapa base daba error.
+  - **F4-02 (alta): Registro Clínico borraba la dislipidemia.** Ahora los diagnósticos se acumulan.
+  - F4-03: el sexo exportado no se podía volver a importar.
+
+**Persistencia e instalación (Fase 4)**
+- **Guardado:** espera como máximo 2 s (L-04), usa un solo formato (S-14) y las transacciones se revierten si algo falla.
+- **Respaldo diario:**
+  - Se guarda en `DATA_DIR/respaldos/` antes del primer guardado de cada día.
+  - Se conservan los últimos 14.
+  - Hay prueba de restauración (S-09, en el mismo disco).
+- **Cifrado en reposo:** es opcional, con `STORE_KEY` (AES-256-GCM), y está **apagado** por defecto.
+- **Instalación:**
+  - Los estáticos salen con gzip, ETag y 304: la primera carga baja de ≈6,4 a ≈1,4 MB (S-08).
+  - `npm ci` y Node 22 (S-10).
+  - Las pruebas usan una carpeta temporal (S-15).
+  - Se quitaron las cifras de capacidad sin sustento (L-11).
+  - README actualizado.
+
+**Decisiones de Edward implementadas (sección 9 de `F4_correcciones.md`)**
+- **Documento obligatorio:** lo exigen la interfaz, la plantilla y el servidor. La cuadrícula marca la fila y no deja cargarla.
+- **Tipos de documento (`server/utils/documentos.js`):**
+  - Acepta DNI, CE y pasaporte.
+  - HOSIX, Galenos y Pakamuros leen `TIPO_DOCUMENTO` (DNI, CE o PASAPORTE, o los códigos SUNAT 1, 4 y 7). Si no viene, lo infieren.
+  - FHIR identifica el DNI con `NNPER`, el CE con `PRC` y el pasaporte con `PPN`.
+  - Un número con comillas, `< >` o `;` se rechaza antes de normalizarlo.
+- **Contraseñas:**
+  - El correo es obligatorio y único; el ADMIN puede cambiarlo.
+  - El botón 🔑 es «Cambiar mi contraseña».
+  - «¿Olvidó su contraseña?» envía un código de 6 dígitos que vence en 15 minutos, admite 5 intentos y sirve una vez. Solo se guarda su huella (HMAC).
+  - Como máximo se envían 3 códigos cada 15 minutos.
+  - La respuesta es igual exista o no el usuario.
+  - El correo sale por Resend o Brevo por HTTPS (`server/utils/correo.js`), sin paquetes nuevos.
+
+### Archivos nuevos (para ubicarse)
+- **Servidor:**
+  - `server/utils/validacion.js`, `cuerpoJson.js`, `documentos.js` y `correo.js`.
+  - `server/auth/config.js`, que revisa los secretos y el correo al arrancar.
+  - `server/db/almacen.js`, para el cifrado.
+- **Cliente:** `client/js/ui/acciones.js` y los íconos `icono-192.png` e `icono-512.png`.
+- **Pruebas:**
+  - `server/tests/testSeguridadF2.js` (38).
+  - `testCorreccionesF4.js` (12).
+  - `testPersistenciaF4.js` (9).
+  - `testClavesF4.js` (13).
+- **Ojo:** `scope.js`, `padronGridModal.js` y los conectores `hosix` y `galenos` usan saltos de línea `\r\r\n`. Al editarlos, respetar ese formato.
+
+### Variables de entorno (detalle en `.env.example` y `README.md`)
+| Variable | Para qué |
+|---|---|
+| `AUTH_SECRET` | Obligatoria en producción: 32 caracteres aleatorios o más |
+| `ADMIN_USER`, `ADMIN_PASSWORD`, `ADMIN_EMAIL` | El primer administrador y su correo |
+| `ADMIN_RESET=true` | Restablece la clave del ADMIN una sola vez; quitarla después |
+| `TRUST_PROXY` | `true` en Render; verificarlo en la Fase 6 |
+| `DATA_DIR` | Carpeta del disco con `store.json`, `store.json.bak` y `respaldos/` |
+| `RESPALDOS_DIARIOS` | Cuántos respaldos se guardan; 14 por defecto |
+| `STORE_KEY` | Opcional: 32 bytes aleatorios (`openssl rand -hex 32`) que cifran los datos. **Si se pierde, se pierde el padrón** |
+| `CORS_ORIGINS` | Orígenes permitidos; vacío significa cerrado |
+| `MAIL_PROVIDER`, `MAIL_API_KEY`, `MAIL_FROM` | Correo para recuperar contraseñas (`resend` o `brevo`) |
+| `RECUPERACION_VIGENCIA_MIN` | Vigencia del código, en minutos; 15 por defecto |
+
+### Cómo retomar en cualquier momento
+1. `git fetch origin claude/pensive-cray-3lwodm && git checkout claude/pensive-cray-3lwodm`
+2. `npm install`, y luego `npm test`: debe dar 298 correctas y 0 fallas.
+3. Leer `docs/produccion/PLAN.md` y la sección 8 de `docs/produccion/F4_correcciones.md`.
+4. Para ver la evidencia en el navegador, seguir `docs/produccion/evidencia/f4/README.md`: levanta un servidor de prueba con `srv.sh`, en una carpeta temporal y con datos inventados.
+5. Abrir la siguiente ventana con esta plantilla:
+   > Lee `docs/produccion/PLAN.md` y `docs/produccion/F4_correcciones.md`. Ejecuta la Fase 3 (lógica clínica y auditoría completa del cliente). Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
+
+### Lo que falta
+
+**Técnico**
+- **Fase 3:**
+  - Revisar contra la norma el semáforo, HEARTS, los indicadores del convenio y `padronCalculadora.js`.
+  - Preparar las preguntas para la licenciada de crónicos: edad, semáforo, metas, y alta y baja de diagnósticos.
+  - Hacer la auditoría completa de los sumideros de HTML del cliente.
+  - Validar la precarga por DNI por rol, red y establecimiento.
+- **Verificado al escribir esta nota y sin corregir** (solo por lectura):
+  - `INICIAR_PROTOTIPO.bat` abre el navegador antes de que arranque el servidor, sin esperar a `/health` ni revisar `node` y `node_modules` (resto de T-14).
+  - `heartsEngine.evaluatePatient` reordena con `sort` la lista de controles del propio paciente y solo reconoce I10 y E11 (T-13).
+  - El servidor solo valida que la latitud y la longitud sean números, no que caigan en Áncash (G-04).
+  - La exportación CSV de pre-citas **ya** duplica comillas y antepone `'` a `= + - @`: esa parte de T-10 estaba hecha.
+- **Cola anterior aún abierta:**
+  - G-03 y G-04: geocodificar en el servidor y mostrar la precisión.
+  - G-05: ubicar sobre la calle.
+  - T-11: analizador CSV.
+  - T-13: motor clínico y WhatsApp.
+  - T-15: vista mínima por rol y DNI enmascarado.
+  - T-18: cargar la trama real, al final de todo.
+- **Fase 5:**
+  - Copia cifrada de los respaldos fuera del servidor.
+  - Retención de la bitácora.
+  - Procedimiento de carga del padrón real, sin pasar por Git.
+  - Umbral y ruta de migración (L-05, L-07, L-08).
+- **Fase 6:**
+  - `render.yaml`, GitHub Actions, Dependabot, escaneo de secretos y `LICENSE`.
+  - Verificar `TRUST_PROXY` en Render (L-10).
+- **Fases 7 y 8:** staging, producción, `RUNBOOK.md` y Go/No-Go.
+
+**Decisiones pendientes de Edward**
+1. Rotar `AUTH_SECRET` y la clave del ADMIN si alguna vez se usaron los del antiguo `.env.example`, que siguen en el historial de Git.
+2. Decidir quién custodia `STORE_KEY` antes de activar el cifrado.
+3. Correo:
+   - Elegir el proveedor (Resend o Brevo).
+   - Verificar el dominio remitente.
+   - Cargar `MAIL_PROVIDER`, `MAIL_API_KEY`, `MAIL_FROM` y `ADMIN_EMAIL` en Render.
+   - Poner el correo a los usuarios que ya existen.
+
+   Sin esto, «¿Olvidó su contraseña?» dice que no está disponible. **No se probó contra Resend ni Brevo reales**, solo contra un proveedor falso local.
+4. Confirmar con SIVSA cómo envía HOSIX el tipo de documento. Hoy, si no viene, se infiere: 8 dígitos es DNI, solo dígitos es CE y con letras es pasaporte.
+5. Confirmar las decisiones aplicadas por defecto:
+   - Sin internet, solo un aviso.
+   - La sesión se cierra a los 30 minutos sin uso.
+   - Los diagnósticos se acumulan; dar de baja uno se define con la licenciada.
+6. Temas no técnicos:
+   - Ley 29733: inscripción del banco de datos y base legal.
+   - Datos alojados fuera del Perú, porque Render no tiene región en Lima.
+   - Presupuesto: unos US$ 8 al mes.
+   - Quién valida las reglas clínicas y quién administra los usuarios.
+
+### Cambios de comportamiento que hay que avisar a los usuarios
+- **Acceso a pacientes:** un paciente fuera del alcance responde 404.
+- **FHIR:** `/fhir` solo acepta recursos FHIR.
+- **Importación:** es más estricta. El documento es obligatorio, las fechas deben ser reales y el CIE-10 debe tener formato válido.
+- **Sesión:** se cierra tras 30 minutos sin uso.
+- **Usuarios:** crear un usuario exige correo.
+- **Red:** CORS está cerrado y los cupos son por usuario.
+
+---
 
 > **Ahorro de tokens:** cuando el usuario diga **«continua»**, leer **solo este bloque (hasta la línea `FIN-COLA`)** y la ficha de la tarea que toca. **No leer el resto del archivo**: desde «# DOCUMENTO DE ENTREGA…» en adelante es histórico y contiene afirmaciones que esta revisión desmintió (ver T-16).
 
@@ -22,7 +248,7 @@
 2. **Toda la seguridad se hace al final**, cuando el proyecto esté terminado: T-04, T-05, T-10 y T-15 (ver «Seguridad al final»). La autenticación de T-03 ya está hecha y no se toca.
 3. **HOSIX sigue como propuesta.** Los conectores (`server/fhir/connectors/*`) están listos como propuesta y la intención es pedir a HOSIX una API real. **No se modifican los conectores** hasta tener esa API (ver H-01, bloqueada). Las correcciones de ingesta (T-06, T-07, T-09) se hacen en `database.js`, `fhirAdapter.js` y `hosixParser.js` (CSV del cliente), no en los conectores.
 
-**SIGUIENTE: A15** (geolocalización honesta: «sin ubicar» y «ubicación aproximada»); luego A13, A14 y A22. A8, A11 y A12 quedaron hechas el 29/10/2026 · Última actualización: 29/10/2026 (Esquema v4, parser y cuadrícula Excel de 76 columnas, calculadoras CKD-EPI/riesgo CV/IMC, combinación incremental y exportación XLSX completadas; 18 suites y 226 pruebas en verde; revisión R1-R13 corregida el 30/10/2026)
+**SIGUIENTE (05/11/2026): Fase 3 de `docs/produccion/PLAN.md`** (lógica clínica con la licenciada y auditoría completa del cliente). Ver el bloque «🧭 ESTADO AL 05/11/2026» arriba. Línea anterior, como referencia: A15 (geolocalización honesta: «sin ubicar» y «ubicación aproximada»); luego A13, A14 y A22. A8, A11 y A12 quedaron hechas el 29/10/2026 · Última actualización: 29/10/2026 (Esquema v4, parser y cuadrícula Excel de 76 columnas, calculadoras CKD-EPI/riesgo CV/IMC, combinación incremental y exportación XLSX completadas; 18 suites y 226 pruebas en verde; revisión R1-R13 corregida el 30/10/2026)
 
 ## Línea base verificada el 22/10/2026 (carpeta `Prototipo_Trabajo`)
 - Sintaxis: los 25 archivos JS propios pasan `node --check`. `npm audit --omit=dev`: 0 vulnerabilidades. Node v24.20.0.
@@ -40,19 +266,19 @@
 | G-01 | **Geolocalización:** una sola fuente de coordenadas para los establecimientos (G6, G7). **DECISIÓN** | Crítica | T-00 | ✅ |
 | G-02 | **Geolocalización:** geocodificador determinista, por palabra completa y que no inventa precisión (F11, G1, G2, G3, G8). Absorbe T-12. **DECISIÓN** | Crítica | G-01 | ✅ |
 | G-03 | **Geolocalización:** geocodificar también en el servidor al ingresar pacientes y no dejar sector inventado (G4) | Alta | G-02 | ⬜ |
-| G-04 | **Geolocalización:** validar coordenadas, mostrar «ubicación aproximada» y «N sin ubicar», CSV sin ubicación inventada, corregir «Distancia vial» (G3, G5, G10, G11) | Alta | G-03 | ⬜ |
+| G-04 | **Geolocalización:** validar coordenadas, mostrar «ubicación aproximada» y «N sin ubicar», CSV sin ubicación inventada, corregir «Distancia vial» (G3, G5, G10, G11) | Alta | G-03 | 🟡 Al importar avisa quiénes quedaron sin ubicar (C-07, 05/11/2026). Falta validar que las coordenadas caigan en Áncash, el contador «N sin ubicar» en el mapa y el resto |
 | G-05 | **Geolocalización:** ubicar sobre la línea de la calle con el catastro (92 vías con nombre, sin numeración) (G7, G9) | Media | G-02 | ⬜ |
-| T-09 | Lotes atómicos y pre-cita a paciente inexistente (F6, N2) | Alta | T-00 | ⬜ |
+| T-09 | Lotes atómicos y pre-cita a paciente inexistente (F6, N2) | Alta | T-00 | ✅ 05/11/2026: Fase 2 (F2-05, F2-08) y Fase 4 (transacciones con reversión) |
 | T-08 | Durabilidad: `store.json` corrupto, cierre ordenado, ETag (F7, F8, F19) | Alta | T-00 | ✅ |
 | T-06 | Pacientes ingresados por API salen incompletos en la interfaz (N3) | Alta | T-00 | ✅ |
 | T-07 | La ingesta inventa datos clínicos (F1, F2, F3, F14, F16, N4). **No toca los conectores HOSIX** | Alta | T-06 | ✅ |
 | T-13 | Motor clínico y mensaje de WhatsApp (F12, F15, F20) | Media | T-00 | ⬜ |
-| T-14 | Cliente honesto ante fallos: API caída, pre-cita, fecha UTC, `.bat` (F13, N5, N6, N7) | Media | T-00 | ⬜ |
+| T-14 | Cliente honesto ante fallos: API caída, pre-cita, fecha UTC, `.bat` (F13, N5, N6, N7) | Media | T-00 | 🟡 05/11/2026: aviso sin internet (C-02), pre-cita honesta y fecha de Lima. **Falta el `.bat`**, que no espera a `/health` |
 | T-11 | Importación CSV: columnas mal repartidas y codificación (F9, F10). **DECISIÓN** | Media | T-07 | ⬜ |
-| T-04 | **SEGURIDAD, AL FINAL:** límite de peticiones por `/fhir`, rutas duplicadas, `trust proxy` (N1, F17, S9, N12) | Alta | todas las anteriores | ⬜ |
-| T-05 | **SEGURIDAD, AL FINAL:** endurecer `server.js`: comodín 404, mensajes de error, CORS/CSP (F18, S6, S7) | Media | T-04 | ⬜ |
-| T-10 | **SEGURIDAD, AL FINAL:** XSS y exportación CSV con fórmulas (S4, S5) | Alta | T-05 | ⬜ |
-| T-15 | **SEGURIDAD, AL FINAL:** privacidad de las respuestas por rol (S8) | Media | T-10 | ⬜ |
+| T-04 | **SEGURIDAD, AL FINAL:** límite de peticiones por `/fhir`, rutas duplicadas, `trust proxy` (N1, F17, S9, N12) | Alta | todas las anteriores | ✅ 05/11/2026: Fase 2 (F2-14, F2-15). Falta verificar `TRUST_PROXY` en Render (Fase 6) |
+| T-05 | **SEGURIDAD, AL FINAL:** endurecer `server.js`: comodín 404, mensajes de error, CORS/CSP (F18, S6, S7) | Media | T-04 | ✅ 05/11/2026: Fase 2 (F2-10, F2-17) y Fase 4 (CSP sin scripts en línea, gzip) |
+| T-10 | **SEGURIDAD, AL FINAL:** XSS y exportación CSV con fórmulas (S4, S5) | Alta | T-05 | 🟡 05/11/2026: XSS C-01 corregido, CSP estricta y avisos con texto plano. El CSV ya escapaba fórmulas. Falta la auditoría completa de sumideros (Fase 3) |
+| T-15 | **SEGURIDAD, AL FINAL:** privacidad de las respuestas por rol (S8) | Media | T-10 | 🟡 05/11/2026: se auditan las lecturas, el ETag es por usuario y el DIRECTOR no recibe datos individuales. Falta la vista mínima por rol y el DNI enmascarado |
 | T-16 | Corregir la documentación y reducir este archivo (N8, N9) | Baja | todas las anteriores | ✅ |
 | T-18 | **Cargar y cotejar la trama real de pacientes (AL FINAL DE TODO)** | Alta | T-16 | ⬜ |
 | T-12 | Geocodificador determinista (F11) | — | **absorbida por G-02** | ➡️ |
@@ -74,6 +300,11 @@
 | 27/10/2026 | Esquema v4 y Modal Excel | **Esquema nominal normativo v4 de 76 columnas (`padronSchema.js`).** Estructurado en 11 bloques clínicos y operacionales (A a K). Validador celda por celda y en caliente con catálogos oficiales de Huarmey. Parser SheetJS (`padronExcelParser.js`) y cuadrícula interactiva modal (`padronGridModal.js`) con cálculo automático de consistencia en pantalla y corrección in situ. |
 | 28/10/2026 | Calculadoras clínicas | **Motor de cálculo clínico automatizado (`padronCalculators.js`).** Filtrado glomerular TFGe con ecuación CKD-EPI 2021 (sin factor racial) y estadiaje ERC (G1-G5). Riesgo cardiovascular a 10 años con tablas OMS/OPS sin laboratorio (subregión AMR B Andina). Categorización nutricional por IMC. Suite `testPadronExcel.js` agregada. |
 | 29/10/2026 | Resolución de Hallazgos y Endurecimiento | **Resolución integral de hallazgos (`HALLAZGOS_VERIFICACION_29oct.md`).** Cabecera `Content-Type: application/json` explícita en subida de Excel; combinación incremental `upsertPatients` (10 base + 3 importados = 13); regla unificada de control en meta en tablero y semáforo (PA < 140/90 mmHg); exportación a Excel SheetJS (`exportarPadronExcel`); derivación de `diagnosticos` y signos vitales en `database.js` (`_enrichPatient`); soporte de alias de cabeceras DNI; cita oficial HEARTS / RM 031-2015/MINSA; RBAC granular hasta establecimiento y sector (`scope.js`); conectores HOSIX/Galenos/Pakamuros sin asumir I10 ni Controlado por defecto; inicialización de Git con `.gitignore` protegido (Ley N° 29733); suite `testExcelImportExportFix.js`. `npm test`: 12 suites, 152 pruebas en verde (0 fallas). |
+| 05/11/2026 | Plan de producción y Fase 1 | `docs/produccion/PLAN.md` (fases 0 a 8, una por ventana) y `F1_diagnostico.md`: 38 hallazgos con severidad y evidencia (`evidencia/f1/`). Edward decide: como máximo 5 usuarios en Render y precarga por DNI. |
+| 05/11/2026 | Fase 2 (seguridad del servidor) | Auditoría y corrección: 21 hallazgos (11 nuevos), entre ellos la escritura cruzada de red, la bitácora que se vaciaba, los cuerpos de 10 MB sin sesión, el oráculo de existencia, el sector por subcadena y el `ADMIN_RESET` repetido. Suite `testSeguridadF2.js`. Informe `F2_seguridad_servidor.md`. |
+| 05/11/2026 | Fase 4 (correcciones) | CSP sin scripts en línea (69 manejadores → `acciones.js`); C-02 a C-14; persistencia (2 s, transacciones, respaldo diario, `STORE_KEY`); gzip; `npm ci` y Node 22. Corrige F4-01 a F4-03, entre ellos que se borraba la dislipidemia. Informe `F4_correcciones.md`. |
+| 05/11/2026 | Decisiones de Edward | El documento es obligatorio; CE y pasaporte también por HOSIX y FHIR (`documentos.js`); correo obligatorio, cambiar y recuperar la contraseña con código (`correo.js`, `testClavesF4.js`). `npm test`: 22 suites, 298 correctas, 0 fallas. Chromium: 32 de 32 acciones, 19 de 19 comprobaciones del cliente y 11 de 11 flujos de contraseña. |
+| 05/11/2026 | HANDOFF | Se agregó el bloque «🧭 ESTADO AL 05/11/2026» con todo lo hecho, lo pendiente y cómo retomar. Estados de la cola actualizados (T-04, T-05 y T-09 ✅; T-10, T-14, T-15 y G-04 🟡). |
 
 
 
