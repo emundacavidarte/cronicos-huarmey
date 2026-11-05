@@ -58,13 +58,19 @@ fs.writeFileSync(xlsxPath, XLSX.write(exp.construirLibro(XLSX, [fila('96000001',
 
   await page.evaluate(() => window.RegistroClinicoModal.open('96000001'));
   await sleep(1200);
+  // Precarga por DNI (requisito de Edward): el formulario debe encontrar al paciente ya guardado
+  const precarga = await page.evaluate(() => {
+    const a = document.querySelector('.reg-dni-status-alert');
+    return (a ? a.textContent.replace(/\s+/g, ' ').trim().slice(0, 70) : '(sin aviso)') + ' | nombre: ' + document.getElementById('reg-apellidos-nombres').value;
+  });
+  console.log('3) Registro Clínico, precarga por DNI 96000001:', precarga);
   // Si el paciente aún no tiene consentimiento registrado, el formulario lo pide antes de guardar
   if (await page.isVisible('#reg-consentimiento')) await page.selectOption('#reg-consentimiento', 'No');
   // El estado se toma del evento de respuesta (leer el cuerpo con resp.text() se bloquea mientras la alerta de éxito está abierta)
   const antes = api.length;
   await page.click('#reg-btn-guardar');
   for (let i = 0; i < 30 && !api.slice(antes).some(a => a.includes('importar-lote')); i++) await sleep(300);
-  console.log('3) Registro Clínico → Guardar:', api.slice(antes).find(a => a.includes('importar-lote')) || 'sin respuesta');
+  console.log('   Registro Clínico → Guardar:', api.slice(antes).find(a => a.includes('importar-lote')) || 'sin respuesta');
   await sleep(800);
 
   // C-01: diagnóstico con HTML puesto directamente en memoria (el servidor ya no lo acepta), ficha y tooltip
