@@ -372,7 +372,7 @@ class App {
         rows.push(`
           <tr>
             <td><strong>${window.escapeHtml(name)}</strong></td>
-            <td><span class="badge-diag">${categoria}</span></td>
+            <td><span class="badge-diag">${window.escapeHtml(categoria)}</span></td>
             <td><strong>${data.total}</strong></td>
             <td><span style="color:var(--hearts-green-text); font-weight:600;">${data.controlled}</span></td>
             <td><span style="color:var(--hearts-red-text); font-weight:600;">${data.red}</span></td>
@@ -1208,8 +1208,9 @@ class App {
 
     // Diagnósticos CIE-10
     const condPills = (p.conditions && p.conditions.length > 0)
-      ? p.conditions.map(c => `<span class="badge-diag badge-${(c.cie10_cod || 'i10').slice(0,3).toLowerCase()}">${c.cie10_cod}: ${c.diagnostico}</span>`).join(' ')
-      : (p.diagnosticos || []).map(d => `<span class="badge-diag badge-${d.toLowerCase()}">${d}</span>`).join(' ');
+      // C-01: código y texto del diagnóstico vienen de importaciones y de la API: siempre escapados (también en la clase)
+      ? p.conditions.map(c => `<span class="badge-diag badge-${escapeHtml(String(c.cie10_cod || 'i10').slice(0,3).toLowerCase())}">${escapeHtml(c.cie10_cod)}: ${escapeHtml(c.diagnostico)}</span>`).join(' ')
+      : (p.diagnosticos || []).map(d => `<span class="badge-diag badge-${escapeHtml(String(d).toLowerCase())}">${escapeHtml(d)}</span>`).join(' ');
 
     // Construcción del Histórico Longitudinal HEARTS
     // 1. Evolución Trimestral de Presión Arterial 2026
