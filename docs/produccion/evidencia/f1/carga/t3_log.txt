@@ -1,0 +1,61 @@
+### n550 rep=1 datos=550 pacientes ; RSS inicial=71 MB
+{"ep":"cronicos","c":50,"rps":189.9,"total":3843,"status":{"200":3843},"errors":{},"p50":254.33,"p95":321.53,"p99":359.16,"max":375.4,"bytes":974312,"cpuSrv":100,"cpuGen":16,"rss":{"first":90.4,"max":116,"last":108.1,"n":75},"healthProbe":{"n":75,"p50":6868.3,"p95":12107.92,"p99":12559.7,"max":12559.7,"failed":0}}
+   RSS 3s despues: 106.5 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicos","c":200,"rps":191.5,"total":4022,"status":{"200":4022},"errors":{},"p50":1032.76,"p95":1133.04,"p99":1144.98,"max":1154.1,"bytes":974312,"cpuSrv":102,"cpuGen":17,"rss":{"first":105.5,"max":108.8,"last":108.8,"n":19},"healthProbe":{"n":19,"p50":10534.72,"p95":18993.26,"p99":18993.26,"max":18993.3,"failed":0}}
+   RSS 3s despues: 112.6 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicos","c":1000,"rps":190.8,"total":4773,"status":{"200":4773},"errors":{},"p50":5193.15,"p95":5346.36,"p99":5377.42,"max":5413.8,"bytes":974312,"cpuSrv":99,"cpuGen":38,"rss":{"first":137.4,"max":149.5,"last":149.5,"n":4},"healthProbe":{"n":4,"p50":15604.75,"p95":20701.7,"p99":20701.7,"max":20701.7,"failed":0}}
+   RSS 3s despues: 144.2 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":50,"rps":145.4,"total":2921,"status":{"200":2921},"errors":{},"p50":339.59,"p95":414.5,"p99":438.75,"max":516.5,"bytes":147809,"cpuSrv":169,"cpuGen":6,"rss":{"first":210.6,"max":256.9,"last":254.9,"n":199},"healthProbe":{"n":199,"p50":65.79,"p95":144.92,"p99":238.79,"max":257.5,"failed":0}}
+   RSS 3s despues: 240.1 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":200,"rps":145.5,"total":2955,"status":{"200":2955},"errors":{},"p50":1376.33,"p95":1606.71,"p99":1771.04,"max":2126.1,"bytes":147809,"cpuSrv":163,"cpuGen":5,"rss":{"first":381.2,"max":499.7,"last":429.4,"n":98},"healthProbe":{"n":98,"p50":5705.49,"p95":10724.78,"p99":10877.33,"max":10877.3,"failed":0}}
+   RSS 3s despues: 429.4 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":1000,"rps":131.7,"total":3000,"status":{"200":3000},"errors":{},"p50":7743.29,"p95":8222.59,"p99":8247.92,"max":8289.3,"bytes":147809,"cpuSrv":159,"cpuGen":7,"rss":{"first":1379.9,"max":1475.8,"last":1466.6,"n":21},"healthProbe":{"n":21,"p50":14168.83,"p95":20554.53,"p99":20586.06,"max":20586.1,"failed":0}}
+   RSS 3s despues: 1195.5 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":50,"rps":439.2,"total":8804,"status":{"200":8804},"errors":{},"p50":110.03,"p95":148.12,"p99":168.55,"max":235.2,"bytes":19804,"cpuSrv":132,"cpuGen":7,"rss":{"first":1219.1,"max":1261.8,"last":1259.2,"n":200},"healthProbe":{"n":200,"p50":57.07,"p95":90.1,"p99":135.05,"max":143.7,"failed":0}}
+   RSS 3s despues: 1259.2 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":200,"rps":442.6,"total":8987,"status":{"200":8987},"errors":{},"p50":445.9,"p95":501.95,"p99":512.85,"max":770,"bytes":19804,"cpuSrv":138,"cpuGen":6,"rss":{"first":1297.3,"max":1320.2,"last":1315.1,"n":95},"healthProbe":{"n":95,"p50":5532.35,"p95":10617.82,"p99":10860.21,"max":10860.2,"failed":0}}
+   RSS 3s despues: 1315.1 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":1000,"rps":429.6,"total":9000,"status":{"200":9000},"errors":{},"p50":2300.24,"p95":2464.79,"p99":2510.45,"max":3285.3,"bytes":19804,"cpuSrv":161,"cpuGen":8,"rss":{"first":1624.3,"max":1675.3,"last":1438.5,"n":21},"healthProbe":{"n":21,"p50":10733.67,"p95":18832.88,"p99":18841.24,"max":18841.2,"failed":0}}
+   RSS 3s despues: 1439.1 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+   RSS fin: 1439.1 MB
+### n550 rep=2 datos=550 pacientes ; RSS inicial=70.6 MB
+{"ep":"cronicos","c":50,"rps":182.9,"total":3706,"status":{"200":3706},"errors":{},"p50":269.85,"p95":320.14,"p99":346.97,"max":383.7,"bytes":974312,"cpuSrv":101,"cpuGen":16,"rss":{"first":89.9,"max":118.2,"last":118.2,"n":72},"healthProbe":{"n":72,"p50":6665.83,"p95":12280.5,"p99":12830.69,"max":12830.7,"failed":0}}
+   RSS 3s despues: 112.9 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicos","c":200,"rps":188.4,"total":3972,"status":{"200":3972},"errors":{},"p50":1152.8,"p95":1280.56,"p99":1318.51,"max":1336.5,"bytes":974312,"cpuSrv":101,"cpuGen":17,"rss":{"first":110.1,"max":123.3,"last":123.1,"n":16},"healthProbe":{"n":16,"p50":11158.71,"p95":18441.68,"p99":18441.68,"max":18441.7,"failed":0}}
+   RSS 3s despues: 112.4 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicos","c":1000,"rps":191.5,"total":4798,"status":{"200":4798},"errors":{},"p50":5117.96,"p95":5442.58,"p99":5473.26,"max":5488.8,"bytes":974312,"cpuSrv":98,"cpuGen":39,"rss":{"first":144.3,"max":160,"last":160,"n":4},"healthProbe":{"n":4,"p50":15313.78,"p95":20648.72,"p99":20648.72,"max":20648.7,"failed":0}}
+   RSS 3s despues: 145.4 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":50,"rps":144.6,"total":2902,"status":{"200":2902},"errors":{},"p50":338.68,"p95":416.43,"p99":569.38,"max":604.8,"bytes":147809,"cpuSrv":170,"cpuGen":6,"rss":{"first":209.3,"max":264.1,"last":249.2,"n":199},"healthProbe":{"n":199,"p50":63.61,"p95":130.98,"p99":225.18,"max":311.2,"failed":0}}
+   RSS 3s despues: 249.2 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":200,"rps":148.5,"total":3025,"status":{"200":3025},"errors":{},"p50":1351.74,"p95":1549.26,"p99":1664.84,"max":2046.5,"bytes":147809,"cpuSrv":167,"cpuGen":6,"rss":{"first":384.4,"max":477.7,"last":462.9,"n":99},"healthProbe":{"n":99,"p50":5645.36,"p95":10700.24,"p99":10824.26,"max":10824.3,"failed":0}}
+   RSS 3s despues: 462.9 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":1000,"rps":142.5,"total":3000,"status":{"200":3000},"errors":{},"p50":7048.6,"p95":7978.36,"p99":7988.23,"max":9310.3,"bytes":147809,"cpuSrv":158,"cpuGen":7,"rss":{"first":1383.8,"max":1526.4,"last":1515.6,"n":25},"healthProbe":{"n":25,"p50":12274.27,"p95":18553.66,"p99":18558.8,"max":18558.8,"failed":0}}
+   RSS 3s despues: 1247.8 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":50,"rps":460.8,"total":9238,"status":{"200":9238},"errors":{},"p50":105.1,"p95":139.55,"p99":159.06,"max":205.7,"bytes":19804,"cpuSrv":133,"cpuGen":7,"rss":{"first":1273.1,"max":1318.6,"last":1313.7,"n":200},"healthProbe":{"n":200,"p50":60.57,"p95":80.57,"p99":100.77,"max":106,"failed":0}}
+   RSS 3s despues: 1313.7 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":200,"rps":448.4,"total":9095,"status":{"200":9095},"errors":{},"p50":431.43,"p95":561.32,"p99":597.84,"max":811.3,"bytes":19804,"cpuSrv":135,"cpuGen":6,"rss":{"first":1351.1,"max":1401.2,"last":1395.8,"n":106},"healthProbe":{"n":106,"p50":5547.7,"p95":9280.55,"p99":9505.16,"max":9626.2,"failed":0}}
+   RSS 3s despues: 1395 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":1000,"rps":427.9,"total":9000,"status":{"200":9000},"errors":{},"p50":2324.94,"p95":2659.16,"p99":2686.21,"max":2722.3,"bytes":19804,"cpuSrv":164,"cpuGen":8,"rss":{"first":1682,"max":1733.9,"last":1498.3,"n":203},"healthProbe":{"n":203,"p50":1380.05,"p95":12688.4,"p99":14710.36,"max":14825.8,"failed":0}}
+   RSS 3s despues: 1498.4 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+   RSS fin: 1498.4 MB
+### n2000 rep=1 datos=2000 pacientes ; RSS inicial=82.5 MB
+{"ep":"cronicos","c":50,"rps":57.6,"total":1204,"status":{"200":1204},"errors":{},"p50":864.78,"p95":927.29,"p99":938.32,"max":942.7,"bytes":3541519,"cpuSrv":100,"cpuGen":14,"rss":{"first":133.9,"max":162.1,"last":162.1,"n":199},"healthProbe":{"n":199,"p50":865.01,"p95":8117.48,"p99":9726.49,"max":9760.6,"failed":0}}
+   RSS 3s despues: 162.4 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicos","c":200,"rps":58.1,"total":1366,"status":{"200":1366},"errors":{},"p50":3401.29,"p95":3559.71,"p99":3573.68,"max":3579.5,"bytes":3541519,"cpuSrv":100,"cpuGen":14,"rss":{"first":156.3,"max":163.9,"last":150.4,"n":30},"healthProbe":{"n":30,"p50":3394.96,"p95":19645.87,"p99":19718,"max":19718,"failed":0}}
+   RSS 3s despues: 155.6 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicos","c":1000,"rps":57.4,"total":2132,"status":{"200":2132},"errors":{},"p50":17174.77,"p95":17555.92,"p99":17569.66,"max":17578.8,"bytes":3541519,"cpuSrv":99,"cpuGen":39,"rss":{"first":184.6,"max":194.1,"last":194.1,"n":4},"healthProbe":{"n":4,"p50":34520.62,"p95":34602.18,"p99":34602.18,"max":34602.2,"failed":0}}
+   RSS 3s despues: 190.6 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":50,"rps":41.7,"total":848,"status":{"200":848},"errors":{},"p50":1203.99,"p95":1392.59,"p99":1506.55,"max":1693.7,"bytes":534107,"cpuSrv":160,"cpuGen":3,"rss":{"first":370.6,"max":465.6,"last":441.4,"n":202},"healthProbe":{"n":202,"p50":172.88,"p95":681.04,"p99":914.94,"max":958.2,"failed":0}}
+   RSS 3s despues: 441.4 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":200,"rps":41.2,"total":977,"status":{"200":977},"errors":{},"p50":4750.29,"p95":5079.63,"p99":6316.31,"max":6860.4,"bytes":534107,"cpuSrv":155,"cpuGen":3,"rss":{"first":906.9,"max":1121.4,"last":1108.1,"n":235},"healthProbe":{"n":235,"p50":1609.54,"p95":3564.4,"p99":3993.51,"max":4188.4,"failed":0}}
+   RSS 3s despues: 1063.5 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"cronicosgz","c":1000,"rps":30.7,"total":1000,"status":{"200":1000},"errors":{},"p50":32421.96,"p95":32549.98,"p99":32574.56,"max":32575.7,"bytes":534107,"cpuSrv":148,"cpuGen":5,"rss":{"first":3873.2,"max":4326.3,"last":4064.9,"n":323},"healthProbe":{"n":323,"p50":11534.2,"p95":26036.26,"p99":27335.17,"max":27479.8,"failed":0}}
+   RSS 3s despues: 4064.9 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":50,"rps":141.3,"total":2845,"status":{"200":2845},"errors":{},"p50":349.8,"p95":419.71,"p99":470.42,"max":688.9,"bytes":68119,"cpuSrv":140,"cpuGen":5,"rss":{"first":4082.8,"max":4134.4,"last":4127.8,"n":200},"healthProbe":{"n":200,"p50":108.35,"p95":223.55,"p99":293.58,"max":315.6,"failed":0}}
+   RSS 3s despues: 4127.8 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":200,"rps":139.9,"total":2878,"status":{"200":2878},"errors":{},"p50":1445.72,"p95":1663.98,"p99":1818.64,"max":2077.7,"bytes":68119,"cpuSrv":157,"cpuGen":4,"rss":{"first":4216.1,"max":4296.3,"last":4291.6,"n":204},"healthProbe":{"n":204,"p50":424.94,"p95":1075.27,"p99":1292.65,"max":1419.9,"failed":0}}
+   RSS 3s despues: 4291.6 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+{"ep":"geo","c":1000,"rps":114.9,"total":2999,"status":{"200":2999},"errors":{},"p50":8356.12,"p95":10328.56,"p99":10344.62,"max":11425.8,"bytes":68119,"cpuSrv":200,"cpuGen":5,"rss":{"first":5004.8,"max":5070.6,"last":5059.7,"n":256},"healthProbe":{"n":256,"p50":3831.55,"p95":8668.64,"p99":9563.24,"max":9693.2,"failed":0}}
+   RSS 3s despues: 4792.6 MB  | antes: ListenOverflows=0 ListenDrops=0  | despues: ListenOverflows=0 ListenDrops=0 
+   RSS fin: 4792.6 MB
+### n2000 rep=2 datos=2000 pacientes ; RSS inicial=82.2 MB

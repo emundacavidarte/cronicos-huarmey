@@ -1,0 +1,25 @@
+=== T1 N=50 rep=2  (inicio ventana limiter: login = 1 escritura) 01:02:08
+{"label":"usuario-real@t=10s(durante carga)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/16ms cronicos=429/6ms indicadores/convenio=429/8ms"]}
+{"N":50,"total":214648,"rps":10730.3,"status":{"200":600,"429":214048},"errors":{},"p50":4.2,"p99":10.73,"cpu_srv":105,"body429":"{\"resourceType\":\"OperationOutcome\",\"issue\":[{\"severity\":\"error\",\"code\":\"throttled\",\"diagnostics\":\"Límite de peticiones por minuto excedido. Intente nuevamente en unos segundos.\"}]}"}
+{"label":"usuario-real@t=25s(tras carga, misma ventana)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/10ms cronicos=429/1ms indicadores/convenio=429/1ms"]}
+{"label":"usuario-real@t=75s(ventana nueva)","loads":1,"loads_completas_ok":1,"primera_carga_fallida":null,"detalle":["auth/me=200/11ms cronicos=200/2ms indicadores/convenio=200/5ms"]}
+=== T1 N=200 rep=1  (inicio ventana limiter: login = 1 escritura) 01:03:25
+{"label":"usuario-real@t=10s(durante carga)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/49ms cronicos=429/31ms indicadores/convenio=429/33ms"]}
+{"N":200,"total":206218,"rps":10301.2,"status":{"200":600,"429":205618},"errors":{},"p50":18.02,"p99":37.48,"cpu_srv":106,"body429":"{\"resourceType\":\"OperationOutcome\",\"issue\":[{\"severity\":\"error\",\"code\":\"throttled\",\"diagnostics\":\"Límite de peticiones por minuto excedido. Intente nuevamente en unos segundos.\"}]}"}
+{"label":"usuario-real@t=25s(tras carga, misma ventana)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/9ms cronicos=429/2ms indicadores/convenio=429/0ms"]}
+{"label":"usuario-real@t=75s(ventana nueva)","loads":1,"loads_completas_ok":1,"primera_carga_fallida":null,"detalle":["auth/me=200/9ms cronicos=200/3ms indicadores/convenio=200/5ms"]}
+=== T1 N=200 rep=2  (inicio ventana limiter: login = 1 escritura) 01:04:41
+{"label":"usuario-real@t=10s(durante carga)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/48ms cronicos=429/33ms indicadores/convenio=429/35ms"]}
+{"N":200,"total":212523,"rps":10611.7,"status":{"200":600,"429":211923},"errors":{},"p50":17.6,"p99":36.54,"cpu_srv":105,"body429":"{\"resourceType\":\"OperationOutcome\",\"issue\":[{\"severity\":\"error\",\"code\":\"throttled\",\"diagnostics\":\"Límite de peticiones por minuto excedido. Intente nuevamente en unos segundos.\"}]}"}
+{"label":"usuario-real@t=25s(tras carga, misma ventana)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/7ms cronicos=429/1ms indicadores/convenio=429/1ms"]}
+{"label":"usuario-real@t=75s(ventana nueva)","loads":1,"loads_completas_ok":1,"primera_carga_fallida":null,"detalle":["auth/me=200/8ms cronicos=200/2ms indicadores/convenio=200/5ms"]}
+=== T1 N=1000 rep=1  (inicio ventana limiter: login = 1 escritura) 01:05:57
+{"label":"usuario-real@t=10s(durante carga)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/207ms cronicos=429/222ms indicadores/convenio=429/178ms"]}
+{"N":1000,"total":216314,"rps":10758.3,"status":{"200":600,"429":215714},"errors":{},"p50":86.94,"p99":206.08,"cpu_srv":106,"body429":"{\"resourceType\":\"OperationOutcome\",\"issue\":[{\"severity\":\"error\",\"code\":\"throttled\",\"diagnostics\":\"Límite de peticiones por minuto excedido. Intente nuevamente en unos segundos.\"}]}"}
+{"label":"usuario-real@t=25s(tras carga, misma ventana)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/7ms cronicos=429/2ms indicadores/convenio=429/1ms"]}
+{"label":"usuario-real@t=75s(ventana nueva)","loads":1,"loads_completas_ok":1,"primera_carga_fallida":null,"detalle":["auth/me=200/9ms cronicos=200/2ms indicadores/convenio=200/5ms"]}
+=== T1 N=1000 rep=2  (inicio ventana limiter: login = 1 escritura) 01:07:14
+{"label":"usuario-real@t=10s(durante carga)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/194ms cronicos=429/168ms indicadores/convenio=429/155ms"]}
+{"N":1000,"total":221066,"rps":10986.5,"status":{"200":600,"429":220466},"errors":{},"p50":85.55,"p99":182.36,"cpu_srv":106,"body429":"{\"resourceType\":\"OperationOutcome\",\"issue\":[{\"severity\":\"error\",\"code\":\"throttled\",\"diagnostics\":\"Límite de peticiones por minuto excedido. Intente nuevamente en unos segundos.\"}]}"}
+{"label":"usuario-real@t=25s(tras carga, misma ventana)","loads":1,"loads_completas_ok":0,"primera_carga_fallida":1,"detalle":["auth/me=429/7ms cronicos=429/1ms indicadores/convenio=429/1ms"]}
+{"label":"usuario-real@t=75s(ventana nueva)","loads":1,"loads_completas_ok":1,"primera_carga_fallida":null,"detalle":["auth/me=200/8ms cronicos=200/1ms indicadores/convenio=200/6ms"]}
