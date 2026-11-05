@@ -385,7 +385,7 @@ class App {
               </div>
             </td>
             <td>
-              <button class="btn-export-mini" onclick="window.app.switchView('mapa'); window.app.toggleHeartsPanel(true);" title="Ver pacientes en mapa">Ver en Mapa</button>
+              <button class="btn-export-mini" data-accion="verEnMapa" title="Ver pacientes en mapa">Ver en Mapa</button>
             </td>
           </tr>
         `);
@@ -771,7 +771,7 @@ class App {
           ${window.AppIcons ? window.AppIcons.layers(18, '#0284c7') : '<span>📐</span>'}
           <span style="font-weight:700;">INSPECTOR DE REFERENCIA GEORIS</span>
         </div>
-        <button type="button" class="btn-close-accessible" aria-label="Cerrar inspector de referencia" onclick="document.getElementById('reference-inspector-card').remove()">✕</button>
+        <button type="button" class="btn-close-accessible" aria-label="Cerrar inspector de referencia" data-accion="quitarElemento" data-arg="reference-inspector-card">✕</button>
       </div>
       <div class="ref-card-body">
         <div style="font-size:var(--font-sm); margin-bottom:8px;">
@@ -794,8 +794,8 @@ class App {
           • Pacientes Crónicos en Jurisdicción: <strong>${verPac ? pacCount + ' pacientes' : 'no disponible para su rol'}</strong>
         </div>
         <div style="display:flex; gap:6px;">
-          ${verPac ? `<button class="btn-mini btn-precita" style="flex:1;" onclick="window.app.filtrarPorPuerta('${es.nombre}')">Ver Pacientes</button>` : ''}
-          <button class="btn-mini btn-ubicar" onclick="window.app.mapManager.home()">Vista General</button>
+          ${verPac ? `<button class="btn-mini btn-precita" style="flex:1;" data-accion="filtrarPorPuerta" data-arg="${escapeHtml(es.nombre)}">Ver Pacientes</button>` : ''}
+          <button class="btn-mini btn-ubicar" data-accion="mapaInicio">Vista General</button>
         </div>
       </div>
     `;
@@ -818,7 +818,7 @@ class App {
           ${window.AppIcons ? window.AppIcons.hospital(18, '#9F1239') : ''}
           <span style="font-weight:700;">NUEVO HOSPITAL DE APOYO HUARMEY (II-1)</span>
         </div>
-        <button type="button" class="btn-close-accessible" aria-label="Cerrar ficha de hospital" onclick="document.getElementById('reference-inspector-card').remove()">✕</button>
+        <button type="button" class="btn-close-accessible" aria-label="Cerrar ficha de hospital" data-accion="quitarElemento" data-arg="reference-inspector-card">✕</button>
       </div>
       <div class="ref-card-body">
         <div style="font-size:var(--font-sm); margin-bottom:8px;">
@@ -831,7 +831,7 @@ class App {
           • <strong>Cartera Crónicos HEARTS:</strong> Consultorio Medicina Interna, Cardiología, Emergencia 24h, Laboratorio Clínico II, Farmacia, Teleconsulta<br>
           • <strong>Red Tributaria:</strong> 12 IPRESS articuladas en la provincia de Huarmey
         </div>
-        <button class="btn-mini btn-precita" style="width:100%;" onclick="document.getElementById('reference-inspector-card').remove()">Entendido</button>
+        <button class="btn-mini btn-precita" style="width:100%;" data-accion="quitarElemento" data-arg="reference-inspector-card">Entendido</button>
       </div>
     `;
 
@@ -1015,7 +1015,7 @@ class App {
       const iconWp = window.AppIcons ? window.AppIcons.whatsapp(13, '#25D366') : '📱';
 
       card.innerHTML = `
-        <div class="patient-card-header" onclick="window.app.openPatientDetail('${safeId}')" role="button" tabindex="0" aria-label="Abrir ficha clínica de ${safeName}">
+        <div class="patient-card-header" data-accion="openPatientDetail" data-arg="${safeId}" role="button" tabindex="0" aria-label="Abrir ficha clínica de ${safeName}">
           <div class="patient-card-title-group">
             <span class="patient-name" title="${safeName}">${safeName}</span>
             <div class="patient-card-badges">${diagBadges} ${hosixTag}</div>
@@ -1023,7 +1023,7 @@ class App {
           ${badgeHtml}
         </div>
 
-        <div class="pcard-compact-grid" onclick="window.app.openPatientDetail('${safeId}')" role="button" tabindex="0">
+        <div class="pcard-compact-grid" data-accion="openPatientDetail" data-arg="${safeId}" role="button" tabindex="0">
           <div class="pcard-demo-cell">
             <span class="pcard-cell-lbl">DNI</span>
             <span class="pcard-cell-val">${escapeHtml(p.dni || '—')}</span>
@@ -1045,9 +1045,9 @@ class App {
         <div class="pcard-bottom-bar">
           <span class="pcard-address" title="${safeAddr} • ${escapeHtml(p.puerta_entrada || '')}">${iconLoc} ${safeAddr}</span>
           <div class="patient-actions">
-            <button class="btn-mini btn-ubicar" onclick="window.app.centrarPaciente('${safeId}')" title="Ubicar en el mapa" aria-label="Ubicar a ${safeName} en el mapa">${iconLocBlue} Ver</button>
-            <button class="btn-mini btn-precita" onclick="window.app.openPatientDetail('${safeId}')" title="Ver Ficha Clínica HEARTS" aria-label="Ver Ficha Clínica de ${safeName}">${iconFicha} Ficha</button>
-            <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp('${safeId}')" title="Enviar recordatorio por WhatsApp"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Enviar recordatorio WhatsApp a ${safeName}">${iconWp} WhatsApp</button>
+            <button class="btn-mini btn-ubicar" data-accion="centrarPaciente" data-arg="${safeId}" title="Ubicar en el mapa" aria-label="Ubicar a ${safeName} en el mapa">${iconLocBlue} Ver</button>
+            <button class="btn-mini btn-precita" data-accion="openPatientDetail" data-arg="${safeId}" title="Ver Ficha Clínica HEARTS" aria-label="Ver Ficha Clínica de ${safeName}">${iconFicha} Ficha</button>
+            <button class="btn-mini btn-whatsapp" ${hasPhone ? `data-accion="enviarWhatsApp" data-arg="${safeId}" title="Enviar recordatorio por WhatsApp"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Enviar recordatorio WhatsApp a ${safeName}">${iconWp} WhatsApp</button>
           </div>
         </div>
       `;
@@ -1389,7 +1389,7 @@ class App {
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             ${p.fila_excel ? `<span class="hearts-padron-pill">Padrón #${escapeHtml(p.fila_excel)}</span>` : ''}
-            <button class="hearts-close-btn btn-close-accessible" onclick="document.getElementById('modal-patient-detail').classList.remove('active')" title="Cerrar ficha clínica" aria-label="Cerrar ficha clínica">✕</button>
+            <button class="hearts-close-btn btn-close-accessible" data-accion="cerrarModal" data-arg="modal-patient-detail" title="Cerrar ficha clínica" aria-label="Cerrar ficha clínica">✕</button>
           </div>
         </div>
 
@@ -1602,10 +1602,10 @@ class App {
         </div>
 
         <div class="modal-footer">
-          <button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente('${p.id}')">${iconBtnLocation} Ubicar en Mapa</button>
-          <button class="btn-mini btn-precita" style="background:#16a34a; border-color:#15803d; color:#ffffff;" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); if(window.RegistroClinicoModal) window.RegistroClinicoModal.open('${p.dni || p.nro_documento || ''}');" title="Registrar nueva atención médica en Padrón Estandarizado">${iconBtnEdit} Registrar Atención</button>
-          <button class="btn-mini btn-precita" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.abrirModalPreCita('${p.id}')">${iconBtnCalendar} Pre-cita HOSIX</button>
-          <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp('${p.id}')"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Notificar por WhatsApp a ${escapeHtml(p.apellidos_nombres)}">${iconBtnWhatsapp} Notificar por WhatsApp</button>
+          <button class="btn-mini btn-ubicar" data-accion="fichaUbicar" data-arg="${escapeHtml(p.id)}">${iconBtnLocation} Ubicar en Mapa</button>
+          <button class="btn-mini btn-precita" style="background:#16a34a; border-color:#15803d; color:#ffffff;" data-accion="fichaRegistrar" data-arg="${escapeHtml(p.dni || p.nro_documento || '')}" title="Registrar nueva atención médica en Padrón Estandarizado">${iconBtnEdit} Registrar Atención</button>
+          <button class="btn-mini btn-precita" data-accion="fichaPreCita" data-arg="${escapeHtml(p.id)}">${iconBtnCalendar} Pre-cita HOSIX</button>
+          <button class="btn-mini btn-whatsapp" ${hasPhone ? `data-accion="enviarWhatsApp" data-arg="${escapeHtml(p.id)}"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Notificar por WhatsApp a ${escapeHtml(p.apellidos_nombres)}">${iconBtnWhatsapp} Notificar por WhatsApp</button>
         </div>
       </div>
     `;

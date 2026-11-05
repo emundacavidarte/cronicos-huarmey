@@ -45,15 +45,15 @@ if (process.env.TRUST_PROXY === 'true' || process.env.TRUST_PROXY === '1') {
 
 // 1. Cabeceras de Seguridad HTTP (Fase 2: OWASP / Ley N° 29733)
 // CSP (F2-17): solo el propio sitio para scripts, conexiones y marcos; imágenes solo de los mapas base que usa Leaflet.
-// 'unsafe-inline' en script-src sigue porque el cliente tiene 69 manejadores onclick/onchange en línea (pendiente del
-// cliente); por eso el escape de datos en el cliente (C-01) es la defensa principal contra XSS.
+// script-src SIN 'unsafe-inline': el cliente ya no tiene scripts ni manejadores en línea (client/js/ui/acciones.js),
+// así que un HTML inyectado no ejecuta código aunque llegue a la página. style-src mantiene 'unsafe-inline' (estilos).
 const MAPAS_BASE = [
   'https://mt0.google.com', 'https://mt1.google.com', 'https://mt2.google.com', 'https://mt3.google.com',
   'https://*.basemaps.cartocdn.com', 'https://*.tile.openstreetmap.fr', 'https://server.arcgisonline.com'
 ];
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${MAPAS_BASE.join(' ')}`,
   "connect-src 'self'",

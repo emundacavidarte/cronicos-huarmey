@@ -412,7 +412,7 @@ async function main() {
       const r = await fetch(BASE + '/api/cronicos', { method: 'OPTIONS', headers: { Origin: 'https://ajeno.example', 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'authorization' } });
       assert.strictEqual(r.headers.get('access-control-allow-origin'), null);
     });
-    await step('F2-17 CSP: connect-src solo el propio sitio, imágenes solo de los mapas base, sin marcos', async () => {
+    await step('F2-17 CSP: scripts y conexiones solo del propio sitio (sin en línea), imágenes solo de los mapas base, sin marcos', async () => {
       const csp = (await fetch(BASE + '/')).headers.get('content-security-policy') || '';
       const dir = Object.fromEntries(csp.split(';').map(s => s.trim()).filter(Boolean).map(s => { const [k, ...v] = s.split(/\s+/); return [k, v]; }));
       assert.deepStrictEqual(dir['connect-src'], ["'self'"]);
@@ -420,6 +420,8 @@ async function main() {
       assert.ok(dir['img-src'].some(s => s.includes('basemaps.cartocdn.com')));
       assert.deepStrictEqual(dir['frame-ancestors'], ["'none'"]);
       assert.ok(!(dir['default-src'] || []).includes("'unsafe-inline'"));
+      // F2-17 completo: sin scripts en línea permitidos (el cliente ya no los usa)
+      assert.deepStrictEqual(dir['script-src'], ["'self'"]);
     });
     await step('F2-17 cabeceras: X-XSS-Protection 0, COOP same-origin, X-Frame-Options DENY', async () => {
       const h = (await fetch(BASE + '/')).headers;
@@ -439,6 +441,25 @@ async function main() {
       assert.strictEqual((await pre('https://app.permitida.example')).headers.get('access-control-allow-origin'), 'https://app.permitida.example');
       assert.strictEqual((await pre('https://ajeno.example')).headers.get('access-control-allow-origin'), null);
     } finally { await s2.stop(); }
+  });
+
+  // --- F2-17 El cliente no tiene scripts ni manejadores en línea (requisito para script-src sin 'unsafe-inline') ---
+  await step('F2-17 index.html y el HTML generado por el cliente no tienen on*="…" ni <script> en línea', async () => {
+    const raiz = path.join(__dirname, '..', '..', 'client');
+    const archivos = [path.join(raiz, 'index.html')];
+    const recorrer = dir => fs.readdirSync(dir, { withFileTypes: true }).forEach(e => {
+      const f = path.join(dir, e.name);
+      if (e.isDirectory()) recorrer(f); else if (f.endsWith('.js')) archivos.push(f);
+    });
+    recorrer(path.join(raiz, 'js'));
+    const hallados = [];
+    for (const f of archivos) {
+      const texto = fs.readFileSync(f, 'utf8');
+      const enLinea = texto.match(/<[a-z][^>]*\son[a-z]{3,20}\s*=\s*["'`$]/gi) || [];
+      const scripts = f.endsWith('.html') ? (texto.match(/<script(?![^>]*\bsrc=)[^>]*>/gi) || []) : [];
+      if (enLinea.length || scripts.length) hallados.push(path.relative(raiz, f) + ': ' + enLinea.concat(scripts).slice(0, 3).join(' | '));
+    }
+    assert.deepStrictEqual(hallados, []);
   });
 
   // --- F2-18 Permisos del archivo de datos (H-13) ---

@@ -298,7 +298,7 @@ class MapManager {
             <div class="georis-popup-row"><span class="georis-popup-label">Hospitales de Área:</span><span class="georis-popup-val" style="font-size:var(--font-xs); color:#b91c1c;">${p.hospital}</span></div>
           </div>
           <div class="georis-popup-footer">
-            <button onclick="window.app.selectRis('${p.id_ris}')" class="btn-mini btn-precita">Delimitar Zonas de ${p.ris}</button>
+            <button data-accion="selectRis" data-arg="${escapeHtml(p.id_ris)}" class="btn-mini btn-precita">Delimitar Zonas de ${p.ris}</button>
           </div>
         </div>
       `;
@@ -348,7 +348,7 @@ class MapManager {
             <div class="georis-popup-row"><span class="georis-popup-label">Puertas de Entrada:</span><span class="georis-popup-val">${p.n_pe || '12'} E.S.</span></div>
           </div>
           <div class="georis-popup-footer">
-            <button onclick="window.app.selectZona('${p.id_zona}')" class="btn-mini btn-precita">Filtrar Sectores y Postas</button>
+            <button data-accion="selectZona" data-arg="${escapeHtml(p.id_zona)}" class="btn-mini btn-precita">Filtrar Sectores y Postas</button>
           </div>
         </div>
       `;
@@ -575,7 +575,7 @@ class MapManager {
             ` : ''}
           </div>
           <div class="georis-popup-footer">
-            <button onclick="window.app.seleccionarHospitalReferencia('${hosp.cod_renipress}')" class="btn-mini btn-precita">Ver Red de Referencias Tributarias</button>
+            <button data-accion="seleccionarHospitalReferencia" data-arg="${escapeHtml(hosp.cod_renipress)}" class="btn-mini btn-precita">Ver Red de Referencias Tributarias</button>
           </div>
         </div>
       `;
@@ -633,7 +633,7 @@ class MapManager {
             <div class="georis-popup-row"><span class="georis-popup-label">Zona Sanitaria:</span><span class="georis-popup-val">Zona ${es.id_zona} (${es.ris})</span></div>
           </div>
           <div class="georis-popup-footer">
-            <button onclick="window.app.trazarReferenciaHaciaHospital('${es.cod_renipress}')" class="btn-mini btn-precita">Medir Referencia al Hospital</button>
+            <button data-accion="trazarReferenciaHaciaHospital" data-arg="${escapeHtml(es.cod_renipress)}" class="btn-mini btn-precita">Medir Referencia al Hospital</button>
           </div>
         </div>
       `;
@@ -698,7 +698,7 @@ class MapManager {
             <div class="georis-popup-row"><span class="georis-popup-label">Estándar GeoRIS:</span><span class="georis-popup-val" style="color:#15803d; font-weight:700;">✅ &lt; 4h Techo Resolutivo</span></div>
           </div>
           <div class="georis-popup-footer">
-            <button onclick="window.app.trazarReferenciaHaciaHospital('${pe.cod_renipress}')" class="btn-mini btn-precita">Trazar Referencia y Medir</button>
+            <button data-accion="trazarReferenciaHaciaHospital" data-arg="${escapeHtml(pe.cod_renipress)}" class="btn-mini btn-precita">Trazar Referencia y Medir</button>
           </div>
         </div>
       `;
@@ -1071,16 +1071,13 @@ class MapManager {
       });
     }
 
-    // Asegurarse de que el orden de capas vectoriales se mantenga al frente
-    if (this.layers.limiteRis) this.layers.limiteRis.bringToFront();
-    if (this.layers.zonasSanitarias) this.layers.zonasSanitarias.bringToFront();
-    if (this.layers.sectoresSanitarios) this.layers.sectoresSanitarios.bringToFront();
-    if (this.layers.catastroUrbano) this.layers.catastroUrbano.bringToFront();
-    if (this.layers.referenciasLines) this.layers.referenciasLines.bringToFront();
-    if (this.layers.puertaEntrada) this.layers.puertaEntrada.bringToFront();
-    if (this.layers.zonaSanitaria) this.layers.zonaSanitaria.bringToFront();
-    if (this.layers.areaSanitaria) this.layers.areaSanitaria.bringToFront();
-    if (this.layers.pacientes) this.layers.pacientes.bringToFront();
+    // Asegurarse de que el orden de capas vectoriales se mantenga al frente. Los L.layerGroup (catastro) no tienen
+    // bringToFront: antes la excepción cortaba aquí y las capas siguientes quedaban detrás del mapa base nuevo.
+    for (const nombre of ['limiteRis', 'zonasSanitarias', 'sectoresSanitarios', 'catastroUrbano', 'referenciasLines',
+      'puertaEntrada', 'zonaSanitaria', 'areaSanitaria', 'pacientes']) {
+      const capa = this.layers[nombre];
+      if (capa && typeof capa.bringToFront === 'function') capa.bringToFront();
+    }
   }
 
   /**
