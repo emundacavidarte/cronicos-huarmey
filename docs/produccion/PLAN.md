@@ -23,7 +23,7 @@ Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. 
 | # | Fase | Modelo sugerido | Entregable | Estado |
 |---|---|---|---|---|
 | 0 | Plan y traspaso | Sonnet 5.5 | este archivo | HECHO |
-| 1 | Diagnóstico en vivo | Sonnet 5.5 | `F1_diagnostico.md` | PENDIENTE |
+| 1 | Diagnóstico en vivo | Sonnet 5.5 | `F1_diagnostico.md` | HECHO (05/11/2026) |
 | 2 | Auditoría de seguridad y privacidad del servidor | Opus 5.5 | `F2_seguridad_servidor.md` | PENDIENTE |
 | 3 | Auditoría del cliente, PWA y lógica clínica | Opus 5.5 | `F3_cliente_clinica.md` | PENDIENTE |
 | 4 | Correcciones críticas y altas | Opus 5.5 (seguridad) y Sonnet 5.5 (resto) | `F4_correcciones.md` | PENDIENTE |
@@ -35,6 +35,7 @@ Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. 
 ### Fase 1 — Diagnóstico en vivo
 Arrancar el servidor en desarrollo y con `NODE_ENV=production` (debe negarse sin `AUTH_SECRET`). Probar `/health`, login, `/api/cronicos`, `POST /fhir/Bundle`, permisos por rol y red. Abrir el cliente en Chromium (Playwright): mapa, padrón, Excel, sin conexión. Prueba de carga modesta (el código dice soportar 1 000 usuarios: verificarlo). `npm audit`. **Salida:** lista de fallas con pasos para reproducir.
 **Cierre:** cada falla tiene severidad (crítica/alta/media/baja) y evidencia.
+**Resultado (05/11/2026):** ver `F1_diagnostico.md` — 38 hallazgos (2 críticos, 6 altos, 19 medios, 11 bajos), cada uno con severidad, estado de la evidencia (reproducida / solo por lectura) y fase que lo atiende. `npm test` 226/226 en verde y `npm audit` con 0 vulnerabilidades. Veredicto: funciona en lo central, **no está listo para datos reales**; los críticos son S-01 (secreto y clave de `.env.example` utilizables) y C-01 (XSS almacenado). «1 000+ usuarios» no se sostiene desde una sola IP. Scripts y mediciones en `docs/produccion/evidencia/f1/`.
 
 ### Fase 2 — Seguridad y privacidad del servidor
 Autenticación y sesiones (token de 8 h sin renovación), alcance por red y establecimiento, validación de entradas, CORS (revisar el valor por defecto sin lista de orígenes), CSP, límites de tasa en memoria, inyección y contaminación de prototipos, manejo de errores, registros sin datos de pacientes, `ADMIN_RESET`, secretos, dependencias, cifrado en reposo. Intentar explotar cada hipótesis antes de reportarla.
@@ -63,6 +64,9 @@ Un modelo distinto revisa el diff completo y la lista de hallazgos sin ver mis c
 - Inscripción del banco de datos personales y base legal del tratamiento (Ley 29733); transferencia fuera del Perú (Render no tiene región en Lima).
 - Quién valida las reglas clínicas y quién administra usuarios.
 - Presupuesto mensual (Starter + disco, aprox. US$ 8).
+- Capacidad objetivo (surgido en la Fase 1): el código promete «1 000+ usuarios»; lo medido sostiene decenas de usuarios por hospital con ≈550 pacientes. ¿Cuántos usuarios simultáneos se esperan?
+- Trabajo sin conexión (Fase 1): hoy no funciona y no deja datos en el dispositivo. ¿Se quiere trabajar sin red con datos de pacientes, o basta un aviso claro?
+- Tamaño de la instancia (Fase 1): con 550 pacientes y mucha concurrencia el proceso llega a 1,4 GB; confirmar la memoria del plan Starter de Render (se cree 512 MB) en la Fase 6.
 
 ## Plantilla para abrir cada ventana
 > Lee `docs/produccion/PLAN.md` y el informe de la fase anterior. Ejecuta la Fase N. Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
