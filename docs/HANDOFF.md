@@ -1,6 +1,6 @@
 # 🚦 COLA DE TRABAJO — LEER ESTO PRIMERO (actualizado 05/11/2026)
 
-> **Ahorro de tokens:** cuando el usuario diga **«continua»**, leer **solo este bloque (hasta la línea `FIN-COLA`)** y la ficha de la tarea que toca. **No leer el resto del archivo**: desde «# DOCUMENTO DE ENTREGA…» en adelante es histórico y contiene afirmaciones que esta revisión desmintió (ver T-16).
+> **Ahorro de tokens:** cuando el usuario diga **«continua»**, leer **solo este bloque (hasta la línea `FIN-COLA`)** y la ficha de la tarea que toca. **No leer el resto del archivo** (empezar por «ESTADO ACTUAL Y CÓMO RETOMAR»): desde «# DOCUMENTO DE ENTREGA…» en adelante es histórico y contiene afirmaciones que esta revisión desmintió (ver T-16).
 
 ## Protocolo «continua»
 1. Tomar la tarea de **SIGUIENTE** (abajo). Debe estar ⬜ y con sus dependencias en ✅.
@@ -22,7 +22,47 @@
 2. **Toda la seguridad se hace al final**, cuando el proyecto esté terminado: T-04, T-05, T-10 y T-15 (ver «Seguridad al final»). La autenticación de T-03 ya está hecha y no se toca.
 3. **HOSIX sigue como propuesta.** Los conectores (`server/fhir/connectors/*`) están listos como propuesta y la intención es pedir a HOSIX una API real. **No se modifican los conectores** hasta tener esa API (ver H-01, bloqueada). Las correcciones de ingesta (T-06, T-07, T-09) se hacen en `database.js`, `fhirAdapter.js` y `hosixParser.js` (CSV del cliente), no en los conectores.
 
-**SIGUIENTE: A15** (geolocalización honesta: «sin ubicar» y «ubicación aproximada»); luego A13, A14 y A22. A8, A11 y A12 quedaron hechas el 29/10/2026 · Última actualización: 05/11/2026 (revisión en navegador y adaptación a pantallas corregidas: 19 suites y 242 pruebas en verde, ver la ficha «Revisión en navegador del 05/11/2026» más abajo; antes: esquema v4, cuadrícula Excel de 76 columnas, calculadoras clínicas y revisión R1-R13 del 30/10/2026)
+**SIGUIENTE: G-03** (geocodificar también en el servidor al ingresar pacientes), según el orden de la cola y la regla «geolocalización primero, seguridad al final». La línea anterior decía «A15, A13, A14 y A22»: esos códigos no están definidos en esta cola (venían de `HALLAZGOS_VERIFICACION_29oct.md`, que no está en el repositorio); si se necesitan, pedirlos al usuario · Última actualización: 05/11/2026 (revisión en navegador y adaptación a pantallas corregidas; 19 suites y 242 pruebas en verde; ver «ESTADO ACTUAL Y CÓMO RETOMAR» y la ficha «Revisión en navegador del 05/11/2026»)
+
+## ESTADO ACTUAL Y CÓMO RETOMAR (05/11/2026) — leer esto antes de seguir
+**Dónde está el trabajo:** repositorio `emundacavidarte/cronicos-huarmey`, rama `claude/compassionate-cori-5c7urn` (no hay solicitud de integración abierta). Versiones: `26096bf` (inicio, v3.0 con 20 pacientes ficticios) → `daa81b5` y `ef8933f` (reporte de la prueba en navegador) → `eaf64ad` (todas las correcciones) → `7f210b4` (notas del handoff).
+
+**Cómo arrancar y verificar (3 comandos):**
+- Instalar: `cd server && npm ci`.
+- Pruebas automáticas: `cd server && npm test` → debe dar **242 correctas, 0 con falla** (19 suites). Es la comprobación principal antes y después de cada cambio.
+- Prueba en navegador real: `node server/tests/browser/testNavegadorAcceso.js` (15 pruebas; con otro navegador, `NAVEGADOR=<ruta>`).
+- Probar a mano: levantar con una carpeta de datos **temporal y vacía** (`DATA_DIR=/ruta/temporal ADMIN_USER=admin ADMIN_PASSWORD=<clave de 10 o más caracteres> AUTH_SECRET=<32+ caracteres> node server/server.js`) y abrir `http://localhost:3000`. Nunca sobre el `store.json` real. Los recorridos automáticos del 05/11 están en `docs/reporte_navegador_2026-11-05/scripts/`.
+
+**Qué hace hoy el sistema (todo verificado en navegador):**
+- Acceso con usuario y clave; roles ADMIN (todo y usuarios), COORDINADOR (su red o establecimiento, puede escribir) y DIRECTOR (solo tablero agregado de su red, sin datos individuales; el servidor le niega lo demás con 403).
+- Mapa territorial con 7 redes de salud, zonas y puertas de entrada; indicadores (Total, Cita vigente, Próximos, Deserción, HOSIX) que filtran el padrón; búsqueda; ficha clínica HEARTS; registro clínico con cálculos automáticos; pre-citas con CSV para HOSIX; WhatsApp con consentimiento y la fecha real de la cita.
+- Carga de pacientes: Excel de 76 columnas con cuadrícula de corrección, CSV de HOSIX/Galenos (se guarda en el servidor), exportación a Excel que se vuelve a importar sin bloqueo.
+- Tablero con patologías, indicadores del convenio SIS (IP02, IP03, IP04) y tabla por establecimiento.
+- API REST y HL7 FHIR R4 (`/fhir/metadata`, `/fhir/Bundle`, `/fhir/Patient/:id`, `/fhir/Patient/:id/bundle`, `/fhir/loinc-catalog`, webhooks de HOSIX, Galenos y Pakamuros).
+- Funciona en computadora, tableta y celular (360 a 1920 px) y abre sin conexión (solo la interfaz; los datos exigen el servidor).
+
+**Lo avanzado, por fechas (resumen; el detalle está en «Registro»):**
+- 22/10: carpeta oficial única (T-01); el padrón deja de servirse como archivo (T-02); autenticación completa en servidor y cliente (T-03a, T-03b); pruebas aisladas (T-00).
+- 26/10: una sola fuente de coordenadas de establecimientos (G-01) y geocodificador determinista y honesto (G-02).
+- 27 al 29/10: esquema nominal v4 de 76 columnas, cuadrícula Excel, calculadoras clínicas (CKD-EPI, riesgo cardiovascular, IMC), combinación incremental, exportación a Excel, indicadores del convenio, consentimiento de WhatsApp, línea de tiempo; durabilidad (T-08), pacientes de la API completos (T-06) y ingesta sin datos inventados (T-07).
+- 30/10: revisión R1 a R13 corregida (establecimiento que controla, usuarios por establecimiento, fechas reales, CSP).
+- 05/11: prueba en navegador y 9 tamaños de pantalla; se corrigieron 6 errores funcionales (F-1 a F-6), 8 observaciones de interfaz (O-1 a O-8) y 10 de adaptación a pantallas (R-1 a R-10); se cerraron T-04 y T-11 y se avanzó en T-05, T-13 y T-14. Detalle por hallazgo, con archivos, en la ficha «Revisión en navegador del 05/11/2026».
+
+**Lo que sigue, en este orden (regla del usuario: geolocalización primero, seguridad al final):**
+1. G-03 → G-04 → G-05 (geolocalización).
+2. T-09 (lotes atómicos y pre-cita a paciente inexistente), T-13 (motor clínico `heartsEngine`) y T-14 (cliente honesto ante fallos y `.bat`).
+3. Seguridad: lo que falta de T-05 (CORS cerrado y CSP), T-10 (XSS y fórmulas en CSV), T-15 (privacidad por rol).
+4. T-18 (cargar y cotejar la trama real de pacientes) al final de todo.
+- Bloqueadas: H-01 (esperar la API real de HOSIX; no tocar los conectores) y T-17 (validación externa).
+
+**Decisiones abiertas para el usuario:** (a) ¿`GET /fhir/metadata` debe ser público? Hoy exige sesión. (b) ¿Exigir siempre el consentimiento al reimportar? Hoy a un paciente ya registrado sin respuesta se le pregunta en su primer WhatsApp; a un paciente nuevo se le exige. (c) Mirar una vez los mapas de fondo en un equipo con internet: en la prueba estaban bloqueados.
+
+**Reglas que no hay que romper:**
+- Nunca imprimir ni copiar datos de pacientes (DNI, nombres, teléfonos, direcciones); solo conteos (Ley N.° 29733). No arrancar el servidor sobre el `store.json` real hasta T-18. No agregar paquetes sin preguntar (hoy solo `express` y `cors`).
+- Al cambiar un archivo de `client/`, subir su `?v=` en `index.html` **y** en `sw.js`; no volver a poner `caches.delete` en `index.html`.
+- Los números del tablero y de los indicadores salen de `client/js/clinical/resumenTablero.js` (servidor y navegador): no recalcular aparte.
+- Todo texto visible y toda documentación, en español.
+- Después de cada tarea: `npm test` en verde, actualizar solo el estado de la tarea, la línea SIGUIENTE y una línea del Registro.
 
 ## Línea base verificada el 22/10/2026 (carpeta `Prototipo_Trabajo`)
 - Sintaxis: los 25 archivos JS propios pasan `node --check`. `npm audit --omit=dev`: 0 vulnerabilidades. Node v24.20.0.
