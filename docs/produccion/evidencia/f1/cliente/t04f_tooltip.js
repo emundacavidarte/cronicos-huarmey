@@ -1,0 +1,23 @@
+const L = require('./lib');
+const flags = page => page.evaluate(() => Object.keys(window).filter(k => k.startsWith('__xss')));
+(async () => {
+  const browser = await L.launch();
+  const ctx = await browser.newContext({ viewport: { width: 1366, height: 800 } });
+  const page = await ctx.newPage(); page.on('dialog', d => d.accept());
+  await page.goto(L.BASE + '/'); await page.waitForSelector('#login-overlay.active');
+  await L.uiLogin(page, L.ADMIN); await page.waitForFunction(() => window.app.patients.length > 0); await L.sleep(500);
+  const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.click('#rail-tab-excel')]);
+  await fc.setFiles(L.W + '/invented_padron4.xlsx');
+  await page.waitForSelector('#modal-padron-grid.active #padron-grid-tbody tr');
+  await page.click('#padron-btn-cargar');
+  await page.waitForFunction(() => !document.getElementById('modal-padron-grid').classList.contains('active'), null, { timeout: 15000 }); await L.sleep(800);
+  const out = { tras_cargar: await flags(page) };
+  await page.evaluate(() => window.app.centrarPaciente('70000031')); await L.sleep(1500);
+  const pin = await page.evaluate(() => { const m = document.getElementById('map').getBoundingClientRect(); const pins = [...document.querySelectorAll('.pin-patient-container')].map(e => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, d: Math.hypot(r.x + r.width / 2 - (m.x + m.width / 2), r.y + r.height / 2 - (m.y + m.height / 2)) }; }).sort((a, b) => a.d - b.d); return pins[0]; });
+  out.pinMasCercano = { distPx: Math.round(pin.d) };
+  await page.mouse.move(pin.x, pin.y); await L.sleep(800);
+  out.tooltipVisible = await page.evaluate(() => !!document.querySelector('.leaflet-tooltip'));
+  out.flags_trasHoverReal = await flags(page);
+  console.log(JSON.stringify(out, null, 1));
+  await browser.close();
+})().catch(e => { console.error('ERR', e); process.exit(1); });

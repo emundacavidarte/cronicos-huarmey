@@ -1,0 +1,68 @@
+[
+ {
+  "label": "sin throttling, cache fria y luego recarga",
+  "primeraCarga": {
+   "tLoad": 986,
+   "tLogin": 1036,
+   "nav": {
+    "dcl": 545,
+    "load": 982,
+    "paint": "first-paint=268 first-contentful-paint=268",
+    "resCount": 34,
+    "transfer": 6996620,
+    "decoded": 6986420
+   },
+   "reqsPropias": 35,
+   "bytesCDP": 7085483,
+   "porTipo": {
+    "Document": "68KB",
+    "Stylesheet": "109KB",
+    "Image": "132KB",
+    "Script": "6611KB"
+   }
+  },
+  "segundaCarga_conCache": {
+   "tLoad": 985,
+   "tLogin": 1017,
+   "nav": {
+    "dcl": 487,
+    "load": 981,
+    "paint": "first-paint=156 first-contentful-paint=156",
+    "resCount": 34,
+    "transfer": 0,
+    "decoded": 6986420
+   },
+   "reqsPropias": 35,
+   "bytesCDP": 0,
+   "porTipo": {
+    "Document": "0KB",
+    "Stylesheet": "0KB",
+    "Image": "0KB",
+    "Script": "0KB"
+   }
+  }
+ },
+ {
+  "label": "Fast 3G (1.6 Mbps, 150 ms) + CPU x4, cache fria",
+  "primeraCarga": {
+   "tLoad": 37607,
+   "tLogin": 37702,
+   "nav": {
+    "dcl": 36902,
+    "load": 37605,
+    "paint": "first-paint=1356 first-contentful-paint=1356",
+    "resCount": 34,
+    "transfer": 6996620,
+    "decoded": 6986420
+   },
+   "reqsPropias": 35,
+   "bytesCDP": 7085483,
+   "porTipo": {
+    "Stylesheet": "109KB",
+    "Document": "68KB",
+    "Script": "6611KB",
+    "Image": "132KB"
+   }
+  }
+ }
+]

@@ -1,0 +1,30 @@
+{
+ "score": "100% Válido",
+ "toasts": [
+  "Bienvenido(a), ADMINISTRADOR",
+  "Abriendo auditoría y corrector de Padrón en pantalla...",
+  "🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron 3 pacientes en el servidor."
+ ],
+ "pacientes": [
+  {
+   "dni": "70000021",
+   "nac": "1966-12-25",
+   "edad": 60,
+   "lat": -10.066661
+  },
+  {
+   "dni": "70000022",
+   "nac": "1966-01-01",
+   "edad": 60,
+   "lat": -10.066661
+  },
+  {
+   "dni": "70000023",
+   "nac": "1960-05-10",
+   "edad": 66,
+   "lat": null
+  }
+ ],
+ "pinsPorPaciente": "22 pines / 23 pacientes",
+ "fichaEdad": "60 años"
+}

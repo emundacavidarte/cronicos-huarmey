@@ -1,0 +1,243 @@
+{
+ "patientPins": 20,
+ "allMarkerIcons": 40,
+ "markerClassesBreakdown": {
+  "custom-map-pin": 40
+ },
+ "mapCenterZoom": {
+  "lat": -10.0478,
+  "lng": -78.1548,
+  "z": 15
+ },
+ "pinsInView": 3,
+ "patientsWithoutCoords": 0,
+ "popupOpen": true,
+ "popupTextLen": 804,
+ "fichaDesdePopup": true,
+ "fichaCerradaConEsc": true,
+ "base": {
+  "cards": 20,
+  "pins": 20,
+  "label": "Mostrando 20 de 20 pacientes"
+ },
+ "distribucion": {
+  "I10|green": 3,
+  "E11+I10|red": 2,
+  "I10|red": 2,
+  "N18.3+I10|green": 1,
+  "I10+E78.2|purple": 1,
+  "I25.2+I10|black|F": 1,
+  "E11|green": 2,
+  "I10+I25.2+E78.0|red": 1,
+  "I10+E66.0|green": 2,
+  "I10+M19.9|red": 1,
+  "I10+N18.3|yellow": 1,
+  "I10|purple": 1,
+  "I25.2+I10|yellow": 1,
+  "I10+I25.2|black|F": 1
+ },
+ "esperadoPorDatos": {
+  "hta": 18,
+  "dm": 4,
+  "green": 8,
+  "yellow": 2,
+  "red": 6,
+  "purple": 2
+ },
+ "filtros": {
+  "HTA": {
+   "cards": 18,
+   "pins": 18,
+   "label": "Mostrando 18 de 18 pacientes"
+  },
+  "DM2": {
+   "cards": 4,
+   "pins": 4,
+   "label": "Mostrando 4 de 4 pacientes"
+  },
+  "Todos": {
+   "cards": 20,
+   "pins": 20,
+   "label": "Mostrando 20 de 20 pacientes"
+  },
+  "verde": {
+   "cards": 8,
+   "pins": 8,
+   "label": "Mostrando 8 de 8 pacientes"
+  },
+  "amarillo": {
+   "cards": 2,
+   "pins": 2,
+   "label": "Mostrando 2 de 2 pacientes"
+  },
+  "rojo": {
+   "cards": 6,
+   "pins": 6,
+   "label": "Mostrando 6 de 6 pacientes"
+  },
+  "morado": {
+   "cards": 2,
+   "pins": 2,
+   "label": "Mostrando 2 de 2 pacientes"
+  }
+ },
+ "tras_todos_con_semaforo_activo": {
+  "cards": 20,
+  "pins": 20,
+  "label": "Mostrando 20 de 20 pacientes"
+ },
+ "chipsActivos": [
+  "Todos"
+ ],
+ "kpiRojo": {
+  "cards": 6,
+  "pins": 6,
+  "label": "Mostrando 6 de 6 pacientes"
+ },
+ "kpiTotal": {
+  "cards": 20,
+  "pins": 20,
+  "label": "Mostrando 20 de 20 pacientes"
+ },
+ "busquedaPorDni": {
+  "cards": 1,
+  "pins": 1,
+  "label": "Mostrando 1 de 1 pacientes"
+ },
+ "busquedaPorApellido": {
+  "cards": 1,
+  "pins": 1,
+  "label": "Mostrando 1 de 1 pacientes"
+ },
+ "busquedaApellidoEsperado": 1,
+ "busquedaSinResultado": {
+  "cards": 0,
+  "pins": 0,
+  "label": "Mostrando 0 de 0 pacientes"
+ },
+ "enterBusqueda": {
+  "toast": [
+   "Paciente localizado: «dato-simulado» «dato-simulado» «dato-simulado» LUIS"
+  ],
+  "centro": {
+   "z": 15.8666802241045
+  }
+ },
+ "georisRequests": [
+  {
+   "url": "/css/georis-theme.css?v=20261027_v6",
+   "status": 200,
+   "len": 15878,
+   "enc": "",
+   "t": 24
+  },
+  {
+   "url": "/js/map/georisAncashLayers.js?v=20261026_v21",
+   "status": 200,
+   "len": 15442,
+   "enc": "",
+   "t": 205
+  },
+  {
+   "url": "/data/georis/huarmeyCadastreBundle.js?v=20261021_v18",
+   "status": 200,
+   "len": 2154815,
+   "enc": "",
+   "t": 211
+  },
+  {
+   "url": "/data/georis/georisDataBundle.js?v=20261021_v18",
+   "status": 200,
+   "len": 3031785,
+   "enc": "",
+   "t": 211
+  }
+ ],
+ "georisBundleTiming": [
+  {
+   "n": "georis-theme.css",
+   "start": 9,
+   "dur": 10,
+   "transfer": 16178,
+   "decoded": 15878
+  },
+  {
+   "n": "huarmeyCadastreBundle.js",
+   "start": 9,
+   "dur": 75,
+   "transfer": 2155115,
+   "decoded": 2154815
+  },
+  {
+   "n": "georisDataBundle.js",
+   "start": 9,
+   "dur": 80,
+   "transfer": 3032085,
+   "decoded": 3031785
+  },
+  {
+   "n": "georisAncashLayers.js",
+   "start": 9,
+   "dur": 28,
+   "transfer": 15742,
+   "decoded": 15442
+  }
+ ],
+ "scriptEntries": "config.js:13 fechaLima.js:24 leaflet.js:29 huarmeyCadastreBundle.js:75 georisDataBundle.js:80 establecimientos.js:28 georisAncashLayers.js:28 ancashGeocoder.js:31 mapManager.js:33 session.js:34 authUi.js:39 semaforo.js:43 heartsEngine.js:48 alertsManager.js:48 whatsappNotifier.js:52 indicadoresConvenio.js:52 hosixParser.js:58 xlsx.full.min.js:74 padronSchema.js:61 padronExcelParser.js:61 padronPlantillaV4.js:64 padronExportV4.js:66 padronCalculadora.js:68 icons.js:70 registroClinicoModal.js:73 main.js:79 padronGridModal.js:72",
+ "checkboxesCapas": [
+  {
+   "id": "",
+   "checked": true,
+   "label": "Pacientes Crónicos (HEARTS)"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Hospital de Área (II-1 / II-2)"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Cabeceras de Zona (I-3 / I-4)"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Postas Puerta de Entrada (I-1 / I-2)"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Rutas de Referencia y Distancias"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Sectores Sanitarios (72 Comunales)"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Zonas Sanitarias (44 Microrredes)"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Límites de Redes RIS (7 Redes)"
+  },
+  {
+   "id": "",
+   "checked": true,
+   "label": "Catastro Urbano (Lotes y Vías)"
+  }
+ ],
+ "pathsAntes": 0,
+ "pathsDespues": 0,
+ "msActivarCapas": 1506,
+ "msSelectRisAll": 1379,
+ "pathsRisAll": 0,
+ "pageErrors": [],
+ "consoleErr": {
+  "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED @mtN.google.com": 59
+ }
+}

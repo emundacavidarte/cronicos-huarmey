@@ -1,0 +1,31 @@
+{
+ "coord_ve": 29,
+ "coord_grid": "100% Válido",
+ "coord_toast": [
+  "Bienvenido(a), Coordinador Diag",
+  "Abriendo auditoría y corrector de Padrón en pantalla...",
+  "🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron 2 pacientes en el servidor."
+ ],
+ "coord_flags_tras_ficha": [
+  "__xss_tok=270"
+ ],
+ "admin_ve": 31,
+ "admin_flags_al_cargar": [],
+ "admin_flags_lista": [],
+ "layerInfo": {
+  "layers": 20,
+  "tooltipsOpened": 20,
+  "errs": []
+ },
+ "admin_flags_tooltips": [],
+ "hover_tooltipVisible": true,
+ "hover_tooltipText": "\n        «dato-simulado» «dato-simulado» ROSA LUZ\n        DNI: «dato-simulado» • HC: «dato-simulado» • Seg: SIS\n        ",
+ "admin_flags_hover": [],
+ "admin_flags_ficha": [
+  "__xss_tok=249"
+ ],
+ "admin_flags_nombre": [
+  "__xss_tok=249"
+ ],
+ "nombreEnLista": "<IMG SRC=X ONERROR=WINDOW.__XSS=1>"
+}

@@ -1,0 +1,227 @@
+{
+ "ui": {
+  "admin": {
+   "chip": "Administrador",
+   "buscador": "visible",
+   "railPadron": "visible",
+   "railExcel": "visible",
+   "railNuevo": "visible",
+   "btnUsuarios": "visible",
+   "panelPadron": "visible",
+   "handlePadron": "visible",
+   "exportar": "visible",
+   "kpiTotal": "visible",
+   "kpis": "20/8/2/6/2",
+   "cards": 20,
+   "pins": 20,
+   "dash": {
+    "total": "20",
+    "ipressRows": 5,
+    "indRows": 0,
+    "estRows": 0
+   },
+   "toasts": [
+    "Bienvenido(a), ADMINISTRADOR"
+   ],
+   "estabsEnMapa": 40,
+   "apiCalls": [
+    "POST /api/auth/login",
+    "GET /api/cronicos"
+   ],
+   "status403": []
+  },
+  "coord156": {
+   "chip": "Coordinador · PACIFICO SUR",
+   "buscador": "visible",
+   "railPadron": "visible",
+   "railExcel": "visible",
+   "railNuevo": "visible",
+   "btnUsuarios": "oculto",
+   "panelPadron": "visible",
+   "handlePadron": "visible",
+   "exportar": "visible",
+   "kpiTotal": "visible",
+   "kpis": "20/8/2/6/2",
+   "cards": 20,
+   "pins": 20,
+   "dash": {
+    "total": "20",
+    "ipressRows": 5,
+    "indRows": 0,
+    "estRows": 0
+   },
+   "toasts": [
+    "Bienvenido(a), Coordinador Diag"
+   ],
+   "estabsEnMapa": 40,
+   "apiCalls": [
+    "POST /api/auth/login",
+    "GET /api/cronicos"
+   ],
+   "status403": []
+  },
+  "dir156": {
+   "chip": "Director · PACIFICO SUR",
+   "buscador": "oculto",
+   "railPadron": "oculto",
+   "railExcel": "oculto",
+   "railNuevo": "oculto",
+   "btnUsuarios": "oculto",
+   "panelPadron": "oculto",
+   "handlePadron": "oculto",
+   "exportar": "oculto",
+   "kpiTotal": "visible",
+   "kpis": "20/8/2/6/2",
+   "cards": 0,
+   "pins": 0,
+   "dash": {
+    "total": "0",
+    "ipressRows": 0,
+    "indRows": 0,
+    "estRows": 0
+   },
+   "toasts": [
+    "Bienvenido(a), Director Diag"
+   ],
+   "estabsEnMapa": 20,
+   "apiCalls": [
+    "POST /api/auth/login",
+    "GET /api/alerts/summary"
+   ],
+   "status403": [],
+   "dashTrasAbrir": {
+    "total": "0",
+    "control": "75%",
+    "ipress": 0,
+    "ind": 10,
+    "est": 5,
+    "estText": "CENTRO DE SALUD LA «dato-simulado»IA\tI-3\t1 de 2 · 50.0 %\t0 de 2 · 0.0 %\t0 de 1 · 0.0 %\t2 de 2 · 100.0 %\nNUEVO HOSPITAL DE APOYO HUARMEY\tII-1\t0 de 0 · — (seguimiento)\t0 d"
+   },
+   "puedeAbrirPanelConTecla": {
+    "display": "none",
+    "collapsed": false,
+    "permHidden": true
+   }
+  },
+  "coord157": {
+   "chip": "Coordinador · PACIFICO NORTE",
+   "buscador": "visible",
+   "railPadron": "visible",
+   "railExcel": "visible",
+   "railNuevo": "visible",
+   "btnUsuarios": "oculto",
+   "panelPadron": "visible",
+   "handlePadron": "visible",
+   "exportar": "visible",
+   "kpiTotal": "visible",
+   "kpis": "0/0/0/0/0",
+   "cards": 0,
+   "pins": 0,
+   "dash": {
+    "total": "0",
+    "ipressRows": 0,
+    "indRows": 0,
+    "estRows": 0
+   },
+   "toasts": [
+    "Bienvenido(a), Coord Norte Diag",
+    "No hay pacientes registrados para su red."
+   ],
+   "estabsEnMapa": 20,
+   "apiCalls": [
+    "POST /api/auth/login",
+    "GET /api/cronicos"
+   ],
+   "status403": []
+  },
+  "dir157": {
+   "chip": "Director · PACIFICO NORTE",
+   "buscador": "oculto",
+   "railPadron": "oculto",
+   "railExcel": "oculto",
+   "railNuevo": "oculto",
+   "btnUsuarios": "oculto",
+   "panelPadron": "oculto",
+   "handlePadron": "oculto",
+   "exportar": "oculto",
+   "kpiTotal": "visible",
+   "kpis": "0/0/0/0/0",
+   "cards": 0,
+   "pins": 0,
+   "dash": {
+    "total": "0",
+    "ipressRows": 0,
+    "indRows": 0,
+    "estRows": 0
+   },
+   "toasts": [
+    "Bienvenido(a), Director Norte Diag"
+   ],
+   "estabsEnMapa": 20,
+   "apiCalls": [
+    "POST /api/auth/login",
+    "GET /api/alerts/summary"
+   ],
+   "status403": []
+  },
+  "apos": {
+   "chip": "Coordinador · PACIFICO SUR",
+   "buscador": "visible",
+   "railPadron": "visible",
+   "railExcel": "visible",
+   "railNuevo": "visible",
+   "btnUsuarios": "oculto",
+   "panelPadron": "visible",
+   "handlePadron": "visible",
+   "exportar": "visible",
+   "kpiTotal": "visible",
+   "kpis": "20/8/2/6/2",
+   "cards": 20,
+   "pins": 20,
+   "dash": {
+    "total": "20",
+    "ipressRows": 5,
+    "indRows": 0,
+    "estRows": 0
+   },
+   "toasts": [
+    "Bienvenido(a), O&#39;Brien &amp; &lt;i&gt;Co&lt;/i&gt;"
+   ],
+   "estabsEnMapa": 40,
+   "apiCalls": [
+    "POST /api/auth/login",
+    "GET /api/cronicos"
+   ],
+   "status403": []
+  }
+ },
+ "api": {
+  "DIRECTOR /api/cronicos": 403,
+  "DIRECTOR /api/patients": 403,
+  "DIRECTOR /api/patients/geo": 403,
+  "DIRECTOR /fhir/Bundle": 403,
+  "DIRECTOR /api/Bundle": 403,
+  "DIRECTOR /fhir/Patient/pac-sim-«dato-simulado»": 403,
+  "DIRECTOR /api/patients/pac-sim-«dato-simulado»/eventos": 403,
+  "DIRECTOR /api/establishments": 200,
+  "DIRECTOR /api/alerts/summary": 200,
+  "DIRECTOR /api/indicadores/convenio": 200,
+  "DIRECTOR /api/users": 403,
+  "DIRECTOR /api/security/audit-logs": 403,
+  "DIRECTOR POST pre-cita": 403,
+  "DIRECTOR POST importar-lote": 403,
+  "directorAlertsKeys": "total_pacientes,personas_unicas_dni,padron_dnt,hosix_brecha,fallecidos,alertas",
+  "directorIndicadoresKeys": "success,periodo,metas,total,por_establecimiento",
+  "directorRespuestasConDniONombre": {
+   "alerts": 0,
+   "indicadores": 0
+  },
+  "COORD157 /api/cronicos": "200 len 2",
+  "COORD157 /api/patients": "200 len 55",
+  "COORD157 /fhir/Patient/pac-sim-«dato-simulado»": "404",
+  "COORD157 /api/patients/pac-sim-«dato-simulado»/eventos": "403",
+  "COORD157 /api/alerts/summary": "200 len 228",
+  "COORD157 POST pre-cita (paciente ajeno)": 403,
+  "sin token /api/cronicos": 401
+ }
+}

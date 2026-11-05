@@ -1,0 +1,10 @@
+{
+ "tras_cargar": [],
+ "pinMasCercano": {
+  "distPx": 0
+ },
+ "tooltipVisible": true,
+ "flags_trasHoverReal": [
+  "__xss_tip"
+ ]
+}

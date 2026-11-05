@@ -1,0 +1,58 @@
+{
+ "suggestedFilename": "Padron_Cronicos_Huarmey_2026-11-04.xlsx",
+ "size": 276010,
+ "toast": [
+  "Bienvenido(a), ADMINISTRADOR",
+  "📥 Descarga iniciada: Padron_Cronicos_Huarmey_2026-11-04.xlsx (20 pacientes, formato del padrón v4)."
+ ],
+ "sheets": [
+  "Instrucciones",
+  "Padrón",
+  "Listas"
+ ],
+ "ref": "A1:CV27",
+ "cols": 100,
+ "rows": 27,
+ "headerCount": 100,
+ "firstHeaders": [
+  "N.º",
+  "Fecha de captación",
+  "Tipo de documento",
+  "N.º de documento (clave)",
+  "N.º de historia clínica o de carpeta familiar en el establecimiento que lo controla",
+  "Apellidos y nombres"
+ ],
+ "columnasConFormulaFila8": 0,
+ "columnasSinFormula": 100,
+ "pacientesEnHoja": 20,
+ "calcPr": {
+  "calcCompleted": "true",
+  "calcMode": "auto",
+  "calcOnSave": "true",
+  "concurrentCalc": "true",
+  "fullCalcOnLoad": "false",
+  "fullPrecision": "true",
+  "iterate": "false",
+  "iterateCount": "100",
+  "iterateDelta": "0.001",
+  "refMode": "A1"
+ },
+ "roundTripRows": 20,
+ "roundTripValid": {
+  "totalErrors": 25,
+  "rowsWithErrors": 20,
+  "percent": 0
+ },
+ "roundTripFirstErrors": [
+  "1:consentimiento",
+  "2:consentimiento",
+  "3:consentimiento",
+  "4:consentimiento",
+  "5:consentimiento",
+  "6:consentimiento",
+  "7:consentimiento",
+  "8:consentimiento",
+  "9:consentimiento",
+  "10:consentimiento"
+ ]
+}

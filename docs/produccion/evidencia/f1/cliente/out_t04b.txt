@@ -1,0 +1,141 @@
+{
+ "patientsBefore": 20,
+ "t_open_grid_ms": 172,
+ "grid0": {
+  "file": "Archivo: invented_padron.xlsx · Hoja: \"Padrón\" · 9 pacientes",
+  "score": "56% Válido",
+  "all": "9",
+  "errs": "4",
+  "rows": 9,
+  "cellsErr": 4,
+  "btn": "⛔ Corrija 4 celdas observadas (56% completado)",
+  "btnDisabled": true,
+  "pills": 4
+ },
+ "flagsAfterGridOpen": [],
+ "gridCols": 74,
+ "gridScrollWidth": {
+  "sw": 10527,
+  "cw": 1323
+ },
+ "hot_beforeCommit": {
+  "file": "Archivo: invented_padron.xlsx · Hoja: \"Padrón\" · 9 pacientes",
+  "score": "56% Válido",
+  "all": "9",
+  "errs": "4",
+  "rows": 9,
+  "cellsErr": 4,
+  "btn": "⛔ Corrija 4 celdas observadas (56% completado)",
+  "btnDisabled": true,
+  "pills": 4
+ },
+ "hot_afterEnter": {
+  "file": "Archivo: invented_padron.xlsx · Hoja: \"Padrón\" · 9 pacientes",
+  "score": "44% Válido",
+  "all": "9",
+  "errs": "5",
+  "rows": 9,
+  "cellsErr": 5,
+  "btn": "⛔ Corrija 5 celdas observadas (44% completado)",
+  "btnDisabled": true,
+  "pills": 5
+ },
+ "hot_cellErrText": "El DNI debe tener exactamente 8 dígitos numéricos (actual: 0).",
+ "hot_afterNumeric": {
+  "file": "Archivo: invented_padron.xlsx · Hoja: \"Padrón\" · 9 pacientes",
+  "score": "44% Válido",
+  "all": "9",
+  "errs": "5",
+  "rows": 9,
+  "cellsErr": 6,
+  "btn": "⛔ Corrija 6 celdas observadas (44% completado)",
+  "btnDisabled": true,
+  "pills": 6
+ },
+ "hot_numTitle": "Valor máximo permitido es 260 (ingresó 9999).",
+ "hot_reverted": {
+  "file": "Archivo: invented_padron.xlsx · Hoja: \"Padrón\" · 9 pacientes",
+  "score": "56% Válido",
+  "all": "9",
+  "errs": "4",
+  "rows": 9,
+  "cellsErr": 4,
+  "btn": "⛔ Corrija 4 celdas observadas (56% completado)",
+  "btnDisabled": true,
+  "pills": 4
+ },
+ "grid_afterFix": {
+  "file": "Archivo: invented_padron.xlsx · Hoja: \"Padrón\" · 9 pacientes",
+  "score": "100% Válido",
+  "all": "9",
+  "errs": "0",
+  "rows": 9,
+  "cellsErr": 0,
+  "btn": "✅ Cargar y Georreferenciar 9 Pacientes al Sistema",
+  "btnDisabled": false,
+  "pills": 0
+ },
+ "dialogsAfterGrid": [],
+ "toastsAfterCommit": [
+  "🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron 9 pacientes en el servidor."
+ ],
+ "loteRequests": [
+  "POST /api/padron/importar-lote"
+ ],
+ "loteResponses": [
+  200
+ ],
+ "patientsAfter": 29,
+ "flagsAfterCommit": [],
+ "dialogsAll": [],
+ "cardsAfter": 29,
+ "flagsAfterList": [],
+ "nuevosDni": [
+  "70000001",
+  "70000002",
+  "70000003",
+  "70000004",
+  "70000005",
+  "70000006",
+  "70000007",
+  "70000008",
+  "70000009"
+ ],
+ "tooltips": {
+  "tooltip": 20,
+  "popup": 0
+ },
+ "flagsAfterTooltips": [],
+ "flagsAfterPopups": [],
+ "flagsAfterFichas": [
+  "__xss_dm",
+  "__xss_hta"
+ ],
+ "xssPatientId": "pac-00001741-70000001",
+ "precitaModalName": "&lt;IMG SRC=X ONERROR=WINDOW.__XSS=1&gt;",
+ "flagsAfterPrecita": [
+  "__xss_dm",
+  "__xss_hta"
+ ],
+ "toastsPrecita": [
+  "<span><svg class=\"svg-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n        <circle cx=\"12\" cy=\"12\" r=\"10\" fill=\"#E6F4EA\" stroke=\"#1E8E3E\" stroke-wid"
+ ],
+ "flagsAfterSearch": [
+  "__xss_dm",
+  "__xss_hta"
+ ],
+ "flagsAfterEnterSearch": [
+  "__xss_dm",
+  "__xss_hta"
+ ],
+ "flagsAfterWhatsapp": [
+  "__xss_dm",
+  "__xss_hta"
+ ],
+ "consentModalHtml": "",
+ "flagsFinal": [
+  "__xss_dm",
+  "__xss_hta"
+ ],
+ "pageErrors": []
+}

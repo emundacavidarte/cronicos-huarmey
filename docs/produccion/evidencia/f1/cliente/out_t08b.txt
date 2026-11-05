@@ -1,0 +1,62 @@
+{
+ "admin_dash": {
+  "total": "20",
+  "desercion": "6",
+  "proximos": "2",
+  "control": "75%",
+  "hta": "Hipertensión Arterial Esencial (I10) 18 pac. (90%) Diabetes Mellitus T",
+  "ipressFilas": 5,
+  "indFilas": 10,
+  "estFilas": 5,
+  "vistaActiva": "none",
+  "periodo": "Periodo del convenio (IP02, IP03 e IP04): 01/01/20"
+ },
+ "tras_salir_dash": {
+  "total": "20",
+  "desercion": "6",
+  "proximos": "2",
+  "control": "75%",
+  "hta": "Hipertensión Arterial Esencial (I10) 18 pac. (90%) Diabetes Mellitus T",
+  "ipressFilas": 5,
+  "indFilas": 10,
+  "estFilas": 5,
+  "vistaActiva": "none",
+  "periodo": "Periodo del convenio (IP02, IP03 e IP04): 01/01/20"
+ },
+ "dir157_vista_al_entrar": {
+  "mapaVisible": "none",
+  "dashVisible": "block"
+ },
+ "dir157_kpi_mapa": "0",
+ "dir157_dash_antes_de_abrir": {
+  "total": "20",
+  "desercion": "6",
+  "proximos": "2",
+  "control": "75%",
+  "hta": "Hipertensión Arterial Esencial (I10) 18 pac. (90%) Diabetes Mellitus T",
+  "ipressFilas": 5,
+  "indFilas": 10,
+  "estFilas": 5,
+  "vistaActiva": "none",
+  "periodo": "Periodo del convenio (IP02, IP03 e IP04): 01/01/20"
+ },
+ "dir157_dash": {
+  "total": "0",
+  "desercion": "0",
+  "proximos": "0",
+  "control": "—",
+  "hta": "Hipertensión Arterial Esencial (I10) 0 pac. (0%) Diabetes Mellitus Tip",
+  "ipressFilas": 0,
+  "indFilas": 10,
+  "estFilas": 1,
+  "vistaActiva": "none",
+  "periodo": "Periodo del convenio (IP02, IP03 e IP04): 01/01/20"
+ },
+ "dir157_botonExportarVisible": true,
+ "dir157_exportar": {
+  "descarga": false,
+  "toast": [
+   "No hay pacientes para exportar."
+  ]
+ }
+}

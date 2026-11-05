@@ -1,0 +1,48 @@
+{
+ "longTasksCarga": {
+  "n": 3,
+  "max": 198,
+  "total": 448,
+  "lista": [
+   {
+    "t": 42,
+    "d": 154
+   },
+   {
+    "t": 305,
+    "d": 198
+   },
+   {
+    "t": 503,
+    "d": 96
+   }
+  ]
+ },
+ "bundles": {
+  "georisBundle": true,
+  "ris": 7,
+  "zonas": 44,
+  "sectores": 72
+ },
+ "seleccionarTodasRIS": {
+  "ms": 217,
+  "longTasks": 0,
+  "maxLong": 0
+ },
+ "seleccionarRIS156": {
+  "ms": 34,
+  "longTasks": 1,
+  "maxLong": 61
+ },
+ "zoom17": {
+  "ms": 181,
+  "longTasks": 1,
+  "maxLong": 58
+ },
+ "zoom12": {
+  "ms": 108,
+  "longTasks": 0,
+  "maxLong": 0
+ },
+ "capasEnMapa": "limiteRis:7 zonasSanitarias:6 sectoresSanitarios:72 areaSanitaria:4 zonaSanitaria:6 puertaEntrada:11 referenciasLines:11 activeHighlight:0 catastroUrbano:0 pacientes:20"
+}

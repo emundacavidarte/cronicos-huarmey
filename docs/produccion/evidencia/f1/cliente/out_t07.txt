@@ -1,0 +1,132 @@
+{
+ "a_recarga": {
+  "patients": 20,
+  "overlay": false,
+  "apiCalls": [
+   "GET /api/auth/me",
+   "GET /api/cronicos"
+  ]
+ },
+ "b_antesSalir": {
+  "ss": [
+   "maxime_cronicos_sesion_v1"
+  ],
+  "ls": [],
+  "memPatients": 20,
+  "cards": 20,
+  "pins": 20,
+  "kpi": "20",
+  "toasts": 1,
+  "overlay": false,
+  "msg": "",
+  "fichaEnDom": true,
+  "popup": true,
+  "tooltipDom": false,
+  "dashPacientes": "20",
+  "ipressRows": 5,
+  "indRows": 10
+ },
+ "b_trasSalir": {
+  "ss": [],
+  "ls": [],
+  "memPatients": 0,
+  "cards": 0,
+  "pins": 0,
+  "kpi": "0",
+  "toasts": 0,
+  "overlay": true,
+  "msg": "Sesión cerrada.",
+  "fichaEnDom": false,
+  "popup": false,
+  "tooltipDom": false,
+  "dashPacientes": "20",
+  "ipressRows": 5,
+  "indRows": 10
+ },
+ "b_tokenViejoTrasSalir": {
+  "me": 401,
+  "cronicos": 401
+ },
+ "b_recargaTrasSalir": {
+  "overlay": true,
+  "patients": 0
+ },
+ "c_vencidoPorFecha": {
+  "overlay": true,
+  "msg": "",
+  "ss": [],
+  "cards": 0,
+  "app_pacientes": 0
+ },
+ "c_tokenManipulado": {
+  "overlay": true,
+  "msg": "Su sesión venció o fue cerrada. Ingrese nuevamente.",
+  "ss": [],
+  "app_pacientes": 0,
+  "apiCalls": [
+   "GET /api/auth/me"
+  ]
+ },
+ "c_basura": {
+  "overlay": true,
+  "msg": "",
+  "ss": []
+ },
+ "d_patchStatus": 200,
+ "d_tras401": {
+  "ss": [],
+  "ls": [],
+  "memPatients": 0,
+  "cards": 0,
+  "pins": 0,
+  "kpi": "0",
+  "toasts": 0,
+  "overlay": true,
+  "msg": "Su sesión venció o fue cerrada. Ingrese nuevamente.",
+  "fichaEnDom": false,
+  "popup": false,
+  "tooltipDom": false,
+  "dashPacientes": "20",
+  "ipressRows": 5,
+  "indRows": 0
+ },
+ "d_apiRespuestas": [
+  "401 /api/indicadores/convenio"
+ ],
+ "e_antes": {
+  "ss": [
+   "maxime_cronicos_sesion_v1"
+  ],
+  "ls": [],
+  "memPatients": 20,
+  "cards": 20,
+  "pins": 20,
+  "kpi": "20",
+  "toasts": 1,
+  "overlay": false,
+  "msg": "",
+  "fichaEnDom": false,
+  "popup": false,
+  "tooltipDom": false,
+  "dashPacientes": "20",
+  "ipressRows": 5,
+  "indRows": 0
+ },
+ "e_tras8h": {
+  "ss": [],
+  "ls": [],
+  "memPatients": 0,
+  "cards": 0,
+  "pins": 0,
+  "kpi": "0",
+  "toasts": 0,
+  "overlay": true,
+  "msg": "Su sesión venció o fue cerrada. Ingrese nuevamente.",
+  "fichaEnDom": false,
+  "popup": false,
+  "tooltipDom": false,
+  "dashPacientes": "20",
+  "ipressRows": 5,
+  "indRows": 0
+ }
+}

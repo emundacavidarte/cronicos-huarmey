@@ -1,0 +1,22 @@
+{
+ "aviso_en_grid": "🎉 ¡Padrón 100% Válido! Todos los 1 pacientes cumplen con los estándares de calidad y listas oficiales.",
+ "fileInfo": "Archivo: invented_padron5.xlsx · Hoja: \"hoja\" · 1 pacientes",
+ "toast": [
+  "🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron 1 pacientes en el servidor."
+ ],
+ "memoria": {
+  "total": 20,
+  "conEseDni": 1
+ },
+ "servidor": {
+  "total": 20,
+  "conEseDni": 1,
+  "ids": [
+   "id-original"
+  ]
+ },
+ "trasRecargar": {
+  "total": 20,
+  "conEseDni": 1
+ }
+}

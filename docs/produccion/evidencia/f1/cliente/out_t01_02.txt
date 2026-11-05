@@ -1,0 +1,70 @@
+{
+ "t_load_ms": 951,
+ "t_login_overlay_ms": 988,
+ "perf": {
+  "dcl": 425,
+  "load": 946,
+  "fcp": 200
+ },
+ "cronicosAntesLogin": [],
+ "apiAntesLogin": [],
+ "overlayVisible": true,
+ "appInert": true,
+ "consoleBeforeLogin": {
+  "error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED @mt0.google.com": 6,
+  "error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED @mt1.google.com": 6,
+  "error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED @mt3.google.com": 6,
+  "error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED @mt2.google.com": 6
+ },
+ "pageErrors": [],
+ "respNo2xx": [],
+ "failedReqByHost": {
+  "mtN.google.com net::ERR_TUNNEL_CONNECTION_FAILED": 24
+ },
+ "externalHosts": [
+  "mt3.google.com",
+  "mt0.google.com",
+  "mt1.google.com",
+  "mt2.google.com"
+ ],
+ "listaAntes": 0,
+ "kpiAntes": "0",
+ "filterLabelAntes": "614 pacientes",
+ "subtitleAntes": "Cargando pacientes...",
+ "badLogin": {
+  "ms": 175,
+  "msg": "Usuario o clave incorrectos.",
+  "overlayStillVisible": true
+ },
+ "sessionStorageAfterBad": null,
+ "emptyMsg": "Ingrese su usuario y su clave.",
+ "t_login_ok_ms": 176,
+ "t_kpi_ms": 180,
+ "kpis": "kpi-total=20 kpi-green=8 kpi-yellow=2 kpi-red=6 kpi-purple=2",
+ "listaCards": 20,
+ "subtitle": "20 de 20 pacientes filtrados",
+ "filterLabel": "Mostrando 20 de 20 pacientes",
+ "appPatients": 20,
+ "pins": {
+  "layerCount": 20,
+  "markersDom": 40,
+  "canvas": true
+ },
+ "apiCount": 20,
+ "idsMatch": true,
+ "afterLoginApiCalls": [
+  "POST /api/auth/login",
+  "GET /api/cronicos"
+ ],
+ "sessionKeys": {
+  "ss": [
+   "maxime_cronicos_sesion_v1"
+  ],
+  "ls": []
+ },
+ "consoleAll": {
+  "error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED @mtN.google.com": 24,
+  "error: Failed to load resource: the server responded with a status of 401 (Unauthorized) @localhost:3210": 1
+ },
+ "pageErrorsAll": []
+}

@@ -1,0 +1,97 @@
+ERR page.waitForSelector: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('#login-overlay.active') to be visible[22m
+
+{
+ "swState": {
+  "scope": "/",
+  "active": true,
+  "state": "activated"
+ },
+ "storageConSesion": {
+  "cacheNames": [
+   "maxime-cronicos-huarmey-v20261030-a8f (38)"
+  ],
+  "cacheEntries": 38,
+  "cacheApiUrls": [],
+  "cacheWithPatientData": 0,
+  "idb": [],
+  "ls": {},
+  "ss": {
+   "maxime_cronicos_sesion_v1": 249
+  },
+  "lsPatientHits": 0,
+  "ssPatientHits": 0
+ },
+ "assetsDeclarados": 38,
+ "assetsNo200": [],
+ "offlineReload": {
+  "ms": 254,
+  "status": 200,
+  "fromSW": true
+ },
+ "offlineUI": {
+  "title": "MÁXIME Salud Digital | Sistema de Manejo Territorial de Crónicos (GeoRIS & HL7 FHIR)",
+  "loginActive": false,
+  "loginMsg": "",
+  "appInert": false,
+  "appPresent": "undefined",
+  "patients": null,
+  "sessionTokenKept": true
+ },
+ "offlineConsole": [
+  "Failed to load resource: the server responded with a status of 503 (Offline)",
+  "Failed to load resource: the server responded with a status of 503 (Offline)",
+  "Failed to load resource: the server responded with a status of 503 (Offline)",
+  "Failed to load resource: the server responded with a status of 503 (Offline)",
+  "Failed to load resource: the server responded with a status of 503 (Offline)",
+  "Failed to load resource: the server responded with a status of 503 (Offline)"
+ ],
+ "offlineCacheTras": 1,
+ "offlineResourceFails": [
+  "503 /js/map/mapManager.js",
+  "503 /js/auth/session.js",
+  "503 /js/auth/authUi.js",
+  "503 /js/clinical/semaforo.js",
+  "503 /js/clinical/heartsEngine.js",
+  "503 /js/clinical/alertsManager.js",
+  "503 /js/clinical/whatsappNotifier.js",
+  "503 /js/clinical/indicadoresConvenio.js",
+  "503 /js/data/hosixParser.js",
+  "503 /js/data/padronSchema.js",
+  "503 /js/data/padronExcelParser.js",
+  "503 /js/data/padronPlantillaV4.js",
+  "503 /js/data/padronExportV4.js",
+  "503 /js/clinical/padronCalculadora.js",
+  "503 /js/ui/icons.js",
+  "503 /js/ui/padronGridModal.js",
+  "503 /js/ui/registroClinicoModal.js",
+  "503 /js/main.js"
+ ],
+ "offlineStorage": {
+  "cacheNames": [
+   "maxime-cronicos-huarmey-v20261030-a8f (1)"
+  ],
+  "cacheEntries": 1,
+  "cacheApiUrls": [],
+  "cacheWithPatientData": 0,
+  "idb": [],
+  "ls": {},
+  "ss": {
+   "maxime_cronicos_sesion_v1": 249
+  },
+  "lsPatientHits": 0,
+  "ssPatientHits": 0
+ },
+ "cacheTras3Cargas": {
+  "n": 22,
+  "hayIndex": false,
+  "hayCss": false,
+  "hayJs": 22
+ },
+ "offlineTras3Cargas": {
+  "status": 503,
+  "body": "Offline",
+  "app": "undefined"
+ }
+}

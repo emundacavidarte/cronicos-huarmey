@@ -1,0 +1,52 @@
+{
+ "A_servidorArriba": {
+  "toasts": [
+   {
+    "cls": "toast toast-success",
+    "txt": "Pre-cita registrada en Admisión HOSIX («dato-simulado» «dato-simulado» «dato-simulado» «dato-simulado» — 2026-11-07)"
+   }
+  ],
+  "req": [
+   "POST"
+  ],
+  "failed": [],
+  "resp": [
+   200
+  ]
+ },
+ "A_eventosServidor": "{\"patient_id\":\"pac-sim-«dato-simulado»\",\"total\":1,\"eventos\":[{\"id\":\"apt:precita-ebfe2248-454d-41d8-9474-b402105d8d26\",\"patient_id\":\"pac-sim-«dato-simulado»\",\"tipo\":\"cita\",\"fecha\":\"2026-11-07\",\"establecimiento_id\":null,\"estado\":\"pre-cita\",\"detalle\":\"Pre-cita HEARTS (Consultorio de Crónicos / Medicina Interna) para",
+ "A_precitasEnSesion": 1,
+ "B_stop": "down",
+ "B_servidorDetenido": {
+  "toasts": [
+   {
+    "cls": "toast toast-warning",
+    "txt": "Sin conexión con el servidor: la pre-cita quedó solo en esta sesión."
+   }
+  ],
+  "req": [
+   "POST"
+  ],
+  "failed": [
+   "net::ERR_CONNECTION_REFUSED"
+  ],
+  "resp": [
+   200
+  ]
+ },
+ "B_precitasEnSesion": 2,
+ "B_toastClass": [
+  "toast toast-warning"
+ ],
+ "B_csvLineas": 2,
+ "B_csvEstados": [
+  "\"PENDIENTE_ADMISIÓN\"",
+  "\"PENDIENTE_ADMISIÓN\""
+ ],
+ "C_servidorDetenido_recargar": null,
+ "D_start": "up pid 5203",
+ "D_eventosPacienteB": "{\"patient_id\":\"pac-sim-«dato-simulado»\",\"total\":0,\"eventos\":[]}",
+ "D_eventosPacienteA": "{\"patient_id\":\"pac-sim-«dato-simulado»\",\"total\":1,\"eventos\":[{\"id\":\"apt:precita-ebfe2248-454d-41d8-9474-b402105d8d26\",\"patient_id\":\"pac-sim-«dato-simulado»\",\"tipo\":\"cita\",\"fecha\":\"2026-11-07\",\"establecimiento_id\":null,\"estado\":\"pre-cita\",\"detalle\":\"Pre-cita HEARTS (Consultorio de Crónicos / Medicina Interna) para",
+ "E_sesionSigueValida": 200,
+ "F_precitaPacienteInexistente": "200 {\"success\":true,\"message\":\"Pre-cita generada exitosamente. Lista para confirmación en Admisión.\",\"data\":{\"id\":\"precita-d"
+}

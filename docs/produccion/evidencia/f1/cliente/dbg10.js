@@ -1,0 +1,21 @@
+const L = require('./lib');
+(async () => {
+  const browser = await L.launch();
+  const ctx = await browser.newContext({ viewport: { width: 1366, height: 800 }, serviceWorkers: 'allow' });
+  const page = await ctx.newPage();
+  const bag = {}; L.instrument(page, bag);
+  await page.goto(L.BASE + '/', { waitUntil: 'load' });
+  await page.waitForSelector('#login-overlay.active');
+  await L.sleep(1500);
+  const keys = () => page.evaluate(async () => (await (await caches.open((await caches.keys())[0])).keys()).map(r => r.url.replace(location.origin, '')));
+  const k0 = await keys();
+  const n0 = bag.responses.length;
+  await page.reload({ waitUntil: 'load' }); await L.sleep(2000);
+  const k1 = await keys();
+  console.log('antes', k0.length, 'despues', k1.length);
+  console.log('perdidas:', k0.filter(k => !k1.includes(k)));
+  console.log('nuevas:', k1.filter(k => !k0.includes(k)));
+  const rs = bag.responses.slice(n0);
+  console.log('respuestas en recarga:', rs.length, 'fromSW:', rs.filter(r => r.fromSW).length, 'status!=200:', rs.filter(r => r.status != 200).map(r => r.status + ' ' + r.url.replace(L.BASE, '')));
+  await browser.close();
+})();

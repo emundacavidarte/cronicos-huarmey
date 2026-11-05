@@ -1,0 +1,61 @@
+{
+ "geocode": {
+  "bolognesi": {
+   "matched": true,
+   "lat": -10.066661,
+   "lng": -78.153316,
+   "precision": "calle"
+  },
+  "prueba": {
+   "matched": false,
+   "lat": null,
+   "lng": null,
+   "precision": "sin_ubicacion"
+  },
+  "vacio": {
+   "matched": false,
+   "lat": null,
+   "lng": null,
+   "precision": "sin_ubicacion"
+  },
+  "huarmey": {
+   "matched": false,
+   "lat": null,
+   "lng": null,
+   "precision": "sin_ubicacion"
+  }
+ },
+ "live": {
+  "imc": "27.3 kg/m²",
+  "tfge": "65 ml/min"
+ },
+ "liveAll": [
+  "live-semaforo-pill=VERDE",
+  "live-estado-cita=Programada en 30 días",
+  "live-dias-atraso=Cita al día",
+  "live-imc=27.3 kg/m²",
+  "live-nutricion=Sobrepeso (25.0 – 29.9)",
+  "live-pa-meta-badge=—",
+  "live-pa-ultima=— / — mmHg",
+  "live-meta-presion=Meta: < 140/90 mmHg",
+  "live-controlado-estable=Controlado y estable: No",
+  "live-tfge=65 ml/min",
+  "live-estadio-erc=G2 (Levemente disminuido, 60–89)",
+  "live-hba1c-meta=HbA1c en meta: Sin dato",
+  "live-ldl-meta=Colesterol LDL en meta: Sin dato",
+  "live-que-le-falta=Tamizaje Albuminuria (RAC) · Perfil lipídico"
+ ],
+ "paAbsurda": {
+  "pas": "300",
+  "pad": "20",
+  "min": "70",
+  "max": "260"
+ },
+ "dniCorto": "⚠️ Ingrese un DNI válido de 8 dígitos numéricos.",
+ "dniExistente": {
+  "alert": "🎉\n        \n          Paciente Encontrado: «dato-simulado» «dato-simulado» «dato-simulado» LUIS (DNI: «dato-simulado»)\n          ✓ Filia",
+  "nombreCargado": true,
+  "badge": "En Padrón"
+ },
+ "pageErrors": []
+}

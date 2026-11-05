@@ -1,0 +1,403 @@
+{
+ "s1_login": {
+  "label": "login",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [],
+  "tapados": [],
+  "objetivosPequenos": 0,
+  "objetivosPequenosEj": []
+ },
+ "s2_mapa": {
+  "label": "mapa",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Calles y Vías GeoRIS Vectori <- search-input",
+   "Registrar y administrar usua <- search-input",
+   "Cerrar sesión <- search-input",
+   "Filtrar pacientes con cita p <- leaflet-zoom-animated",
+   "Filtrar pacientes en deserci <- leaflet-zoom-animated",
+   "Filtrar pacientes captados p <- leaflet-zoom-animated",
+   "Ocultar panel lateral <- leaflet-zoom-animated",
+   "Calles y Sentidos Viales (Po <- leaflet-zoom-animated",
+   "-- Todas las RIS de Áncash ( <- leaflet-zoom-animated",
+   "-- Todas las Zonas Sanitaria <- leaflet-zoom-animated"
+  ],
+  "objetivosPequenos": 59,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "railVisible": "none 0x0 left=0",
+ "hamburguesa": "flex",
+ "mobileNavTexts": [
+  "Mapa",
+  "Pacientes",
+  "Ingesta",
+  "Capas",
+  "Usuarios",
+  "Salir"
+ ],
+ "mobileNavRect": {
+  "top": 788,
+  "bottom": 844,
+  "h": 56,
+  "display": "flex"
+ },
+ "s3_popup": {
+  "label": "popup",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Calles y Vías GeoRIS Vectori <- search-input",
+   "Registrar y administrar usua <- search-input",
+   "Cerrar sesión <- search-input",
+   "Filtrar pacientes con cita p <- leaflet-zoom-animated",
+   "Filtrar pacientes en deserci <- leaflet-zoom-animated",
+   "Filtrar pacientes captados p <- leaflet-zoom-animated",
+   "Ocultar panel lateral <- leaflet-zoom-animated",
+   "Calles y Sentidos Viales (Po <- leaflet-zoom-animated",
+   "-- Todas las RIS de Áncash ( <- leaflet-zoom-animated",
+   "-- Todas las Zonas Sanitaria <- leaflet-zoom-animated"
+  ],
+  "objetivosPequenos": 60,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "popupBox": {
+  "left": 20,
+  "right": 389,
+  "top": 127,
+  "bottom": 595,
+  "vw": 390,
+  "vh": 844
+ },
+ "s4_panelPacientes": {
+  "label": "panel pacientes",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Calles y Vías GeoRIS Vectori <- search-input",
+   "Registrar y administrar usua <- search-input",
+   "Cerrar sesión <- search-input",
+   "Ver todos los pacientes crón <- DIV",
+   "Filtrar pacientes con cita v <- hearts-panel-header",
+   "Filtrar pacientes con cita p <- leaflet-zoom-animated",
+   "Filtrar pacientes en deserci <- leaflet-zoom-animated",
+   "Filtrar pacientes captados p <- leaflet-zoom-animated",
+   "Mostrar u ocultar territorio <- pcard-cell-val",
+   "Ocultar panel lateral <- DIV"
+  ],
+  "objetivosPequenos": 59,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "s5_ficha": {
+  "label": "ficha",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Alternar menú lateral <- hearts-ficha-header",
+   "Buscar paciente <- modal-patient-detail",
+   "Calles y Vías GeoRIS Vectori <- modal-patient-detail",
+   "Registrar y administrar usua <- modal-patient-detail",
+   "Cerrar sesión <- modal-patient-detail",
+   "Ver todos los pacientes crón <- ficha-paciente-title",
+   "Filtrar pacientes con cita v <- ficha-paciente-title",
+   "Filtrar pacientes con cita p <- modal-patient-detail",
+   "Filtrar pacientes en deserci <- modal-patient-detail",
+   "Filtrar pacientes captados p <- modal-patient-detail"
+  ],
+  "objetivosPequenos": 59,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "fichaScroll": {
+  "w": 344,
+  "h": 885,
+  "vh": 844,
+  "top": -21,
+  "bottom": 865
+ },
+ "s6_precita": {
+  "label": "precita",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Alternar menú lateral <- modal-precita",
+   "Buscar paciente <- modal-precita",
+   "Calles y Vías GeoRIS Vectori <- modal-precita",
+   "Registrar y administrar usua <- modal-precita",
+   "Cerrar sesión <- modal-precita",
+   "Ver todos los pacientes crón <- modal-precita",
+   "Filtrar pacientes con cita v <- modal-precita",
+   "Filtrar pacientes con cita p <- modal-precita",
+   "Filtrar pacientes en deserci <- modal-precita",
+   "Filtrar pacientes captados p <- modal-precita"
+  ],
+  "objetivosPequenos": 59,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "s7_capas": {
+  "label": "capas",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "leaflet-marker-icon custom-m [-268..-236]",
+   "leaflet-marker-icon custom-m [-7267..-7235]",
+   "leaflet-marker-icon custom-m [-17251..-17219]",
+   "leaflet-marker-icon custom-m [-2692..-2664]"
+  ],
+  "tapados": [
+   "Calles y Vías GeoRIS Vectori <- search-input",
+   "Registrar y administrar usua <- search-input",
+   "Cerrar sesión <- search-input",
+   "Ver todos los pacientes crón <- SPAN",
+   "Filtrar pacientes con cita v <- SPAN",
+   "Filtrar pacientes con cita p <- leaflet-zoom-animated",
+   "Filtrar pacientes en deserci <- leaflet-zoom-animated",
+   "Filtrar pacientes captados p <- leaflet-zoom-animated",
+   " <- mobile-nav-bar",
+   "leaflet-marker-icon custom-m <- leaflet-zoom-animated"
+  ],
+  "objetivosPequenos": 59,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "s8_ingesta": {
+  "label": "ingesta",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Calles y Vías GeoRIS Vectori <- search-input",
+   "Registrar y administrar usua <- search-input",
+   "Cerrar sesión <- search-input",
+   "Ver todos los pacientes crón <- DIV",
+   "Filtrar pacientes con cita v <- hearts-panel-header",
+   "Filtrar pacientes con cita p <- leaflet-zoom-animated",
+   "Filtrar pacientes en deserci <- leaflet-zoom-animated",
+   "Filtrar pacientes captados p <- leaflet-zoom-animated",
+   "Mostrar u ocultar territorio <- STRONG",
+   "Ocultar panel lateral <- DIV"
+  ],
+  "objetivosPequenos": 50,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "s9_grid": {
+  "label": "grid padron",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Alternar menú lateral <- padron-modal-header",
+   "Buscar paciente <- modal-padron-grid",
+   "Calles y Vías GeoRIS Vectori <- modal-padron-grid",
+   "Registrar y administrar usua <- modal-padron-grid",
+   "Cerrar sesión <- modal-padron-grid",
+   "Ver todos los pacientes crón <- padron-title",
+   "Filtrar pacientes con cita v <- padron-score-badge",
+   "Filtrar pacientes con cita p <- modal-padron-grid",
+   "Filtrar pacientes en deserci <- modal-padron-grid",
+   "Filtrar pacientes captados p <- modal-padron-grid"
+  ],
+  "objetivosPequenos": 57,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "gridBox": {
+  "w": 358,
+  "h": 793,
+  "vw": 390,
+  "vh": 844
+ },
+ "s10_registro": {
+  "label": "registro clinico",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Alternar menú lateral <- modal-registro-clinico",
+   "Buscar paciente <- modal-registro-clinico",
+   "Calles y Vías GeoRIS Vectori <- modal-registro-clinico",
+   "Registrar y administrar usua <- modal-registro-clinico",
+   "Cerrar sesión <- modal-registro-clinico",
+   "Ver todos los pacientes crón <- reg-title",
+   "Filtrar pacientes con cita v <- reg-patient-badge",
+   "Filtrar pacientes con cita p <- modal-registro-clinico",
+   "Filtrar pacientes en deserci <- modal-registro-clinico",
+   "Filtrar pacientes captados p <- modal-registro-clinico"
+  ],
+  "objetivosPequenos": 95,
+  "objetivosPequenosEj": [
+   "Calles y Vías GeoRIS Vectori 113x16",
+   "Ocultar panel lateral 74x28",
+   " 18x18",
+   " 18x18",
+   " 18x18"
+  ]
+ },
+ "s11_usuarios": {
+  "label": "usuarios",
+  "scrollW": 390,
+  "bodyScrollW": 390,
+  "innerW": 390,
+  "hOverflow": false,
+  "fueraDePantalla": [
+   "Buscar paciente [374..458]",
+   "Calles y Vías GeoRIS Vectori [502..615]",
+   "Registrar y administrar usua [747..847]",
+   "Cerrar sesión [1107..1143]",
+   "Ocultar panel lateral [-109..-35]",
+   "Calles y Sentidos Viales (Po [-346..-46]",
+   "-- Todas las RIS de Áncash ( [-344..-48]",
+   "-- Todas las Zonas Sanitaria [-344..-48]"
+  ],
+  "tapados": [
+   "Alternar menú lateral <- modal-usuarios",
+   "Buscar paciente <- modal-usuarios",
+   "Calles y Vías GeoRIS Vectori <- modal-usuarios",
+   
