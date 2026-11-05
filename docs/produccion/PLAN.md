@@ -9,6 +9,8 @@ Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. 
 - Datos reales de pacientes: **nunca** en el repositorio ni en el historial. Solo se cargan en producción.
 - Rama de trabajo: `claude/pensive-cray-3lwodm`. No tocar `main`. No abrir pull request salvo que Edward lo pida.
 - Regla de evidencia: nada se afirma sin haberlo ejecutado. Cada hallazgo se reproduce o se marca «solo por lectura».
+- **Capacidad (decisión de Edward, 05/11/2026):** la salida en Render es un **prototipo con un máximo de 5 usuarios concurrentes**. La **meta de escalada** es de más de 2 000 usuarios conectados a la vez; con la arquitectura actual (un proceso Node + `store.json`) eso **no se alcanza** (medido en la Fase 1: con 2 000 pacientes y 1 000 conexiones la mediana pasa de 17 s) y se trata como proyecto aparte. La Fase 5 deja documentados el umbral y la ruta de migración (base de datos real, varias instancias, `/api/cronicos` paginado o en caché, límite de tasa compartido); no se rediseña para esa meta en esta salida.
+- **Requisito funcional (Edward, 05/11/2026):** al escribir el DNI para registrar una atención, el sistema debe **cargar los datos ya guardados del paciente**. Existe (`buscarPacientePorDni`, Registro Clínico) y la Fase 1 lo vio funcionar con el administrador; la Fase 3 debe validarlo por rol y red, y revisar los valores por defecto que rellena si faltan datos.
 
 ## Reglas para todas las ventanas
 1. Leer este plan y el informe de la fase anterior; no releer todo el código.
@@ -43,6 +45,7 @@ Autenticación y sesiones (token de 8 h sin renovación), alcance por red y esta
 
 ### Fase 3 — Cliente, PWA y lógica clínica
 XSS y renderizado de datos, service worker (qué datos de pacientes quedan en caché sin conexión y por cuánto), manejo de sesión, importación y exportación de Excel, semáforo, indicadores del convenio y reglas HEARTS contra `docs/GUIA_NORMA_HEARTS.md`. Pendientes ya conocidos en `docs/HANDOFF.md` (por ejemplo, pre-cita que muestra éxito aunque el servidor falle, cotejo de redes).
+Incluye la **precarga por DNI** del Registro Clínico (requisito de Edward, ver «Decisiones tomadas») y los hallazgos C-xx de `F1_diagnostico.md`.
 **Cierre:** errores clínicos separados de errores técnicos; los clínicos se validan con la licenciada de crónicos.
 
 ### Fase 4 — Correcciones críticas y altas
@@ -64,9 +67,9 @@ Un modelo distinto revisa el diff completo y la lista de hallazgos sin ver mis c
 - Inscripción del banco de datos personales y base legal del tratamiento (Ley 29733); transferencia fuera del Perú (Render no tiene región en Lima).
 - Quién valida las reglas clínicas y quién administra usuarios.
 - Presupuesto mensual (Starter + disco, aprox. US$ 8).
-- Capacidad objetivo (surgido en la Fase 1): el código promete «1 000+ usuarios»; lo medido sostiene decenas de usuarios por hospital con ≈550 pacientes. ¿Cuántos usuarios simultáneos se esperan?
-- Trabajo sin conexión (Fase 1): hoy no funciona y no deja datos en el dispositivo. ¿Se quiere trabajar sin red con datos de pacientes, o basta un aviso claro?
-- Tamaño de la instancia (Fase 1): con 550 pacientes y mucha concurrencia el proceso llega a 1,4 GB; confirmar la memoria del plan Starter de Render (se cree 512 MB) en la Fase 6.
+- ~~Capacidad objetivo~~ — **RESUELTO el 05/11/2026**: ≤ 5 usuarios concurrentes en Render; escalada de 2 000+ como proyecto aparte (ver «Decisiones tomadas»).
+- Trabajo sin conexión (Fase 1): «sin conexión» = abrir y usar la app **sin internet** (hoy no funciona y no deja datos en el dispositivo). **Pendiente de que Edward confirme** si lo quiere o basta un aviso claro; la precarga por DNI que pidió es otra cosa y no depende de estar sin red.
+- ~~Tamaño de la instancia~~ — con ≤ 5 usuarios la memoria no es un riesgo (70 MB al inicio); queda solo confirmar el plan de Render en la Fase 6.
 
 ## Plantilla para abrir cada ventana
 > Lee `docs/produccion/PLAN.md` y el informe de la fase anterior. Ejecuta la Fase N. Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.

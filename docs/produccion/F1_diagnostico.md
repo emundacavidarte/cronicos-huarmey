@@ -80,6 +80,11 @@ Estado de la evidencia: **R** = reproducida; **R+L** = reproducida y confirmada 
 2. **Trabajo sin conexión:** hoy no funciona y no deja datos en el dispositivo. ¿Se quiere trabajar sin red con datos de pacientes (más riesgo y más trabajo) o solo mostrar un aviso claro?
 3. **Instancia:** con 550 pacientes y mucha concurrencia el proceso llega a 1,4 GB. El plan Starter de Render tiene, según lo que sé de su documentación pública (a confirmar en la Fase 6), 512 MB: hay que decidir el límite de conexiones o subir de plan.
 
+**Respuestas de Edward (05/11/2026), después de cerrar este informe:**
+1. **Capacidad:** es un prototipo; la salida en Render será de **máximo 5 usuarios concurrentes**, y la meta de escalada es de **más de 2 000 usuarios a la vez**. Efecto: para la salida a Render, L-01, L-07, L-08 y S-08 pasan a **prioridad baja** (no se reclasifican: siguen siendo válidos para la escalada, que con la arquitectura actual no se alcanza; ver sección 6.1). Siguen vigentes, y con prioridad, todos los de seguridad e integridad de datos.
+2. **Sin conexión:** Edward preguntó a qué se refiere el término. Aquí significa *usar la app sin internet* (hallazgo C-02), que es distinto de la **precarga por DNI** que pide (al escribir el DNI para registrar la atención, cargar los datos ya guardados del paciente). Esa precarga existe y en la Fase 1 funcionó con el administrador (`out_t04d.txt`: «Paciente Encontrado», nombre cargado, insignia «En Padrón»); queda para la Fase 3 comprobar el alcance por rol y red y los valores por defecto (`registroClinicoModal.js:830-836`, solo por lectura). La decisión sobre el trabajo sin internet sigue pendiente.
+3. **Instancia:** con ≤ 5 usuarios no es un riesgo; se confirma el plan de Render en la Fase 6.
+
 ## 4. Servidor y API — hallazgos con pasos para reproducir
 
 Cómo se levantó el servidor de prueba (siempre con `DATA_DIR` temporal, nunca sobre `server/db/`):
