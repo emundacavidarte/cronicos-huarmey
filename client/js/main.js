@@ -1901,7 +1901,7 @@ class App {
     const fecha = document.getElementById('modal-precita-fecha')?.value || window.FechaLima.hoy();
     const consultorio = document.getElementById('modal-precita-consultorio')?.value || 'Consultorio de Crónicos / Medicina Interna';
 
-    window.AlertsManager.crearPreCita(p, fecha, consultorio);
+    const precitaLocal = window.AlertsManager.crearPreCita(p, fecha, consultorio);
     document.getElementById('modal-precita').classList.remove('active');
 
     // Sincronizar con el servidor HL7 FHIR / Base de Datos (con el token de la sesión; el servidor valida la red)
@@ -1922,6 +1922,9 @@ class App {
         })
       });
       if (this.session.getToken() !== token) return; // la sesión se cerró mientras se enviaba
+      // Observación de la Fase 1: el CSV de pre-citas marcaba como «PENDIENTE_ADMISIÓN» también las que el servidor
+      // no guardó. Ahora el estado dice si quedó en el servidor.
+      if (precitaLocal) precitaLocal.estado = res.ok ? 'PENDIENTE_ADMISIÓN' : 'NO_GUARDADA_EN_SERVIDOR';
       if (res.status === 403 || res.status === 404) {
         // Desde la Fase 2 un paciente fuera del alcance responde 404, igual que uno que ya no existe
         mensaje = 'El servidor no encontró a este paciente en su alcance (otra red o ya no está en el padrón). La pre-cita quedó solo en esta sesión.';
@@ -1931,6 +1934,7 @@ class App {
         tipo = 'warning';
       }
     } catch (e) {
+      if (precitaLocal) precitaLocal.estado = 'NO_GUARDADA_EN_SERVIDOR';
       mensaje = 'Sin conexión con el servidor: la pre-cita quedó solo en esta sesión.';
       tipo = 'warning';
     }

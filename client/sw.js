@@ -11,6 +11,8 @@ const ASSETS_TO_CACHE = [
   './manifest.json',
   './assets/images/logo_maxime.png',
   './assets/images/favicon.png',
+  './assets/images/icono-192.png',
+  './assets/images/icono-512.png',
   './css/georis-theme.css?v=20261026_premium',
   './css/layout.css?v=20261105_f4',
   './css/components.css?v=20261029_a8f',
