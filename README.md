@@ -57,5 +57,10 @@ Este repositorio contiene **únicamente 20 pacientes sintéticos/simulados** par
 
 ---
 
+## 🗺️ Geolocalización y capas GeoRIS
+Resumen de lo avanzado y corregido, pendientes y cómo retomar: [`docs/RESUMEN_AVANCES_GEOLOCALIZACION.md`](docs/RESUMEN_AVANCES_GEOLOCALIZACION.md).
+
+---
+
 ## 📄 Licencia
 MIT License — Hospital de Apoyo Huarmey & MÁXIME Consultoría en Salud.
