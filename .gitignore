@@ -25,6 +25,9 @@ _CLAUDE/
 .env.local
 .env.production
 
+# Capas oficiales descargadas por tools/comparar_georis_oficial.js (se regeneran)
+georis_oficial/
+
 # Archivos temporales de pruebas y auditorías
 *.tmp
 *.bak

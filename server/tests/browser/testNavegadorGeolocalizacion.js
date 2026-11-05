@@ -422,7 +422,9 @@ function assert(c, m) { if (!c) throw new Error(m || 'assert'); }
       // 3. Todas las RIS
       window.app.selectRis('ALL');
       const ca = contar();
-      if (ca.zonas !== 44 || ca.sectores !== 72 || ca.hosp !== 13 || ca.cab + 1 !== 44) out.problemas.push('ALL: ' + JSON.stringify(ca));
+      const tot = G.getResumenAncash();
+    const cabHosp = b.eessZona.features.filter(f => G.getHospitalesArea('ALL').some(h => h.cod_renipress === f.properties.cod_reni)).length;
+    if (ca.zonas !== b.zonas.features.length || ca.sectores !== tot.sectores_con_poligono || ca.hosp !== tot.hospitales || ca.cab + cabHosp !== tot.cabeceras) out.problemas.push('ALL: ' + JSON.stringify(ca));
       { const todos = [...pts(mm.layers.areaSanitaria), ...pts(mm.layers.zonaSanitaria), ...pts(mm.layers.puertaEntrada)].map(ll => ll.lat.toFixed(6) + ',' + ll.lng.toFixed(6)); const rep = todos.filter((k, i) => todos.indexOf(k) !== i); if (rep.length) out.problemas.push('ALL: ' + rep.length + ' establecimientos repetidos: ' + rep.slice(0, 5).join(' ')); }
       out.resumen.push('ALL: ' + JSON.stringify(ca));
       out.panel = document.getElementById('zona-info-panel').textContent.replace(/\s+/g, ' ').trim();

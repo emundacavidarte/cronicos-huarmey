@@ -55,7 +55,8 @@ Luego abra su navegador en:
    * Siempre se confirma en el mapa viendo en vivo el **sector GeoRIS**, la zona y la distancia al establecimiento. Al guardar, el servidor recalcula el sector sanitario con el polígono oficial y registra quién y cuándo la fijó.
    * **Pin con borde continuo y ✓** = ubicación exacta. **Pin con borde punteado** = aproximada por dirección (a nivel de calle, barrio o localidad: el catastro no tiene numeración de casas). Al centrar un paciente se dibuja su radio de incertidumbre.
    * Una ubicación exacta **no se pierde** al reimportar el padrón ni al registrar una atención con la misma dirección; si el paciente se muda (otra dirección), vale la nueva.
-9. **Herramienta de medición:** botón **`📏`** en los controles del mapa (clic en 2 o más puntos; vuelva a pulsarlo para terminar).
+9. **Actualizar las capas GeoRIS con la fuente oficial del MINSA:** en la PC de la oficina ejecute `COMPARAR_GEORIS_OFICIAL.bat` (compara y deja el informe en `docs/COMPARACION_GEORIS_OFICIAL.md`) o `COMPARAR_GEORIS_OFICIAL.bat --actualizar` (además reemplaza en el mapa las capas que difieran, con copia de respaldo del bundle anterior). Después ejecute `npm test`.
+10. **Herramienta de medición:** botón **`📏`** en los controles del mapa (clic en 2 o más puntos; vuelva a pulsarlo para terminar).
 
 ---
 

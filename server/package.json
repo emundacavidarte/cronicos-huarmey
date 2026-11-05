@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node tests/testErrorA.js && node tests/testErrorB.js && node tests/testHttp.js && node tests/testSemaforo.js && node tests/testIdempotencia.js && node tests/testAuth.js && node tests/testAuthHttp.js && node tests/testSession.js && node tests/testGeolocalizacion.js && node tests/testUbicacionExacta.js && node tests/testAuditoriaSeguridad.js && node tests/testPadronExcel.js && node tests/testExcelImportExportFix.js && node tests/testLineaTiempo.js && node tests/testConsentimiento.js && node tests/testIndicadoresConvenio.js && node tests/testIndicadoresHttp.js && node tests/testExportPadronV4.js && node tests/testRevision30oct.js"
+    "test": "node tests/testErrorA.js && node tests/testErrorB.js && node tests/testHttp.js && node tests/testSemaforo.js && node tests/testIdempotencia.js && node tests/testAuth.js && node tests/testAuthHttp.js && node tests/testSession.js && node tests/testGeolocalizacion.js && node tests/testUbicacionExacta.js && node tests/testComparadorGeoris.js && node tests/testAuditoriaSeguridad.js && node tests/testPadronExcel.js && node tests/testExcelImportExportFix.js && node tests/testLineaTiempo.js && node tests/testConsentimiento.js && node tests/testIndicadoresConvenio.js && node tests/testIndicadoresHttp.js && node tests/testExportPadronV4.js && node tests/testRevision30oct.js"
   },
   "keywords": [
     "hl7",

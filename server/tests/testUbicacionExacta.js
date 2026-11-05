@@ -361,12 +361,13 @@ async function unitarias() {
       assert.strictEqual(zs.reduce((a, z) => a + z.properties.pob_t, 0), p.pob_t, `RIS ${p.id_ris} población`);
       assert.strictEqual(zs.reduce((a, z) => a + z.properties.n_sec, 0), p.n_sec, `RIS ${p.id_ris} sectores`);
     }
-    for (const z of bundle.zonas.features.filter(z => z.properties.id_ris === 156)) {
-      const ss = bundle.sectores.features.filter(s => s.properties.id_zona === z.properties.id_zona);
+    const risConSectores = new Set(bundle.sectores.features.map(f => f.properties.id_ris));
+    for (const z of bundle.zonas.features.filter(z => risConSectores.has(z.properties.id_ris))) {
+      const ss = bundle.sectores.features.filter(s => s.properties.id_ris === z.properties.id_ris && s.properties.id_zona === z.properties.id_zona);
       assert.strictEqual(ss.length, z.properties.n_sec);
       assert.strictEqual(ss.reduce((a, s) => a + s.properties.pob_t, 0), z.properties.pob_t);
     }
-    const ids = bundle.sectores.features.map(f => f.properties.id_sector).sort((a, b) => a - b);
+    const ids = bundle.sectores.features.filter(f => f.properties.id_ris === 156).map(f => f.properties.id_sector).sort((a, b) => a - b);
     assert.deepStrictEqual(ids, Array.from({ length: 72 }, (_, i) => i + 1));
   });
   await step('cada sector está dentro de su zona y cada zona dentro de su RIS (muestreo interior)', async () => {
@@ -388,19 +389,30 @@ async function unitarias() {
       assert.ok(pts.filter(([x, y]) => enGeom(x, y, r.geometry)).length >= pts.length * 0.98, `zona ${z.properties.id_ris}:${z.properties.id_zona}`);
     }
   });
-  await step('los 32 vinculados con id_zona errado en la fuente se asignan a la zona donde están su punto y su puerta', async () => {
+  await step('los vinculados con id_zona errado en la fuente (32 en el bundle del 05/11) se asignan a la zona donde están', async () => {
     const v = GeorisTerritory.getVinculados('ALL', 'ALL');
     const corregidos = v.filter(x => x.id_zona_declarada !== null);
-    assert.strictEqual(corregidos.length, 32);
+    const esperados = bundle.eessVinculados.features.filter(f => {
+      const z = GeorisTerritory.zonaQueContiene(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+      return z && z.id_ris === f.properties.id_ris && z.id_zona !== f.properties.id_zona;
+    }).length;
+    assert.strictEqual(corregidos.length, esperados);
     for (const e of [...v, ...GeorisTerritory.getPuertasEntrada('ALL', 'ALL'), ...GeorisTerritory.getEessZona('ALL')]) {
       const z = GeorisTerritory.zonaQueContiene(e.lat, e.lng);
       assert.ok(z && z.id_ris === e.id_ris && z.id_zona === e.id_zona, `${e.cod_renipress} ${e.nombre} en zona ${z && z.id_zona}, asignado ${e.id_zona}`);
     }
     assert.ok(!GeorisTerritory.getVinculados(156, 6).some(x => x.id_zona_declarada !== null), 'Huarmey no tiene correcciones');
   });
-  await step('totales de Áncash calculados del bundle (13 hospitales sin el Sihuas repetido; 72 sectores con polígono)', async () => {
+  await step('totales de Áncash calculados del bundle (hospitales sin repetidos ni RIS inexistentes)', async () => {
     const t = GeorisTerritory.getResumenAncash();
-    assert.deepStrictEqual(t, { ris: 7, poblacion: 1078374, familias: 316831, viviendas: 361712, zonas: 44, sectores: 367, sectores_con_poligono: 72, hospitales: 13, cabeceras: 44, puertas: 225, vinculados: 184 });
+    const suma = campo => bundle.ris.features.reduce((a, f) => a + (f.properties[campo] || 0), 0);
+    const hosp = new Set(bundle.eessArea.features.filter(f => [69, 87, 101, 104, 111, 156, 157].includes(f.properties.id_ris)).map(f => f.properties.cod_reni));
+    assert.deepStrictEqual(t, {
+      ris: 7, poblacion: suma('pob_t'), familias: suma('n_fam'), viviendas: suma('n_viv'), zonas: suma('n_zona'), sectores: suma('n_sec'),
+      sectores_con_poligono: bundle.sectores.features.length, hospitales: hosp.size, cabeceras: bundle.eessZona.features.length,
+      puertas: bundle.eessPuertas.features.length, vinculados: bundle.eessVinculados.features.length
+    });
+    assert.ok(t.sectores_con_poligono >= 72, 'deben estar al menos los 72 sectores de Pacífico Sur');
   });
 
   console.log('G-07: alcance por sector');
