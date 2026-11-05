@@ -1,0 +1,22 @@
+const { chromium } = require('playwright');
+(async () => {
+  const b = await chromium.launch();
+  const ctx = await b.newContext();
+  await ctx.route(/arcgisonline|google\.com\/vt|cartocdn|openstreetmap/, r => r.abort());
+  const p = await ctx.newPage();
+  await p.goto('http://localhost:3000/');
+  await p.waitForSelector('#login-overlay.active');
+  await p.fill('#login-username', 'admin'); await p.fill('#login-password', 'Prueba2026*Huarmey'); await p.click('#login-submit');
+  await p.waitForTimeout(8000);
+  process.kill(Number(process.env.SPID), 'SIGTERM');
+  await new Promise(r => setTimeout(r, 1500));
+  const p2 = await ctx.newPage();
+  const fails = []; p2.on('response', r => { if (r.status() >= 400) fails.push(r.status() + ' ' + r.url().replace('http://localhost:3000', '')); });
+  const errs = []; p2.on('pageerror', e => errs.push(e.message.slice(0, 120)));
+  await p2.goto('http://localhost:3000/').catch(e => console.log('goto:', e.message.slice(0, 80)));
+  await p2.waitForTimeout(5000);
+  const st = await p2.evaluate(() => ({ app: !!(window.app && window.app.authUi), login: !!document.querySelector('#login-overlay.active'), sesion: !!(window.app && window.app.session && window.app.session.getToken()), pacientes: window.app ? window.app.patients.length : null, kpi: (document.getElementById('kpi-total') || {}).textContent, toasts: ((document.getElementById('toast-container') || {}).innerText || '').replace(/\s+/g, ' ').slice(0, 200) }));
+  console.log('NUEVA PESTAÑA SIN SERVIDOR:', JSON.stringify(st), 'fallos:', fails.length, fails.slice(0, 3).join(' | '), 'errores:', errs.join(' | '));
+  await p2.screenshot({ path: 'shots/offline_nueva_pestana.png' });
+  await b.close();
+})();
