@@ -88,7 +88,7 @@ Los scripts y sus salidas están en `docs/produccion/evidencia/f2/` (ver su `REA
   - El login acepta como máximo 10 KB.
   - Solo se admite `application/json`; cualquier otro tipo recibe 415.
   - Se quitó el lector de formularios (`urlencoded`), que ninguna ruta usaba, y las consultas se leen en modo simple.
-- **Después:** el 401 llega en 22-27 ms y la memoria pasa de 162,3 a 169,8 MB.
+- **Después:** el 401 llega en 17-27 ms y la memoria pasa de 153 a 173,5 MB (+20 MB, frente a +187 MB antes; `out_01_despues.txt`).
 
 ### F2-09 · Alta — Validación de entradas en el servidor (S-03, S-06)
 - **Antes:**
