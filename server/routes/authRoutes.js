@@ -10,6 +10,7 @@ const express = require('express');
 const db = require('../db/database');
 const auth = require('../auth/auth');
 const { RIS, normalizeRed } = require('../auth/redes');
+const { cuerpoJson } = require('../utils/cuerpoJson');
 
 const publicRouter = express.Router();
 const privateRouter = express.Router();
@@ -18,6 +19,7 @@ const privateRouter = express.Router();
 const LOGIN_MAX_FAILS = 10;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const failedLogins = new Map();
+const LOGIN_MAX_CLAVES = 20000; // tope del mapa: nombres de usuario inventados no hacen crecer la memoria sin fin
 
 setInterval(() => {
   const now = Date.now();
@@ -42,13 +44,21 @@ function registerFail(key) {
   if (!b || now > b.resetAt) b = { count: 0, resetAt: now + LOGIN_WINDOW_MS };
   b.count++;
   failedLogins.set(key, b);
+  if (failedLogins.size > LOGIN_MAX_CLAVES) {
+    for (const [k, v] of failedLogins) if (now > v.resetAt) failedLogins.delete(k);
+    for (const k of failedLogins.keys()) {
+      if (failedLogins.size <= LOGIN_MAX_CLAVES * 0.9) break;
+      failedLogins.delete(k); // Map conserva el orden de inserción: se descartan los más antiguos
+    }
+  }
 }
 
 function bad(res, status, code, diagnostics) {
   return res.status(status).json(auth.outcome(code, diagnostics));
 }
 
-publicRouter.post('/auth/login', async (req, res) => {
+// El login es lo único que se lee sin sesión: cuerpo de hasta 10 KB (F2-07)
+publicRouter.post('/auth/login', cuerpoJson('10kb'), async (req, res) => {
   try {
     const body = req.body && typeof req.body === 'object' ? req.body : {};
     const { username, password } = body;

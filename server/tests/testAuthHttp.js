@@ -275,11 +275,11 @@ async function main() {
       assert.ok(!dnisOf((await call('GET', '/api/cronicos', { token: admin })).json).includes('93200005'), 'el primer registro no debe haberse guardado');
     });
 
-    await step('pre-cita: coord de su red puede (200); de otra red o paciente inexistente no (403)', async () => {
+    await step('pre-cita: coord de su red puede (200); de otra red o paciente inexistente no (404, sin revelar si existe: F2-04)', async () => {
       const ok = await call('POST', '/api/appointments/pre-cita', { token: coordPs, body: { patient_id: idA, fecha_sugerida: '2026-12-01' } });
       assert.strictEqual(ok.status, 200, ok.text);
-      assert.strictEqual((await call('POST', '/api/appointments/pre-cita', { token: coordCs, body: { patient_id: idA } })).status, 403);
-      assert.strictEqual((await call('POST', '/api/appointments/pre-cita', { token: coordPs, body: { patient_id: 'no-existe-123' } })).status, 403);
+      assert.strictEqual((await call('POST', '/api/appointments/pre-cita', { token: coordCs, body: { patient_id: idA } })).status, 404);
+      assert.strictEqual((await call('POST', '/api/appointments/pre-cita', { token: coordPs, body: { patient_id: 'no-existe-123' } })).status, 404);
       assert.strictEqual((await call('POST', '/api/appointments/pre-cita', { token: director, body: { patient_id: idA } })).status, 403);
     });
 

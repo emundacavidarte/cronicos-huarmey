@@ -143,8 +143,8 @@ async function http() {
       assert.strictEqual((await call('PUT', '/api/patients/no-existe-99/consentimiento', { token: admin, body: { consentimiento: 'No' } })).status, 404);
     });
 
-    await step('otra red y el DIRECTOR no pueden registrar el consentimiento (403)', async () => {
-      assert.strictEqual((await call('PUT', url, { token: coordCs, body: { consentimiento: 'Sí, firmado' } })).status, 403);
+    await step('otra red (404, igual que inexistente: F2-04) y el DIRECTOR (403) no pueden registrar el consentimiento', async () => {
+      assert.strictEqual((await call('PUT', url, { token: coordCs, body: { consentimiento: 'Sí, firmado' } })).status, 404);
       assert.strictEqual((await call('PUT', url, { token: director, body: { consentimiento: 'Sí, firmado' } })).status, 403);
       const p = (await call('GET', '/api/cronicos', { token: admin })).json.find(x => x.id === id);
       assert.ok(!p.consentimiento);

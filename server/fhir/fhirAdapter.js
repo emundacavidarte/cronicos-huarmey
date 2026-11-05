@@ -8,6 +8,7 @@
 const crypto = require('crypto');
 const fechaLima = require('../../client/js/utils/fechaLima');
 const { getLatestObservation } = require('../utils/latestRecord');
+const { ErrorValidacion, texto } = require('../utils/validacion');
 
 const LOINC_CATALOG = {
   BP_PANEL: { code: '85354-9', display: 'Blood pressure panel with all children optional', unit: 'mm[Hg]' },
@@ -40,7 +41,7 @@ class FhirAdapter {
    */
   processBundle(bundle) {
     if (!bundle || bundle.resourceType !== 'Bundle') {
-      throw new Error('El payload no corresponde a un HL7 FHIR Bundle válido');
+      throw new ErrorValidacion('El payload no corresponde a un HL7 FHIR Bundle válido');
     }
 
     const results = {
@@ -145,9 +146,12 @@ class FhirAdapter {
     const fallecido = (resource.deceasedBoolean === undefined && !resource.deceasedDateTime)
       ? null
       : Boolean(resource.deceasedBoolean || resource.deceasedDateTime);
-    const rawDniVal = dniIdentifier ? String(dniIdentifier.value).trim() : (resource.id ? String(resource.id).replace(/^pac-\d+-/, '') : '');
+    // El DNI sale del identificador; del id solo si sigue la convención pac-<renipress>-<8 dígitos> (F2-09: no se inventa)
+    const idConDni = /^pac-\d+-(\d{8})$/.exec(texto(resource.id).trim());
+    const rawDniVal = dniIdentifier ? texto(dniIdentifier.value).trim() : (idConDni ? idConDni[1] : '');
+    // Se quitan caracteres que no son de un documento; luego la validación exige 8 dígitos (F2-09)
     const dniVal = rawDniVal ? rawDniVal.replace(/[^A-Za-z0-9\-]/g, '') : '';
-    let resId = resource.id ? String(resource.id).trim() : null;
+    let resId = resource.id ? texto(resource.id).trim() : null;
     if (resId && !/^[A-Za-z0-9\-_]{1,64}$/.test(resId)) {
       resId = resId.replace(/[^A-Za-z0-9\-_]/g, '').slice(0, 64);
     }
@@ -178,10 +182,11 @@ class FhirAdapter {
 
   parseCondition(resource) {
     const coding = resource.code?.coding?.[0] || {};
-    const code = coding.code || 'I10';
+    // Sin código no se inventa uno (antes se ponía I10): la validación del servidor rechaza la Condition (F2-09)
+    const code = texto(coding.code).trim() || null;
     let defaultDesc = 'Hipertensión Arterial';
-    if (code.startsWith('E1')) defaultDesc = 'Diabetes Mellitus';
-    else if (code.startsWith('N18')) defaultDesc = 'Enfermedad Renal Crónica';
+    if (code && code.startsWith('E1')) defaultDesc = 'Diabetes Mellitus';
+    else if (code && code.startsWith('N18')) defaultDesc = 'Enfermedad Renal Crónica';
 
     return {
       id: resource.id || `cond-${crypto.randomUUID()}`,

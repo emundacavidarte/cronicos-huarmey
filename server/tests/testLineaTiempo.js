@@ -151,9 +151,9 @@ async function main() {
 
     console.log('A11: alcance');
 
-    await step('un usuario de otra red no ve ni escribe eventos (403) y el DIRECTOR no accede (403)', async () => {
-      assert.strictEqual((await call('GET', url, { token: coordCs })).status, 403);
-      assert.strictEqual((await call('POST', url, { token: coordCs, body: { tipo: 'control', fecha: '2026-10-01' } })).status, 403);
+    await step('un usuario de otra red no ve ni escribe eventos (404, igual que un paciente inexistente: F2-04) y el DIRECTOR no accede (403)', async () => {
+      assert.strictEqual((await call('GET', url, { token: coordCs })).status, 404);
+      assert.strictEqual((await call('POST', url, { token: coordCs, body: { tipo: 'control', fecha: '2026-10-01' } })).status, 404);
       assert.strictEqual((await call('GET', url, { token: director })).status, 403);
       assert.strictEqual((await call('POST', url, { token: director, body: { tipo: 'control', fecha: '2026-10-01' } })).status, 403);
     });

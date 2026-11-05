@@ -35,7 +35,7 @@ Module._load = function (request, ...rest) {
 
 const { db, resetDb, closeDb } = require('./helpers/memoryDb');
 const fhirAdapter = require('../fhir/fhirAdapter');
-const router = require('../routes/apiRoutes');
+const router = require('../routes/apiRoutes').router; // F2: el módulo exporta { router, fhirRouter }
 Module._load = originalLoad;
 const { getLatestByDate, getLatestAppointment, getLatestObservation } = require('../utils/latestRecord');
 

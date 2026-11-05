@@ -22,6 +22,15 @@ const DB_FILE = path.join(DATA_DIR, 'store.json');
 const DB_TMP_FILE = path.join(DATA_DIR, 'store.json.tmp');
 const DB_BAK_FILE = path.join(DATA_DIR, 'store.json.bak');
 const MAX_AUDIT_LOGS = 5000;
+// Los inicios de sesión fallidos ocupan como máximo esta parte de la bitácora: una inundación sin sesión
+// ya no desplaza los demás eventos (F2-13). Los más antiguos de ese tipo se descartan primero.
+const MAX_LOGIN_FALLIDO_LOGS = 500;
+// Datos de salud: el archivo solo lo lee y escribe el usuario del servicio (F2-18)
+const FILE_MODE = 0o600;
+
+function protegerArchivo(file) {
+  try { fs.chmodSync(file, FILE_MODE); } catch (_) { /* puede no existir todavía */ }
+}
 
 function syncEstablishments(savedList) {
   const map = new Map();
@@ -55,14 +64,15 @@ function sanitizeRecord(obj) {
   return clean;
 }
 
-// Valores por defecto que se aplican SOLO al crear un paciente nuevo (nunca al actualizar uno existente)
+// Valores por defecto que se aplican SOLO al crear un paciente nuevo (nunca al actualizar uno existente).
+// No se inventan datos que cambian la atención o el pago: sexo y financiador quedan vacíos si no se informan (S-06).
 const PATIENT_DEFAULTS = {
   historia_clinica: 'S/N',
   apellidos_nombres: 'PACIENTE SIN NOMBRE',
-  sexo: 'O',
+  sexo: null,
   fecha_nacimiento: '',
   fallecido: false,
-  financiador: 'SIS',
+  financiador: null,
   telefono: '',
   direccion: 'Sin dirección consignada',
   distrito: 'Huarmey',
@@ -86,7 +96,9 @@ function hasRealValue(field, value) {
   if (typeof value === 'string') {
     const text = value.trim();
     if (text === '') return false;
-    if ((PLACEHOLDER_VALUES[field] || []).includes(text)) return false;
+    // hasOwnProperty: un campo llamado "toString" o "constructor" no debe resolver a Object.prototype (F2-08)
+    const relleno = Object.prototype.hasOwnProperty.call(PLACEHOLDER_VALUES, field) ? PLACEHOLDER_VALUES[field] : [];
+    if (relleno.includes(text)) return false;
   }
   return true;
 }
@@ -128,13 +140,16 @@ class Database {
 
   init() {
     if (fs.existsSync(DB_FILE)) {
+      protegerArchivo(DB_FILE);
+      protegerArchivo(DB_BAK_FILE);
       let raw;
       let parsed = null;
       try {
         raw = fs.readFileSync(DB_FILE, 'utf8');
         parsed = JSON.parse(raw);
       } catch (e) {
-        console.error('FATAL: Error al parsear store.json (archivo corrupto o incompleto):', e.message);
+        // Sin e.message: el texto de JSON.parse incluye un fragmento del archivo (podría ser un dato de paciente)
+        console.error(`FATAL: store.json está corrupto o incompleto (${e.name}).`);
         const corruptTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const corruptPath = path.join(DATA_DIR, `store.json.corrupt-${corruptTimestamp}`);
         try {
@@ -153,7 +168,7 @@ class Database {
             fs.copyFileSync(DB_BAK_FILE, DB_FILE);
             console.warn('¡Recuperación exitosa de base de datos desde store.json.bak!');
           } catch (bakErr) {
-            console.error('El archivo de backup store.json.bak también se encuentra dañado:', bakErr.message);
+            console.error(`El archivo de backup store.json.bak también se encuentra dañado (${bakErr.name}).`);
           }
         }
 
@@ -295,13 +310,15 @@ class Database {
     this._isSaving = true;
     try {
       const payload = JSON.stringify(this.data);
-      await fsp.writeFile(DB_TMP_FILE, payload, 'utf8');
+      await fsp.writeFile(DB_TMP_FILE, payload, { encoding: 'utf8', mode: FILE_MODE });
       if (fs.existsSync(DB_FILE)) {
         try {
           await fsp.copyFile(DB_FILE, DB_BAK_FILE);
+          protegerArchivo(DB_BAK_FILE);
         } catch (_) {}
       }
       await fsp.rename(DB_TMP_FILE, DB_FILE);
+      protegerArchivo(DB_FILE);
     } catch (e) {
       console.error('Error en persistencia asíncrona atómica:', e.message);
     } finally {
@@ -324,13 +341,15 @@ class Database {
     }
     try {
       const payload = JSON.stringify(this.data, null, 2);
-      fs.writeFileSync(DB_TMP_FILE, payload, 'utf8');
+      fs.writeFileSync(DB_TMP_FILE, payload, { encoding: 'utf8', mode: FILE_MODE });
       if (fs.existsSync(DB_FILE)) {
         try {
           fs.copyFileSync(DB_FILE, DB_BAK_FILE);
+          protegerArchivo(DB_BAK_FILE);
         } catch (_) {}
       }
       fs.renameSync(DB_TMP_FILE, DB_FILE);
+      protegerArchivo(DB_FILE);
     } catch (e) {
       console.error('Error guardando DB síncronamente (flushSync):', e.message);
     }
@@ -477,6 +496,11 @@ class Database {
 
     const existing = (dniKey && this.patientByDniMap.get(dniKey)) || this.patientByIdMap.get(idKey);
     if (existing) {
+      // Si cambia el DNI, el DNI anterior deja de apuntar a este paciente (índice sin entradas viejas)
+      const dniAnterior = existing.dni ? String(existing.dni) : '';
+      if (dniKey && dniAnterior && dniAnterior !== dniKey && this.patientByDniMap.get(dniAnterior) === existing) {
+        this.patientByDniMap.delete(dniAnterior);
+      }
       // Actualiza solo los campos con valor real; conserva lo ya guardado en el resto.
       // El id NUNCA se reemplaza: las citas, atenciones, diagnósticos y medicación del paciente
       // lo referencian en patient_id, y cambiarlo los dejaría huérfanos (F4).
@@ -768,16 +792,28 @@ class Database {
       payload_json: typeof payload === 'string' ? payload : JSON.stringify(payload),
       fecha: new Date().toISOString()
     };
-    this.data.audit_logs.push(log);
-    if (this.data.audit_logs.length > MAX_AUDIT_LOGS) {
-      this.data.audit_logs = this.data.audit_logs.slice(-MAX_AUDIT_LOGS);
+    const logs = this.data.audit_logs;
+    if (log.evento === 'LOGIN_FALLIDO') {
+      let fallidos = 0;
+      for (const l of logs) if (l.evento === 'LOGIN_FALLIDO') fallidos++;
+      if (fallidos >= MAX_LOGIN_FALLIDO_LOGS) {
+        const masAntiguo = logs.findIndex(l => l.evento === 'LOGIN_FALLIDO');
+        if (masAntiguo >= 0) logs.splice(masAntiguo, 1);
+      }
+    }
+    logs.push(log);
+    if (logs.length > MAX_AUDIT_LOGS) {
+      this.data.audit_logs = logs.slice(-MAX_AUDIT_LOGS);
     }
     this.scheduleSave();
     return log;
   }
 
-  getAuditLogs(limit = 100) {
-    return this.data.audit_logs.slice(-Math.min(limit, 500)).reverse();
+  /** Últimos eventos (más reciente primero); `evento` filtra por tipo (por ejemplo USUARIO_CREADO). */
+  getAuditLogs(limit = 100, evento = null) {
+    const n = Math.min(limit, 500);
+    const lista = evento ? this.data.audit_logs.filter(l => l.evento === evento) : this.data.audit_logs;
+    return lista.slice(-n).reverse();
   }
 }
 
