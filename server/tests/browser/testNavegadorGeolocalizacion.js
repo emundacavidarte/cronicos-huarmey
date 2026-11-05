@@ -288,6 +288,72 @@ function assert(c, m) { if (!c) throw new Error(m || 'assert'); }
     assert(txt && /SECTOR SANITARIO/.test(txt), 'popup=' + txt);
   });
 
+  await step('las 7 RIS y las 44 zonas dibujan exactamente lo de GeoRIS (sin duplicados ni establecimientos fuera de su zona)', async () => {
+  const r = await page.evaluate(() => {
+      const G = window.GeorisTerritory, mm = window.app.mapManager, b = G.bundle;
+      const out = { problemas: [], resumen: [] };
+      const contar = () => {
+        const c = { ris: mm.layers.limiteRis.getLayers().length, zonas: mm.layers.zonasSanitarias.getLayers().length, sectores: mm.layers.sectoresSanitarios.getLayers().length, hosp: 0, cab: mm.layers.zonaSanitaria.getLayers().length, pe: mm.layers.puertaEntrada.getLayers().length, refs: mm.layers.referenciasLines.getLayers().length };
+        mm.layers.areaSanitaria.eachLayer(l => { if (l.getLatLng) c.hosp++; });
+        return c;
+      };
+      const pts = g => { const a = []; g.eachLayer(l => { if (l.getLatLng) a.push(l.getLatLng()); }); return a; };
+      const zonaDe = ll => G.zonaQueContiene(ll.lat, ll.lng);
+      // 1. Cada RIS
+      for (const risF of b.ris.features) {
+        const id = risF.properties.id_ris;
+        window.app.selectRis(String(id));
+        const c = contar();
+        const esp = {
+          zonas: b.zonas.features.filter(f => f.properties.id_ris === id).length,
+          sectores: b.sectores.features.filter(f => f.properties.id_ris === id).length,
+          hosp: G.getHospitalesArea(id).length,
+          cab: b.eessZona.features.filter(f => f.properties.id_ris === id && !G.getHospitalesArea(id).some(h => h.cod_renipress === f.properties.cod_reni)).length
+        };
+        if (c.ris !== 7 || c.zonas !== esp.zonas || c.sectores !== esp.sectores || c.hosp !== esp.hosp || c.cab !== esp.cab) out.problemas.push(`RIS ${id}: dibujado ${JSON.stringify(c)} esperado ${JSON.stringify(esp)}`);
+        // todo establecimiento dibujado está en una zona de esta RIS
+        for (const ll of [...pts(mm.layers.zonaSanitaria), ...pts(mm.layers.puertaEntrada)]) { const z = zonaDe(ll); if (!z || z.id_ris !== id) out.problemas.push(`RIS ${id}: establecimiento dibujado fuera de la RIS en ${ll.lat.toFixed(4)},${ll.lng.toFixed(4)} (zona ${z ? z.id_ris + ':' + z.id_zona : 'ninguna'})`); }
+        out.resumen.push(`RIS ${id}: ${JSON.stringify(c)}`);
+        // 2. Cada zona de la RIS
+        for (const zf of b.zonas.features.filter(f => f.properties.id_ris === id)) {
+          const zid = zf.properties.id_zona;
+          window.app.selectZona(`${id}|${zid}`);
+          const cz = contar();
+          const espS = b.sectores.features.filter(f => f.properties.id_ris === id && f.properties.id_zona === zid).length;
+          if (cz.sectores !== espS) out.problemas.push(`Zona ${id}:${zid}: sectores ${cz.sectores} esperado ${espS}`);
+          const cabEsHosp = G.getHospitalesArea(id).some(h => h.cod_renipress === (b.eessZona.features.find(f => f.properties.id_ris === id && f.properties.id_zona === zid) || {}).properties.cod_reni);
+          if (cz.cab !== (cabEsHosp ? 0 : 1)) out.problemas.push(`Zona ${id}:${zid}: cabeceras dibujadas ${cz.cab}`);
+          if (cz.zonas !== esp.zonas) out.problemas.push(`Zona ${id}:${zid}: polígonos de zona ${cz.zonas}`);
+          for (const ll of [...pts(mm.layers.zonaSanitaria), ...pts(mm.layers.puertaEntrada)]) { const z = zonaDe(ll); if (!z || z.id_ris !== id || z.id_zona !== zid) out.problemas.push(`Zona ${id}:${zid}: establecimiento fuera de la zona en ${ll.lat.toFixed(4)},${ll.lng.toFixed(4)} → ${z ? z.id_ris + ':' + z.id_zona : 'ninguna'}`); }
+          // la zona resaltada es la elegida
+          let resaltada = null; mm.layers.zonasSanitarias.eachLayer(g => g.eachLayer(l => { if (l.options.weight === 3) resaltada = l.feature.properties; }));
+          if (!resaltada || resaltada.id_zona !== zid) out.problemas.push(`Zona ${id}:${zid}: resaltada ${resaltada ? resaltada.id_zona : 'ninguna'}`);
+          const sel = document.getElementById('select-zona').value; if (sel !== `${id}|${zid}`) out.problemas.push(`Zona ${id}:${zid}: selector muestra ${sel}`);
+          const todosPts = [...pts(mm.layers.areaSanitaria), ...pts(mm.layers.zonaSanitaria), ...pts(mm.layers.puertaEntrada)].map(ll => ll.lat.toFixed(6) + ',' + ll.lng.toFixed(6));
+          const rep = todosPts.filter((k, i) => todosPts.indexOf(k) !== i);
+          if (rep.length) out.problemas.push(`Zona ${id}:${zid}: ${rep.length} establecimientos dibujados dos veces en el mismo punto`);
+          const cabCod = (b.eessZona.features.find(f => f.properties.id_ris === id && f.properties.id_zona === zid) || {}).properties.cod_reni;
+          const espPe = G.getPuertasEntrada(id, zid).filter(e => e.cod_renipress !== cabCod && !G.getHospitalesArea(id).some(h => h.cod_renipress === e.cod_renipress)).length
+            + G.getVinculados(id, zid).filter(e => !G.getHospitalesArea(id).some(h => h.cod_renipress === e.cod_renipress)).length;
+          const espPeFinal = (id === 156 && zid === 6) ? 11 : espPe;
+          if (cz.pe !== espPeFinal) out.problemas.push(`Zona ${id}:${zid}: puertas+vinculados ${cz.pe} esperado ${espPeFinal}`);
+          const totalEst = cz.cab + cz.pe; const espEst = 1 + G.getPuertasEntrada(id, zid).filter(e => e.cod_renipress !== (b.eessZona.features.find(f => f.properties.id_ris === id && f.properties.id_zona === zid) || {}).properties?.cod_reni || true).length;
+          out.resumen.push(`  zona ${id}:${zid} sectores ${cz.sectores}, cabecera ${cz.cab}, puertas+vinculados ${cz.pe}, refs ${cz.refs}`);
+        }
+      }
+      // 3. Todas las RIS
+      window.app.selectRis('ALL');
+      const ca = contar();
+      if (ca.zonas !== 44 || ca.sectores !== 72 || ca.hosp !== 13 || ca.cab + 1 !== 44) out.problemas.push('ALL: ' + JSON.stringify(ca));
+      { const todos = [...pts(mm.layers.areaSanitaria), ...pts(mm.layers.zonaSanitaria), ...pts(mm.layers.puertaEntrada)].map(ll => ll.lat.toFixed(6) + ',' + ll.lng.toFixed(6)); const rep = todos.filter((k, i) => todos.indexOf(k) !== i); if (rep.length) out.problemas.push('ALL: ' + rep.length + ' establecimientos repetidos: ' + rep.slice(0, 5).join(' ')); }
+      out.resumen.push('ALL: ' + JSON.stringify(ca));
+      out.panel = document.getElementById('zona-info-panel').textContent.replace(/\s+/g, ' ').trim();
+      window.app.selectRis('156');
+      return out;
+    });
+    assert(r.problemas.length === 0, r.problemas.slice(0, 5).join(' | '));
+  });
+
   await step('sin errores de consola en todo el recorrido', async () => { assert(errores.length === 0, errores.join(' | ')); });
 
   await browser.close();

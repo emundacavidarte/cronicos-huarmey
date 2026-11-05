@@ -139,12 +139,60 @@ function formatMinutes(min) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Punto en polígono (Polygon / MultiPolygon GeoJSON, con huecos)
+function _puntoEnAnillo(x, y, r) {
+  let ins = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) ins = !ins;
+  }
+  return ins;
+}
+function _poligonosDe(g) {
+  return (g && g.type === 'Polygon') ? [g.coordinates] : (g && g.type === 'MultiPolygon') ? g.coordinates : [];
+}
+
 // Objeto de acceso y métodos de consulta territorial
 const GeorisTerritory = {
   bundle: (typeof window !== 'undefined' && window.GEORIS_DATA_BUNDLE) ? window.GEORIS_DATA_BUNDLE : null,
+  _zonaPorUbicacion: null,
 
   isReady() {
     return !!(this.bundle && this.bundle.ris && this.bundle.zonas);
+  },
+
+  /** Zona sanitaria oficial (polígono) que contiene un punto: { id_ris, id_zona } o null. */
+  zonaQueContiene(lat, lng) {
+    if (!this.bundle || !this.bundle.zonas) return null;
+    if (!this._indiceZonas) {
+      this._indiceZonas = this.bundle.zonas.features.map(f => {
+        const ps = _poligonosDe(f.geometry);
+        let a = [Infinity, Infinity, -Infinity, -Infinity];
+        ps.forEach(p => p[0].forEach(q => { a = [Math.min(a[0], q[0]), Math.min(a[1], q[1]), Math.max(a[2], q[0]), Math.max(a[3], q[1])]; }));
+        return { p: f.properties, ps, bb: a };
+      });
+    }
+    const z = this._indiceZonas.find(e => lng >= e.bb[0] && lng <= e.bb[2] && lat >= e.bb[1] && lat <= e.bb[3] &&
+      e.ps.some(p => _puntoEnAnillo(lng, lat, p[0]) && !p.slice(1).some(h => _puntoEnAnillo(lng, lat, h))));
+    return z ? { id_ris: z.p.id_ris, id_zona: z.p.id_zona } : null;
+  },
+
+  /**
+   * Zona de un establecimiento según su ubicación. En el bundle GeoRIS, 32 establecimientos vinculados (RIS Huaylas
+   * Sur 1, Conchucos Sur y Conchucos Norte; ninguno de Huarmey) declaran un id_zona distinto del de la zona donde están
+   * su punto y su puerta de entrada (los polígonos no se superponen ni dejan huecos). Para dibujarlos y filtrarlos en su
+   * zona real se usa la zona que contiene el punto y se conserva la declarada en id_zona_declarada.
+   */
+  _zonaEstablecimiento(f) {
+    const p = f.properties;
+    if (!this._zonaPorUbicacion) this._zonaPorUbicacion = new Map();
+    const clave = `${p.cod_reni}|${f.geometry.coordinates.join(',')}`;
+    if (!this._zonaPorUbicacion.has(clave)) {
+      const z = this.zonaQueContiene(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+      const corregida = !!z && z.id_ris === p.id_ris && z.id_zona !== p.id_zona;
+      this._zonaPorUbicacion.set(clave, corregida ? { id_zona: z.id_zona, id_zona_declarada: p.id_zona } : { id_zona: p.id_zona, id_zona_declarada: null });
+    }
+    return this._zonaPorUbicacion.get(clave);
   },
 
   getAllRis() {
@@ -261,12 +309,14 @@ const GeorisTerritory = {
     }
     return list.map(f => {
       const p = f.properties;
+      const zona = this._zonaEstablecimiento(f);
       return {
         cod_renipress: p.cod_reni,
         nombre: p.ipress,
         categoria: p.categoria || "I-3",
         id_ris: p.id_ris,
-        id_zona: p.id_zona,
+        id_zona: zona.id_zona,
+        id_zona_declarada: zona.id_zona_declarada,
         ris: p.ris,
         cod_hos: p.cod_hos || null,
         lat: f.geometry.coordinates[1],
@@ -287,15 +337,17 @@ const GeorisTerritory = {
     if (!this.bundle || !this.bundle.eessVinculados) return [];
     let list = this.bundle.eessVinculados.features;
     if (idRis && idRis !== 'ALL') list = list.filter(f => f.properties.id_ris === parseInt(idRis, 10));
-    if (idZona && idZona !== 'ALL') list = list.filter(f => f.properties.id_zona === parseInt(idZona, 10));
+    if (idZona && idZona !== 'ALL') list = list.filter(f => this._zonaEstablecimiento(f).id_zona === parseInt(idZona, 10));
     return list.map(f => {
       const p = f.properties;
+      const zona = this._zonaEstablecimiento(f);
       return {
         cod_renipress: p.cod_reni,
         nombre: p.ipress,
         categoria: p.categoria || "I-1",
         id_ris: p.id_ris,
-        id_zona: p.id_zona,
+        id_zona: zona.id_zona,
+        id_zona_declarada: zona.id_zona_declarada,
         distrito: p.distrito,
         provincia: p.provincia,
         cod_hos: p.cod_hos || null,
@@ -315,16 +367,18 @@ const GeorisTerritory = {
       list = list.filter(f => f.properties.id_ris === parseInt(idRis, 10));
     }
     if (idZona && idZona !== 'ALL') {
-      list = list.filter(f => f.properties.id_zona === parseInt(idZona, 10));
+      list = list.filter(f => this._zonaEstablecimiento(f).id_zona === parseInt(idZona, 10));
     }
     return list.map(f => {
       const p = f.properties;
+      const zona = this._zonaEstablecimiento(f);
       return {
         cod_renipress: p.cod_reni,
         nombre: p.ipress,
         categoria: p.categoria || "I-1",
         id_ris: p.id_ris,
-        id_zona: p.id_zona,
+        id_zona: zona.id_zona,
+        id_zona_declarada: zona.id_zona_declarada,
         distrito: p.distrito,
         provincia: p.provincia,
         cod_hos: p.cod_hos || null,
@@ -435,6 +489,28 @@ const GeorisTerritory = {
       puertas: puertasConDistancia
     };
   }
+};
+
+/** Totales de Áncash calculados del bundle GeoRIS (no se escriben a mano). */
+GeorisTerritory.getResumenAncash = function () {
+  if (!this.bundle || !this.bundle.ris) return null;
+  const r = { ris: 0, poblacion: 0, familias: 0, viviendas: 0, zonas: 0, sectores: 0, sectores_con_poligono: 0, hospitales: 0, cabeceras: 0, puertas: 0, vinculados: 0 };
+  this.bundle.ris.features.forEach(f => {
+    const p = f.properties;
+    r.ris++; r.poblacion += p.pob_t || 0; r.familias += p.n_fam || 0; r.viviendas += p.n_viv || 0; r.zonas += p.n_zona || 0; r.sectores += p.n_sec || 0;
+  });
+  r.sectores_con_poligono = (this.bundle.sectores && this.bundle.sectores.features.length) || 0;
+  r.hospitales = this.getHospitalesArea('ALL').length;
+  r.cabeceras = (this.bundle.eessZona && this.bundle.eessZona.features.length) || 0;
+  r.puertas = (this.bundle.eessPuertas && this.bundle.eessPuertas.features.length) || 0;
+  r.vinculados = (this.bundle.eessVinculados && this.bundle.eessVinculados.features.length) || 0;
+  return r;
+};
+
+/** Cuántos sectores de una RIS tienen polígono en el bundle (solo Pacífico Sur los trae). */
+GeorisTerritory.getSectoresConPoligono = function (idRis) {
+  if (!this.bundle || !this.bundle.sectores) return 0;
+  return this.bundle.sectores.features.filter(f => idRis === 'ALL' || f.properties.id_ris === parseInt(idRis, 10)).length;
 };
 
 // Objeto retrocompatible para el resto de la app

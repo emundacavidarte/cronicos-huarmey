@@ -15,11 +15,11 @@ Para garantizar fidelidad absoluta e idéntica a la plataforma GeoRIS MINSA, est
 | **LÍMITE DE RIS (RIS_TOTAL)** | FeatureServer/11 | Polígono (WGS84) | **7 RIS** | Polígonos de límites de las 7 Redes Integradas de Salud de Áncash (11,276 vértices en Pacífico Sur). |
 | **ZONAS SANITARIAS (ZONAS_TOTAL)** | FeatureServer/13 | Polígono (WGS84) | **44 Zonas** | Delimitación oficial de las 44 Microrredes/Zonas Sanitarias de Áncash. |
 | **SECTORES SANITARIOS (SECTOR_TOTAL)** | FeatureServer/12 | Polígono (WGS84) | **72 Sectores** | Malla territorial comunal de RIS Pacífico Sur con densidad y población. |
-| **E.S. ÁREA SANITARIA (P_AREA_TOTAL)** | FeatureServer/2 | Punto | **14 IPRESS** | Hospitales de Referencia (II-1 y II-2): Huarmey, Casma, EGB, Huaraz, etc. |
+| **E.S. ÁREA SANITARIA (P_AREA_TOTAL)** | FeatureServer/2 | Punto | **13 IPRESS** (14 registros; Sihuas repetido) | Hospitales de Referencia (II-1 y II-2): Huarmey, Casma, EGB, Huaraz, etc. |
 | **E.S. ZONA SANITARIA (P_REF_TOTAL)** | FeatureServer/4 | Punto | **44 IPRESS** | Cabeceras de Zona Sanitaria (I-3 y I-4): C.S. La Victoria en Huarmey, Buenavista, etc. |
 | **E.S. PUERTAS DE ENTRADA (P_ENT_TOTAL)** | FeatureServer/3 | Punto | **225 IPRESS** | Postas y Centros de Salud de primer contacto (I-1, I-2, I-3). |
-| **E.S. VINCULADOS (P_VIN_TOTAL)** | FeatureServer/5 | Punto | **184 IPRESS** | Puestos de salud anexos y satélites. |
-| **RENIPRESS ÁNCASH COMPLETO** | FeatureServer/6 | Punto | **435 IPRESS** | Catálogo oficial de todos los establecimientos de salud de Áncash. |
+| **E.S. VINCULADOS (P_VIN_TOTAL)** | FeatureServer/5 | Punto | **184 IPRESS** | Puestos de salud anexos y satélites. En 32 registros (RIS Huaylas Sur 1, Conchucos Sur y Conchucos Norte; ninguno de Huarmey) el `id_zona` declarado no es el de la zona donde están su punto y su puerta de entrada: la aplicación los asigna por ubicación y muestra el valor declarado. |
+| **RENIPRESS ÁNCASH COMPLETO** | FeatureServer/6 | Punto | — | Catálogo de todos los establecimientos de Áncash. **No está incluido en el bundle de este prototipo.** |
 
 ```
                                JERARQUÍA DEL MODELO GEORIS (MINSA)
@@ -44,11 +44,11 @@ Para garantizar fidelidad absoluta e idéntica a la plataforma GeoRIS MINSA, est
    ┌────────────────────────────────────────────────────────────────────────┐
    │ 3. SECTOR SANITARIO Y PUERTA DE ENTRADA (Primer Nivel de Atención)     │
    │    • Sectores: 72 sectores comunales censales en Pacífico Sur          │
-   │    • E.S. Puerta de Entrada Huarmey: P.S. Puerto Huarmey (I-2),        │
-   │      P.S. Culebras (I-2), P.S. Molino (I-1), P.S. Quián (I-2),         │
-   │      P.S. Huamba (I-1), P.S. Huayán (I-2), P.S. Malvas (I-1),          │
-   │      P.S. San Miguel (I-1), P.S. Raypa (I-1), P.S. Huanchay HZ (I-2).  │
-   │    • Enclave territorial: P.S. Cochapeti (I-1, Red Huaylas Sur).       │
+   │    • Puertas de Entrada Huarmey: C.S. La Victoria (I-3), P.S. Culebras │
+   │      (I-2), P.S. Huamba (I-1), P.S. Huayán (I-2), P.S. Huanchay HZ.    │
+   │    • Vinculados: P.S. Puerto Huarmey, Quián y Raypa (a La Victoria),   │
+   │      P.S. Molino (a Culebras), P.S. Malvas, San Miguel y Cochapetí     │
+   │      (a Huamba; Cochapetí es enclave de la Red Huaylas Sur).           │
    │    • Función: Adscripción de familias, tamizaje, entrega de medicación │
    │      mensual/trimestral HEARTS, seguimiento comunitario en domicilio.  │
    └────────────────────────────────────────────────────────────────────────┘
@@ -60,16 +60,18 @@ Para garantizar fidelidad absoluta e idéntica a la plataforma GeoRIS MINSA, est
 
 El departamento de Áncash se encuentra zonificado en **7 Redes Integradas de Salud** oficiales:
 
-| Código RIS | Nombre Oficial RIS | Población Total | Familias | Viviendas | N° Zonas | N° Sectores | Hospitales de Cabecera |
+| Código RIS | Nombre Oficial RIS | Población Total | Familias | Viviendas | N° Zonas | N° Sectores | Hospitales de Área (GeoRIS) |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **156** | **RIS PACIFICO SUR** | **292,742** | **88,990** | **92,271** | **6** | **72** | **Hospital de Apoyo Huarmey (II-1)**, Casma (II-1), Eleazar Guzmán Barrón (II-2) |
-| **157** | **RIS PACIFICO NORTE** | 269,794 | 81,450 | 85,120 | 7 | 50 | Hospital La Caleta (II-2, Chimbote) |
-| **101** | **RIS HUAYLAS SUR 1** | 214,098 | 64,800 | 71,200 | 5 | 133 | Hospital "Víctor Ramos Guardia" (II-2, Huaraz), Hospital Carhuaz (II-1) |
-| **104** | **RIS HUAYLAS SUR 2** | 45,632 | 14,200 | 16,800 | 3 | 25 | Hospital de Apoyo Recuay (II-1), Hospital Barranca (II-2) |
-| **69** | **RIS HUAYLAS NORTE** | 102,378 | 30,415 | 41,697 | 6 | 57 | Hospital de Apoyo Caraz (II-1), Hospital de Apoyo Yungay (II-1) |
-| **111** | **RIS CONCHUCOS NORTE** | 68,200 | 21,300 | 26,400 | 7 | 52 | Hospital de Apoyo Sihuas (II-1), Hospital de Pomabamba (II-1) |
-| **87** | **RIS CONCHUCOS SUR** | 85,530 | 26,800 | 32,100 | 10 | 70 | Hospital de Apoyo Huari (II-1) |
-| **TOTAL** | **DEPARTAMENTO ÁNCASH** | **1,078,380** | **327,955** | **365,588** | **44** | **459** | **14 Hospitales de Referencia II-1 y II-2** |
+| **156** | **RIS PACIFICO SUR** | **292,742** | **88,990** | **92,271** | **6** | **72** | **Hospital de Apoyo Huarmey (II-1)**, Hospital de Apoyo Casma, Eleazar Guzmán Barrón |
+| **157** | **RIS PACIFICO NORTE** | 269,794 | 72,851 | 70,013 | 7 | 65 | Hospital La Caleta |
+| **101** | **RIS HUAYLAS SUR 1** | 214,098 | 62,353 | 75,520 | 5 | 58 | Hospital de Apoyo Carhuaz, Hospital "Víctor Ramos Guardia" - Huaraz |
+| **104** | **RIS HUAYLAS SUR 2** | 45,632 | 15,044 | 21,581 | 3 | 20 | Hospital de Apoyo Recuay, Hospital de Barranca |
+| **69** | **RIS HUAYLAS NORTE** | 102,378 | 30,415 | 41,697 | 6 | 57 | Hospital de Apoyo Caraz, Hospital de Apoyo Yungay |
+| **111** | **RIS CONCHUCOS NORTE** | 68,200 | 20,940 | 27,369 | 7 | 47 | Hospital de Apoyo de Pomabamba "Antonio Caldas Domínguez", Hospital de Apoyo Sihuas |
+| **87** | **RIS CONCHUCOS SUR** | 85,530 | 26,238 | 33,261 | 10 | 48 | Hospital de Apoyo Huari |
+| **TOTAL** | **DEPARTAMENTO ÁNCASH** | **1,078,374** | **316,831** | **361,712** | **44** | **367** | **13 hospitales de referencia** (el bundle trae 14 registros: Sihuas está repetido con una RIS 177 inexistente) |
+
+> Cifras tomadas tal cual de las propiedades de las capas `RIS_TOTAL` y `ZONAS_TOTAL` del bundle (`client/data/georis/georisDataBundle.js`); la suma de las zonas coincide con cada RIS. **Polígonos de sectores:** el bundle trae solo los 72 de la RIS Pacífico Sur; de las otras 6 RIS hay conteos pero no polígonos.
 
 ---
 
@@ -77,21 +79,23 @@ El departamento de Áncash se encuentra zonificado en **7 Redes Integradas de Sa
 
 La provincia de Huarmey conforma la **Zona Sanitaria Huarmey (Zona N° 6 de RIS Pacífico Sur)**. Todas sus puertas de entrada tienen como techo resolutivo de referencia al **Hospital de Apoyo Huarmey (II-1)**:
 
-| IPRESS | Categoría | Rol GeoRIS | Distancia Geodésica al Hosp. II-1 | Tiempo Estimado de Traslado | Estándar GeoRIS (< 4h al Hospital) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Hospital de Apoyo Huarmey** | **II-1** | **Techo Resolutivo Provincial** | **0.0 km** | **0 min** | ✅ Sede Central |
-| **C.S. La Victoria** | I-3 | Cabecera de Zona Sanitaria | 1.5 km | ~5 min | ✅ Cumple |
-| **P.S. Puerto Huarmey** | I-2 | Puerta de Entrada | 3.4 km | ~10 min | ✅ Cumple |
-| **P.S. Culebras** | I-2 | Puerta de Entrada | 15.3 km | ~27 min | ✅ Cumple |
-| **P.S. Molino** | I-1 | Puerta de Entrada | 21.2 km | ~38 min | ✅ Cumple |
-| **P.S. Quián** | I-2 | Puerta de Entrada | 39.5 km | ~71 min (1h 11m) | ✅ Cumple |
-| **P.S. Raypa** | I-1 | Puerta de Entrada (Huanchay/Huaraz) | 45.0 km | ~81 min (1h 21m) | ✅ Cumple |
-| **P.S. Huanchay HZ** | I-2 | Puerta de Entrada (Huanchay/Huaraz) | 51.3 km | ~92 min (1h 32m) | ✅ Cumple |
-| **P.S. Huamba** | I-1 | Puerta de Entrada | 34.6 km | ~62 min | ✅ Cumple |
-| **P.S. Huayán** | I-2 | Puerta de Entrada | 53.7 km | ~96 min (1h 36m) | ✅ Cumple |
-| **P.S. Malvas** | I-1 | Puerta de Entrada | 57.1 km | ~102 min (1h 42m) | ✅ Cumple |
-| **P.S. San Miguel** | I-1 | Puerta de Entrada | 46.8 km | ~84 min (1h 24m) | ✅ Cumple |
-| **P.S. Cochapeti** | I-1 | Enclave Territorial (Red Huaylas Sur) | 56.4 km | ~101 min (1h 41m) | ✅ Cumple |
+| IPRESS | Categoría | Rol GeoRIS (bundle oficial) | Distancia en línea recta al Hosp. II-1 | Tiempo estimado de traslado* | Estándar GeoRIS (< 4h al Hospital) |
+| :--- | :---: | :--- | :---: | :---: | :---: |
+| **Nuevo Hospital de Apoyo Huarmey** | **II-1** | **Hospital de Referencia (Área Sanitaria)** | **0.0 km** | **0 min** | ✅ Sede |
+| **C.S. La Victoria** | I-3 | Cabecera de Zona Sanitaria y Puerta de Entrada (sectores 64-69) | 1.0 km | ~2 min | ✅ Cumple |
+| **P.S. Culebras** | I-2 | Puerta de Entrada (sector 62) | 13.1 km | ~24 min | ✅ Cumple |
+| **P.S. Huamba** | I-1 | Puerta de Entrada (sectores 70, 71) | 33.9 km | ~1h 1m | ✅ Cumple |
+| **P.S. Huanchay HZ** | I-2 | Puerta de Entrada (sector 63) | 51.3 km | ~1h 32m | ✅ Cumple |
+| **P.S. Huayán** | I-2 | Puerta de Entrada (sector 72) | 52.6 km | ~1h 35m | ✅ Cumple |
+| **P.S. Puerto Huarmey** | I-2 | Vinculado a C.S. La Victoria | 5.7 km | ~10 min | ✅ Cumple |
+| **P.S. Molino** | I-1 | Vinculado a P.S. Culebras | 19.0 km | ~34 min | ✅ Cumple |
+| **P.S. Quián** | I-2 | Vinculado a C.S. La Victoria | 37.9 km | ~1h 8m | ✅ Cumple |
+| **P.S. Raypa** | I-1 | Vinculado a C.S. La Victoria | 45.0 km | ~1h 21m | ✅ Cumple |
+| **P.S. San Miguel** | I-1 | Vinculado a P.S. Huamba | 46.1 km | ~1h 23m | ✅ Cumple |
+| **P.S. Malvas** | I-1 | Vinculado a P.S. Huamba | 56.1 km | ~1h 41m | ✅ Cumple |
+| **P.S. Cochapetí** | I-1 | Vinculado a P.S. Huamba (enclave, Red Huaylas Sur) | 56.2 km | ~1h 41m | ✅ Cumple |
+
+\* Estimación: distancia en línea recta × 1,35 (curvas) a 45 km/h. No es la distancia vial real.
 
 ---
 
@@ -105,3 +109,25 @@ De acuerdo al marco metodológico del MINSA para la delimitación de RIS:
 3. **Flujo de Pacientes Crónicos HEARTS:**
    - Pacientes con HTA / DM2 controlados: Atención periódica (cada 90 días) en su **Puerta de Entrada** más cercana (entrega de medicamentos y control de PA/glicemia).
    - Pacientes con HTA / DM2 no controlados o con daño a órgano blanco: **Referencia activa inmediata** al Hospital de Apoyo Huarmey (II-1) para evaluación por Medicina Interna, ajuste terapéutico y electrocardiograma/laboratorio.
+
+---
+
+## 5. Verificación de las capas GeoRIS del prototipo (05/11/2026)
+
+Medición automática sobre el bundle del repositorio y sobre el mapa dibujado en el navegador (sin acceso al servidor `geominsa.minsa.gob.pe` desde el entorno de verificación; no se comparó contra la fuente en línea):
+
+| Comprobación | Resultado |
+| :--- | :--- |
+| Anillos de polígonos cerrados (7 RIS, 44 zonas, 72 sectores) | ✅ 0 abiertos |
+| Huecos y superposiciones entre zonas de cada RIS (malla de ~39 000 puntos) | ✅ 0 % y 0 % |
+| Superposición entre RIS | ✅ 0 puntos |
+| Zona dentro de su RIS / sector dentro de su zona (muestreo interior) | ✅ 100 % |
+| Superposición entre sectores de Pacífico Sur | ✅ 0 puntos |
+| N.º de zonas y sectores declarados por RIS = conteo real | ✅ 7 de 7 |
+| Población de la RIS = Σ zonas; población de la zona = Σ sectores (Pacífico Sur) | ✅ exacto |
+| Sectores 1 a 72 sin repetir ni faltar; IPRESS de cada sector existe y es de su zona | ✅ |
+| Puertas de Pacífico Sur: su punto cae en uno de sus sectores asignados (`sec_asig`) | ✅ |
+| Establecimientos dentro de su zona declarada | ⚠️ 435 de 467; los 32 restantes son vinculados con `id_zona` errado en la fuente (se corrigen por ubicación) |
+| Cabeceras que también figuran como puertas de entrada | 44 de 44: se dibujan una sola vez (como cabecera, o como hospital si lo son) |
+| Mapa dibujado: 7 RIS y 44 zonas, una por una (polígonos, sectores, cabecera, puertas y vinculados, todos dentro de la zona elegida, sin duplicados) | ✅ 0 problemas |
+

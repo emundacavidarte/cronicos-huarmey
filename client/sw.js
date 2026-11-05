@@ -4,7 +4,7 @@
  * MÁXIME Salud Digital - Puesta en Marcha de Hospitales (v20: acceso con usuario y clave, T-03b)
  */
 
-const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-geo';
+const CACHE_NAME = 'maxime-cronicos-huarmey-v20261105-geo2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -13,7 +13,7 @@ const ASSETS_TO_CACHE = [
   './assets/images/favicon.png',
   './css/georis-theme.css?v=20261026_premium',
   './css/layout.css?v=20261105_geo',
-  './css/components.css?v=20261105_geo',
+  './css/components.css?v=20261105_geo2',
   './css/padron-grid.css?v=20261027_v4',
   './css/registro-clinico.css?v=20261027_v4',
   './libs/leaflet.js',
@@ -25,11 +25,11 @@ const ASSETS_TO_CACHE = [
   './js/utils/fechaLima.js?v=20261029_a8f',
   './js/auth/session.js?v=20261022_v20',
   './js/auth/authUi.js?v=20261022_v20',
-  './js/main.js?v=20261105_geo',
-  './js/map/mapManager.js?v=20261105_geo',
+  './js/main.js?v=20261105_geo2',
+  './js/map/mapManager.js?v=20261105_geo2',
   './js/map/geoUbicacion.js?v=20261105_geo',
   './js/map/establecimientos.js?v=20261105_geo',
-  './js/map/georisAncashLayers.js?v=20261105_geo',
+  './js/map/georisAncashLayers.js?v=20261105_geo2',
   './js/map/ancashGeocoder.js?v=20261105_geo',
   './js/clinical/semaforo.js?v=20261021_v18',
   './js/clinical/heartsEngine.js?v=20261021_v18',

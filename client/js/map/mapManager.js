@@ -531,6 +531,9 @@ class MapManager {
   renderHospitalesAreaLayer() {
     this.layers.areaSanitaria.clearLayers();
     const hospitales = window.GeorisTerritory.getHospitalesArea(this.currentRisId);
+    this._codigosHospital = new Set(hospitales.map(h => String(h.cod_renipress)));
+    const cabeceras = new Set(((window.GeorisTerritory.bundle && window.GeorisTerritory.bundle.eessZona && window.GeorisTerritory.bundle.eessZona.features) || []).map(f => String(f.properties.cod_reni)));
+    const esCabecera = cod => cabeceras.has(String(cod));
 
     hospitales.forEach(hosp => {
       const isHuarmey = hosp.cod_renipress === '00001741';
@@ -575,7 +578,7 @@ class MapManager {
           </div>
           <div class="georis-popup-body">
             <div class="georis-popup-row"><span class="georis-popup-label">Categoría:</span><span class="georis-popup-val" style="font-weight:700; color:#dc2626;">${escapeHtml(hosp.categoria)}</span></div>
-            <div class="georis-popup-row"><span class="georis-popup-label">Rol GeoRIS:</span><span class="georis-popup-val">Hospital de Referencia de Área Sanitaria</span></div>
+            <div class="georis-popup-row"><span class="georis-popup-label">Rol GeoRIS:</span><span class="georis-popup-val">Hospital de Referencia de Área Sanitaria${esCabecera(hosp.cod_renipress) ? ' y Cabecera de Zona Sanitaria' : ''}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Cód. RENIPRESS:</span><span class="georis-popup-val">${escapeHtml(hosp.cod_renipress)}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Red RIS:</span><span class="georis-popup-val">${escapeHtml(hosp.ris)}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Coordenadas:</span><span class="georis-popup-val">${hosp.lat.toFixed(6)}, ${hosp.lng.toFixed(6)}</span></div>
@@ -605,6 +608,10 @@ class MapManager {
     if (this.currentZonaId && this.currentZonaId !== 'ALL') {
       eessZona = eessZona.filter(e => String(e.id_zona) === String(this.currentZonaId));
     }
+    // Las 44 cabeceras también figuran como puertas de entrada en GeoRIS: se dibujan una sola vez, como cabecera
+    eessZona = eessZona.filter(e => !(this._codigosHospital && this._codigosHospital.has(String(e.cod_renipress))));
+    this._codigosCabecera = new Set(eessZona.map(e => String(e.cod_renipress)));
+    const codigosPuerta = new Set(((window.GeorisTerritory.bundle && window.GeorisTerritory.bundle.eessPuertas && window.GeorisTerritory.bundle.eessPuertas.features) || []).map(f => String(f.properties.cod_reni)));
 
     eessZona.forEach(es => {
       const zonaIcon = L.divIcon({
@@ -634,7 +641,7 @@ class MapManager {
           </div>
           <div class="georis-popup-body">
             <div class="georis-popup-row"><span class="georis-popup-label">Categoría:</span><span class="georis-popup-val" style="font-weight:700; color:#b45309;">${escapeHtml(es.categoria)}</span></div>
-            <div class="georis-popup-row"><span class="georis-popup-label">Rol GeoRIS:</span><span class="georis-popup-val">Establecimiento de Referencia de Zona Sanitaria</span></div>
+            <div class="georis-popup-row"><span class="georis-popup-label">Rol GeoRIS:</span><span class="georis-popup-val">Establecimiento de Referencia de Zona Sanitaria${codigosPuerta.has(String(es.cod_renipress)) ? ' y Puerta de Entrada' : ''}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Cód. RENIPRESS:</span><span class="georis-popup-val">${escapeHtml(es.cod_renipress)}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Zona Sanitaria:</span><span class="georis-popup-val">Zona ${escapeHtml(es.id_zona)} (${escapeHtml(es.ris)})</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Hospital de Referencia:</span><span class="georis-popup-val">${escapeHtml(hosp ? hosp.nombre : 'No indicado en GeoRIS')}</span></div>
@@ -670,7 +677,8 @@ class MapManager {
       ...window.GeorisTerritory.getPuertasEntrada(ris, zona),
       ...(window.GeorisTerritory.getVinculados ? window.GeorisTerritory.getVinculados(ris, zona) : [])
     ].filter(e => !(e.id_ris === 156 && e.id_zona === 6) && (e.id_zona !== undefined));
-    const vistos = new Set(lista.map(e => e.cod_renipress));
+    // Un establecimiento se dibuja una sola vez: si ya es hospital o cabecera de la selección, no se repite como puerta
+    const vistos = new Set([...lista.map(e => e.cod_renipress), ...(this._codigosHospital || []), ...(this._codigosCabecera || [])]);
     otros.forEach(e => {
       if (vistos.has(e.cod_renipress)) return;
       vistos.add(e.cod_renipress);
@@ -723,6 +731,8 @@ class MapManager {
             ${vinculado ? `<div class="georis-popup-row"><span class="georis-popup-label">Vinculado a:</span><span class="georis-popup-val">${escapeHtml(pe.vinculado_a_nombre || '—')}</span></div>` : ''}
             <div class="georis-popup-row"><span class="georis-popup-label">Cód. RENIPRESS:</span><span class="georis-popup-val">${escapeHtml(pe.cod_renipress)}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Ubicación:</span><span class="georis-popup-val">${escapeHtml(pe.distrito || '—')} (${escapeHtml(pe.provincia || '—')})</span></div>
+            ${pe.id_zona !== undefined ? `<div class="georis-popup-row"><span class="georis-popup-label">Zona Sanitaria:</span><span class="georis-popup-val">Zona ${escapeHtml(pe.id_zona)} · RIS ${escapeHtml(pe.id_ris || 156)}</span></div>` : ''}
+            ${pe.id_zona_declarada ? `<div class="georis-popup-row" style="background:#fef3c7; padding:4px 6px; border-radius:4px;"><span class="georis-popup-label" style="color:#b45309;">Dato GeoRIS:</span><span class="georis-popup-val" style="color:#b45309;">declara la zona ${escapeHtml(pe.id_zona_declarada)}, pero su punto y su puerta de entrada están en la zona ${escapeHtml(pe.id_zona)}</span></div>` : ''}
             ${pe.is_enclave ? `<div class="georis-popup-row" style="background:#fef3c7; padding:4px 6px; border-radius:4px;"><span class="georis-popup-label" style="color:#b45309;">Enclave:</span><span class="georis-popup-val" style="color:#b45309; font-weight:700;">${escapeHtml(pe.red_origen)}</span></div>` : ''}
             <div class="georis-popup-row"><span class="georis-popup-label">Hospital de referencia:</span><span class="georis-popup-val">${escapeHtml(pe.red_huarmey ? 'NUEVO HOSPITAL DE APOYO HUARMEY' : (pe.hospital_nombre || 'No indicado en GeoRIS'))}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Distancia al hospital:</span><span class="georis-popup-val" style="color:#dc2626; font-weight:800;">${pe.distancia_hospital_km !== undefined ? escapeHtml(pe.distancia_hospital_km) + ' km (línea recta)' : '—'}</span></div>

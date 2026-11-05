@@ -620,6 +620,7 @@ class App {
     this.actualizarSelectorZonas(156);
     this.actualizarSelectorPuertas(156, 'ALL');
     this.actualizarSelectorHospitales('00001741');
+    this.actualizarPanelInfoRis(156);
   }
 
   selectRis(risId) {
@@ -734,26 +735,35 @@ class App {
     const panel = document.getElementById('zona-info-panel');
     if (!panel) return;
 
+    // Cifras calculadas del bundle GeoRIS (no escritas a mano)
+    const G = window.GeorisTerritory;
     if (risId === 'ALL') {
+      const t = G.getResumenAncash ? G.getResumenAncash() : null;
+      if (!t) return;
       panel.innerHTML = `
         <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:10px; margin-top:8px; font-size:var(--font-xs); line-height:var(--lh-normal);">
-          <strong style="color:#0369a1;">DEPARTAMENTO DE ÁNCASH (7 RIS)</strong><br>
-          • <strong>Población Total:</strong> ~1,078,380 hab.<br>
-          • <strong>Zonas Sanitarias:</strong> 44 Microrredes<br>
-          • <strong>Hospitales de Área:</strong> 14 Hospitales II-1 / II-2
+          <strong style="color:#0369a1;">DEPARTAMENTO DE ÁNCASH (${t.ris} RIS)</strong><br>
+          • <strong>Población Total:</strong> ${t.poblacion.toLocaleString('es-PE')} hab. | ${t.familias.toLocaleString('es-PE')} familias<br>
+          • <strong>Zonas Sanitarias:</strong> ${t.zonas} | <strong>Sectores:</strong> ${t.sectores} (polígonos cargados: ${t.sectores_con_poligono}, solo Pacífico Sur)<br>
+          • <strong>Hospitales de Área:</strong> ${t.hospitales} II-1 / II-2 | <strong>Cabeceras:</strong> ${t.cabeceras}<br>
+          • <strong>Puertas de entrada:</strong> ${t.puertas} | <strong>Vinculados:</strong> ${t.vinculados}
         </div>
       `;
       return;
     }
 
-    const r = window.GeorisTerritory.getRisById(risId);
+    const r = G.getRisById(risId);
     if (r) {
+      const conPoligono = G.getSectoresConPoligono ? G.getSectoresConPoligono(risId) : r.sectores_count;
+      const avisoSectores = conPoligono < r.sectores_count
+        ? `<br><span style="color:#b45309;">⚠️ GeoRIS de este prototipo no trae los polígonos de los ${escapeHtml(r.sectores_count)} sectores de esta RIS: se dibujan zonas y establecimientos.</span>`
+        : '';
       panel.innerHTML = `
         <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:10px; margin-top:8px; font-size:var(--font-xs); line-height:var(--lh-normal);">
-          <strong style="color:#0369a1;">${r.nombre} (N° ${r.id_ris})</strong><br>
-          • <strong>Población:</strong> ${r.poblacion} hab.<br>
-          • <strong>Zonas Sanitarias:</strong> ${r.zonas_count} Zonas | <strong>Sectores:</strong> ${r.sectores_count}<br>
-          • <strong>Hospital de Cabecera:</strong> ${r.hospital_principal || r.hospitales}
+          <strong style="color:#0369a1;">${escapeHtml(r.nombre)} (N° ${escapeHtml(r.id_ris)})</strong><br>
+          • <strong>Población:</strong> ${escapeHtml(r.poblacion)} hab. | ${escapeHtml(r.familias)} familias<br>
+          • <strong>Zonas Sanitarias:</strong> ${escapeHtml(r.zonas_count)} | <strong>Sectores:</strong> ${escapeHtml(r.sectores_count)}<br>
+          • <strong>Hospitales de Área:</strong> ${escapeHtml(r.hospitales)}${avisoSectores}
         </div>
       `;
     }
@@ -774,11 +784,11 @@ class App {
     if (z) {
       panel.innerHTML = `
         <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px; margin-top:8px; font-size:var(--font-xs); line-height:var(--lh-normal);">
-          <strong style="color:#047857;">ZONA ${z.id_zona}: ${z.distrito || z.cabecera}</strong><br>
-          • <strong>Cabecera:</strong> ${z.cabecera} (${z.categoria})<br>
-          • <strong>Cód. RENIPRESS:</strong> ${z.cod_renipress}<br>
-          • <strong>Población Asignada:</strong> ${z.poblacion} hab.<br>
-          • <strong>Sectores Sanitarios:</strong> ${z.sectores_count} sectores comunales
+          <strong style="color:#047857;">ZONA ${escapeHtml(z.id_zona)}: ${escapeHtml(z.distrito || z.cabecera)}</strong><br>
+          • <strong>Cabecera:</strong> ${escapeHtml(z.cabecera)} (${escapeHtml(z.categoria)})<br>
+          • <strong>Cód. RENIPRESS:</strong> ${escapeHtml(z.cod_renipress)}<br>
+          • <strong>Población Asignada:</strong> ${escapeHtml(z.poblacion)} hab. | ${escapeHtml(z.familias)} familias<br>
+          • <strong>Sectores Sanitarios:</strong> ${escapeHtml(z.sectores_count)}${window.GeorisTerritory.getSectoresByZona(zonaId, risId).length ? '' : ' <span style="color:#b45309;">(sin polígonos en este prototipo)</span>'}
         </div>
       `;
     }

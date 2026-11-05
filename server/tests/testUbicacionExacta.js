@@ -50,7 +50,11 @@ const inRing = (x, y, r) => {
   }
   return ins;
 };
-const enZona = (lat, lng) => bundle.zonas.features.some(f => inRing(lng, lat, f.geometry.coordinates[0]));
+const { GeorisTerritory } = require('../../client/js/map/georisAncashLayers.js');
+GeorisTerritory.bundle = bundle;
+const polysDe = g => g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+const enGeom = (lng, lat, g) => polysDe(g).some(p => inRing(lng, lat, p[0]) && !p.slice(1).some(h => inRing(lng, lat, h)));
+const enZona = (lat, lng) => !!GeorisTerritory.zonaQueContiene(lat, lng);
 const kx = Math.cos(10.06 * Math.PI / 180) * 111320, ky = 110574;
 function distSeg(p, a, b) {
   const ax = a[0] * kx, ay = a[1] * ky, bx = b[0] * kx, by = b[1] * ky, px = p[0] * kx, py = p[1] * ky;
@@ -278,6 +282,57 @@ async function unitarias() {
     db.upsertPatient({ dni: '91000004', latitud: '-10,0689', longitud: '-78,1524' });
     assert.strictEqual(db.getPatientByDni('91000004').longitud, -78.1524);
     assert.strictEqual(db.getPatientByDni('91000004').sector_sanitario, 'Sector 67');
+  });
+
+  console.log('G-08: capas GeoRIS (integridad del bundle oficial)');
+  await step('conteos y poblaciones: RIS = Σ zonas, zona = Σ sectores (Pacífico Sur), sectores 1-72 completos', async () => {
+    for (const r of bundle.ris.features) {
+      const p = r.properties;
+      const zs = bundle.zonas.features.filter(z => z.properties.id_ris === p.id_ris);
+      assert.strictEqual(zs.length, p.n_zona, `RIS ${p.id_ris} zonas`);
+      assert.strictEqual(zs.reduce((a, z) => a + z.properties.pob_t, 0), p.pob_t, `RIS ${p.id_ris} población`);
+      assert.strictEqual(zs.reduce((a, z) => a + z.properties.n_sec, 0), p.n_sec, `RIS ${p.id_ris} sectores`);
+    }
+    for (const z of bundle.zonas.features.filter(z => z.properties.id_ris === 156)) {
+      const ss = bundle.sectores.features.filter(s => s.properties.id_zona === z.properties.id_zona);
+      assert.strictEqual(ss.length, z.properties.n_sec);
+      assert.strictEqual(ss.reduce((a, s) => a + s.properties.pob_t, 0), z.properties.pob_t);
+    }
+    const ids = bundle.sectores.features.map(f => f.properties.id_sector).sort((a, b) => a - b);
+    assert.deepStrictEqual(ids, Array.from({ length: 72 }, (_, i) => i + 1));
+  });
+  await step('cada sector está dentro de su zona y cada zona dentro de su RIS (muestreo interior)', async () => {
+    const muestras = (g, n) => {
+      const ps = polysDe(g); let a = [Infinity, Infinity, -Infinity, -Infinity];
+      ps.forEach(p => p[0].forEach(q => { a = [Math.min(a[0], q[0]), Math.min(a[1], q[1]), Math.max(a[2], q[0]), Math.max(a[3], q[1])]; }));
+      const out = []; const k = Math.ceil(Math.sqrt(n * 4));
+      for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) { const x = a[0] + (i + 0.5) * (a[2] - a[0]) / k, y = a[1] + (j + 0.5) * (a[3] - a[1]) / k; if (enGeom(x, y, g)) out.push([x, y]); }
+      return out;
+    };
+    for (const s of bundle.sectores.features) {
+      const z = bundle.zonas.features.find(z => z.properties.id_ris === s.properties.id_ris && z.properties.id_zona === s.properties.id_zona);
+      const pts = muestras(s.geometry, 30);
+      assert.ok(pts.every(([x, y]) => enGeom(x, y, z.geometry)), 'sector ' + s.properties.id_sector);
+    }
+    for (const z of bundle.zonas.features) {
+      const r = bundle.ris.features.find(r => r.properties.id_ris === z.properties.id_ris);
+      const pts = muestras(z.geometry, 40);
+      assert.ok(pts.filter(([x, y]) => enGeom(x, y, r.geometry)).length >= pts.length * 0.98, `zona ${z.properties.id_ris}:${z.properties.id_zona}`);
+    }
+  });
+  await step('los 32 vinculados con id_zona errado en la fuente se asignan a la zona donde están su punto y su puerta', async () => {
+    const v = GeorisTerritory.getVinculados('ALL', 'ALL');
+    const corregidos = v.filter(x => x.id_zona_declarada !== null);
+    assert.strictEqual(corregidos.length, 32);
+    for (const e of [...v, ...GeorisTerritory.getPuertasEntrada('ALL', 'ALL'), ...GeorisTerritory.getEessZona('ALL')]) {
+      const z = GeorisTerritory.zonaQueContiene(e.lat, e.lng);
+      assert.ok(z && z.id_ris === e.id_ris && z.id_zona === e.id_zona, `${e.cod_renipress} ${e.nombre} en zona ${z && z.id_zona}, asignado ${e.id_zona}`);
+    }
+    assert.ok(!GeorisTerritory.getVinculados(156, 6).some(x => x.id_zona_declarada !== null), 'Huarmey no tiene correcciones');
+  });
+  await step('totales de Áncash calculados del bundle (13 hospitales sin el Sihuas repetido; 72 sectores con polígono)', async () => {
+    const t = GeorisTerritory.getResumenAncash();
+    assert.deepStrictEqual(t, { ris: 7, poblacion: 1078374, familias: 316831, viviendas: 361712, zonas: 44, sectores: 367, sectores_con_poligono: 72, hospitales: 13, cabeceras: 44, puertas: 225, vinculados: 184 });
   });
 
   console.log('G-07: alcance por sector');
