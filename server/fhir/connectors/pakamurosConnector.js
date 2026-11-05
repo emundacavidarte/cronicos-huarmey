@@ -5,20 +5,15 @@
  */
 
 const crypto = require('crypto');
+const documentos = require('../../utils/documentos');
 
 class PakamurosConnector {
   /**
    * Transforma un registro o payload de Pakamuros Soft a un HL7 FHIR R4 Bundle (transaction)
    */
   transformToFhir(pakamurosRecord = {}) {
-    const rawDni = String(pakamurosRecord.dni_paciente || pakamurosRecord.DNI || pakamurosRecord.numero_documento || '').trim();
-    if (!rawDni) {
-      throw new Error('Registro Pakamuros inválido: dni_paciente / DNI es obligatorio');
-    }
-    if (!/^[A-Za-z0-9\-]{3,15}$/.test(rawDni)) {
-      throw new Error(`Registro Pakamuros inválido: DNI '${rawDni}' contiene caracteres no permitidos o longitud incorrecta`);
-    }
-    const dni = rawDni;
+    const doc = documentos.leerDeRegistro(pakamurosRecord, ['dni_paciente', 'DNI', 'numero_documento'], ['tipo_documento', 'TIPO_DOCUMENTO'], 'Pakamuros');
+    const dni = doc.numero;
     const hc = String(pakamurosRecord.hc_numero || pakamurosRecord.nro_historia || pakamurosRecord.historia_clinica || 'S/N').trim();
     const nombreCompleto = String(pakamurosRecord.paciente_apellidos_nombres || pakamurosRecord.nombre_completo || pakamurosRecord.paciente || 'PACIENTE PAKAMUROS').trim();
     const telefono = String(pakamurosRecord.telefono_celular || pakamurosRecord.celular || pakamurosRecord.telefono || '').trim();
@@ -63,7 +58,7 @@ class PakamurosConnector {
             resourceType: 'Patient',
             id: patientId,
             identifier: [
-              { system: 'urn:oid:2.16.840.1.113883.4.904', value: dni },
+              documentos.identificadorFhir(doc.tipo, dni),
               { system: 'http://minsa.gob.pe/pakamuros/historia_clinica', value: hc }
             ],
             name: [{ use: 'official', text: nombreCompleto }],

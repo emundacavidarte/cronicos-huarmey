@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const fechaLima = require('../../client/js/utils/fechaLima');
 const { getLatestObservation } = require('../utils/latestRecord');
 const { ErrorValidacion, texto } = require('../utils/validacion');
+const documentos = require('../utils/documentos');
 
 const LOINC_CATALOG = {
   BP_PANEL: { code: '85354-9', display: 'Blood pressure panel with all children optional', unit: 'mm[Hg]' },
@@ -87,9 +88,14 @@ class FhirAdapter {
    * Convierte un recurso FHIR Patient a la estructura territorial interna (sin inventar edades ni datos faltantes)
    */
   parsePatient(resource) {
-    const dniIdentifier = (resource.identifier || []).find(
-      i => i.system?.includes('dni') || i.system?.includes('reniec') || i.system?.includes('4.904') || i.type?.coding?.[0]?.code === 'NNPER'
-    );
+    // Documento de identidad: DNI, carné de extranjería o pasaporte (en ese orden de preferencia)
+    const identificadores = Array.isArray(resource.identifier) ? resource.identifier : [];
+    let tipoDocumento = null;
+    let dniIdentifier = null;
+    for (const tipo of ['DNI', 'CE', 'PASAPORTE']) {
+      dniIdentifier = identificadores.find(i => documentos.tipoDeIdentificador(i) === tipo) || null;
+      if (dniIdentifier) { tipoDocumento = tipo; break; }
+    }
     const hcIdentifier = (resource.identifier || []).find(
       i => i.system?.includes('historia') || i.system?.includes('hc')
     );
@@ -149,8 +155,13 @@ class FhirAdapter {
     // El DNI sale del identificador; del id solo si sigue la convención pac-<renipress>-<8 dígitos> (F2-09: no se inventa)
     const idConDni = /^pac-\d+-(\d{8})$/.exec(texto(resource.id).trim());
     const rawDniVal = dniIdentifier ? texto(dniIdentifier.value).trim() : (idConDni ? idConDni[1] : '');
-    // Se quitan caracteres que no son de un documento; luego la validación exige 8 dígitos (F2-09)
-    const dniVal = rawDniVal ? rawDniVal.replace(/[^A-Za-z0-9\-]/g, '') : '';
+    if (!dniIdentifier && idConDni) tipoDocumento = 'DNI';
+    // Un valor con comillas, < > o ; no se «limpia» para volverlo válido: se marca y la validación lo rechaza
+    const documentoInvalido = !!rawDniVal && !documentos.crudoAceptable(rawDniVal);
+    // Se quitan caracteres que no son de un documento; luego la validación revisa el formato según el tipo (F2-09)
+    const dniVal = rawDniVal ? (tipoDocumento && tipoDocumento !== 'DNI'
+      ? documentos.normalizar(rawDniVal, tipoDocumento)
+      : rawDniVal.replace(/[^A-Za-z0-9\-]/g, '')) : '';
     let resId = resource.id ? texto(resource.id).trim() : null;
     if (resId && !/^[A-Za-z0-9\-_]{1,64}$/.test(resId)) {
       resId = resId.replace(/[^A-Za-z0-9\-_]/g, '').slice(0, 64);
@@ -161,6 +172,8 @@ class FhirAdapter {
     return {
       id: resId || `pac-${puertaId}-${dniVal || crypto.randomUUID()}`,
       dni: dniVal,
+      tipo_documento: tipoDocumento ? documentos.TIPOS[tipoDocumento].etiqueta : null,
+      ...(documentoInvalido ? { _documento_invalido: true } : {}),
       // Los datos ausentes se devuelven como null: los valores por defecto los aplica
       // db.upsertPatient solo al crear un paciente nuevo, nunca al actualizar uno existente.
       historia_clinica: hcIdentifier ? String(hcIdentifier.value).trim() : null,
@@ -328,12 +341,8 @@ class FhirAdapter {
         profile: ['http://minsa.gob.pe/renhice/StructureDefinition/Patient-PE']
       },
       identifier: [
-        {
-          use: 'official',
-          system: 'urn:oid:2.16.840.1.113883.4.904', // OID RENIEC DNI Perú
-          type: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0203', code: 'NNPER', display: 'Documento Nacional de Identidad' }] },
-          value: String(p.dni || '')
-        },
+        // DNI (OID RENIEC), carné de extranjería o pasaporte según el tipo guardado
+        documentos.identificadorFhir(documentos.tipoDesdeTexto(p.tipo_documento) || 'DNI', String(p.dni || '')),
         {
           use: 'usual',
           system: 'http://hospitalhuarmey.gob.pe/fhir/sid/historia-clinica',

@@ -95,10 +95,10 @@
                 <div class="reg-dni-search-card">
                   <div class="reg-dni-row">
                     <label class="reg-dni-label" for="reg-input-dni">
-                      <span>${iconDni}</span> DNI del Paciente:
+                      <span>${iconDni}</span> Documento del paciente:
                     </label>
                     <div class="reg-dni-input-wrap">
-                      <input type="text" id="reg-input-dni" class="reg-dni-input" placeholder="8 dígitos numéricos" maxlength="8" autocomplete="off" autofocus>
+                      <input type="text" id="reg-input-dni" class="reg-dni-input" placeholder="DNI (8 dígitos), carné de extranjería o pasaporte" maxlength="15" autocomplete="off" autofocus>
                       <button type="button" id="reg-btn-buscar-dni" class="reg-dni-btn-search">
                         ${iconSearch} Buscar
                       </button>
@@ -631,11 +631,11 @@
       this.dom.btnCerrar.addEventListener('click', () => this.close());
       this.dom.btnCancelar.addEventListener('click', () => this.close());
 
-      // Búsqueda automática por DNI al escribir 8 dígitos o presionar Enter
+      // Búsqueda automática al escribir un DNI de 8 dígitos; un carné de extranjería o pasaporte se busca con Enter o «Buscar»
       this.dom.inputDni.addEventListener('input', (e) => {
-        const val = e.target.value.replace(/\D/g, '');
+        const val = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         e.target.value = val;
-        if (val.length === 8) {
+        if (/^\d{8}$/.test(val)) {
           this.buscarPacientePorDni(val);
         }
       });
@@ -688,7 +688,7 @@
       this.dom.proximaCita.value = prox.toISOString().split('T')[0];
 
       if (prefillDni) {
-        this.dom.inputDni.value = String(prefillDni).replace(/\D/g, '');
+        this.dom.inputDni.value = String(prefillDni).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         this.buscarPacientePorDni(this.dom.inputDni.value);
       } else {
         setTimeout(() => this.dom.inputDni.focus(), 150);
@@ -747,16 +747,18 @@
      * Búsqueda por DNI y Precarga Inteligente de Paciente Existente
      */
     buscarPacientePorDni(dni) {
-      if (!dni || dni.length !== 8) {
+      // DNI de 8 dígitos, o carné de extranjería / pasaporte de 6 a 15 letras o dígitos (el documento es obligatorio)
+      dni = String(dni || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      if (!/^\d{8}$/.test(dni) && !/^[A-Z0-9]{6,15}$/.test(dni)) {
         this.dom.statusAlert.style.display = 'block';
         this.dom.statusAlert.className = 'reg-dni-status-alert reg-alert-warn';
-        this.dom.statusAlert.innerHTML = '⚠️ Ingrese un DNI válido de 8 dígitos numéricos.';
+        this.dom.statusAlert.innerHTML = '⚠️ Ingrese un DNI de 8 dígitos, o un carné de extranjería o pasaporte de 6 a 15 letras o dígitos.';
         return;
       }
 
       // 1. Buscar en la memoria de la aplicación
       const allPatients = (window.app && Array.isArray(window.app.patients)) ? window.app.patients : [];
-      let found = allPatients.find(p => String(p.dni || p.nro_documento || '').replace(/\D/g, '') === dni);
+      let found = allPatients.find(p => String(p.dni || p.nro_documento || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase() === dni);
 
       // Si no está en array directo, buscar por id
       if (!found && window.app && typeof window.app.findPatient === 'function') {
@@ -769,6 +771,9 @@
         // Paciente Nuevo
         this.isExistingPatient = false;
         this.currentPatient = null;
+        // Si no es un DNI, se sugiere el tipo (solo dígitos: carné de extranjería; con letras: pasaporte)
+        if (!/^\d{8}$/.test(dni)) this.dom.tipoDoc.value = /^\d+$/.test(dni) ? 'Carné de extranjería' : 'Pasaporte';
+        else this.dom.tipoDoc.value = 'DNI';
         this.dom.btnLimpiar.style.display = 'inline-block';
         this.dom.statusAlert.style.display = 'block';
         this.dom.statusAlert.className = 'reg-dni-status-alert reg-alert-new';
@@ -1023,15 +1028,20 @@
      * Guarda la atención y sincroniza con el Padrón Estandarizado y el mapa territorial
      */
     async commitSave() {
-      const dni = this.dom.inputDni.value.trim().replace(/\D/g, '');
+      const tipoDocumento = this.dom.tipoDoc.value || 'DNI';
+      const dni = tipoDocumento === 'DNI'
+        ? this.dom.inputDni.value.trim().replace(/\D/g, '')
+        : this.dom.inputDni.value.trim().replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const nombres = this.dom.nombres.value.trim();
       const sector = this.dom.sector.value;
       const direccion = this.dom.direccion.value.trim();
       const eess = this.dom.eessCtrl.value;
 
       // Validaciones obligatorias
-      if (dni.length !== 8) {
-        alert('El DNI debe tener exactamente 8 dígitos numéricos.');
+      if (tipoDocumento === 'DNI' ? !/^\d{8}$/.test(dni) : !/^[A-Z0-9]{6,15}$/.test(dni)) {
+        alert(tipoDocumento === 'DNI'
+          ? 'El documento es obligatorio: el DNI debe tener exactamente 8 dígitos.'
+          : 'El documento es obligatorio: el carné de extranjería o pasaporte debe tener de 6 a 15 letras o dígitos.');
         this.dom.inputDni.focus();
         return;
       }

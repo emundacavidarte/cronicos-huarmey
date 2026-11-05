@@ -5,20 +5,17 @@
  */
 
 const crypto = require('crypto');
+const documentos = require('../../utils/documentos');
 
 class HosixConnector {
   /**
    * Transforma una fila o payload nativo de HOSIX a un HL7 FHIR R4 Bundle (transaction)
    */
   transformToFhir(hosixRecord = {}) {
-    const rawDni = String(hosixRecord.NRO_DOCUMENTO || hosixRecord.DNI || '').trim();
-    if (!rawDni) {
-      throw new Error('Registro HOSIX inválido: NRO_DOCUMENTO / DNI es obligatorio');
-    }
-    if (!/^[A-Za-z0-9\-]{3,15}$/.test(rawDni)) {
-      throw new Error(`Registro HOSIX inválido: DNI '${rawDni}' contiene caracteres no permitidos o longitud incorrecta`);
-    }
-    const dni = rawDni;
+    // Documento obligatorio: DNI, carné de extranjería o pasaporte. Tipo en TIPO_DOCUMENTO (DNI/CE/PASAPORTE o los
+    // códigos SUNAT 1/4/7); si no viene, se infiere del formato (supuesto hasta conocer el envío real de HOSIX).
+    const doc = documentos.leerDeRegistro(hosixRecord, ['NRO_DOCUMENTO', 'NUM_DOCUMENTO', 'DNI'], ['TIPO_DOCUMENTO', 'TIPO_DOC', 'TIPODOC'], 'HOSIX');
+    const dni = doc.numero;
     const hc = String(hosixRecord.HISTORIA_CLINICA || hosixRecord.NUM_HC || 'S/N').trim();
     const nombre = String(hosixRecord.PACIENTE || hosixRecord.APELLIDOS_NOMBRES || 'PACIENTE HOSIX').trim();
     const telefono = String(hosixRecord.TELEFONO || hosixRecord.CELULAR || '').trim();
@@ -49,7 +46,7 @@ class HosixConnector {
             resourceType: 'Patient',
             id: patientId,
             identifier: [
-              { system: 'urn:oid:2.16.840.1.113883.4.904', value: dni },
+              documentos.identificadorFhir(doc.tipo, dni),
               { system: 'http://minsa.gob.pe/hosix/historia_clinica', value: hc }
             ],
             name: [{ use: 'official', text: nombre }],

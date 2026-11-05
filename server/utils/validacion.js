@@ -217,12 +217,16 @@ function validarFhir(parsedList, db) {
       const dni = texto(p.dni).trim();
       const id = texto(p.id).trim();
       if (!ID_REGEX.test(id)) throw new ErrorValidacion(`${donde}: id inválido.`);
-      if (dni && !DNI_REGEX.test(dni)) throw new ErrorValidacion(`${donde}: el identificador DNI debe tener exactamente 8 dígitos.`);
+      // DNI, carné de extranjería o pasaporte (también por HOSIX y FHIR: decisión de Edward, 05/11/2026)
+      const tipoDoc = tipoDocumento({ tipo_documento: p.tipo_documento });
+      if (p._documento_invalido) throw new ErrorValidacion(`${donde}: el documento tiene caracteres no permitidos.`);
+      if (dni && tipoDoc === 'DNI' && !DNI_REGEX.test(dni)) throw new ErrorValidacion(`${donde}: el identificador DNI debe tener exactamente 8 dígitos.`);
+      if (dni && tipoDoc !== 'DNI' && !DOC_OTRO_REGEX.test(dni)) throw new ErrorValidacion(`${donde}: el carné de extranjería o pasaporte debe tener de 6 a 15 letras o dígitos.`);
       const porDni = dni ? db.getPatientByDni(dni) : null;
       const porId = db.getPatientByIdOrDni(id);
       if (porDni && porId && String(porDni.id) !== String(porId.id)) throw new ErrorValidacion(`${donde}: el id y el DNI corresponden a pacientes distintos.`);
       if (!porDni && !porId) {
-        if (!dni) throw new ErrorValidacion(`${donde}: un paciente nuevo necesita un DNI.`);
+        if (!dni) throw new ErrorValidacion(`${donde}: un paciente nuevo necesita un documento (DNI, carné de extranjería o pasaporte).`);
         const nombre = texto(p.apellidos_nombres).trim();
         if (nombre.length < 3 || PLACEHOLDERS_NOMBRE.includes(nombre.toUpperCase())) throw new ErrorValidacion(`${donde}: un paciente nuevo necesita apellidos y nombres.`);
       }

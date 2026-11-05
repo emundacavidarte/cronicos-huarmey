@@ -5,20 +5,15 @@
  */
 
 const crypto = require('crypto');
+const documentos = require('../../utils/documentos');
 
 class GalenosConnector {
   /**
    * Transforma una fila o evento de Galenos a un HL7 FHIR R4 Bundle (transaction)
    */
   transformToFhir(galenosRecord = {}) {
-    const rawDni = String(galenosRecord.DocIdentidad || galenosRecord.NumeroDocumento || '').trim();
-    if (!rawDni) {
-      throw new Error('Registro Galenos inválido: DocIdentidad / NumeroDocumento es obligatorio');
-    }
-    if (!/^[A-Za-z0-9\-]{3,15}$/.test(rawDni)) {
-      throw new Error(`Registro Galenos inválido: DNI '${rawDni}' contiene caracteres no permitidos o longitud incorrecta`);
-    }
-    const dni = rawDni;
+    const doc = documentos.leerDeRegistro(galenosRecord, ['DocIdentidad', 'NumeroDocumento'], ['TipoDocumento', 'TipoDocIdentidad'], 'Galenos');
+    const dni = doc.numero;
     const hc = String(galenosRecord.NroHistoriaClinica || 'S/N').trim();
     const nombres = String(galenosRecord.Nombres || '').trim();
     const apPaterno = String(galenosRecord.ApellidoPaterno || '').trim();
@@ -52,7 +47,7 @@ class GalenosConnector {
             resourceType: 'Patient',
             id: patientId,
             identifier: [
-              { system: 'urn:oid:2.16.840.1.113883.4.904', value: dni },
+              documentos.identificadorFhir(doc.tipo, dni),
               { system: 'http://minsa.gob.pe/galenos/historia_clinica', value: hc }
             ],
             name: [{

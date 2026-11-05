@@ -129,6 +129,39 @@ async function main() {
         assert.ok(/documento es obligatorio/.test(r.text), r.text);
       }
     });
+    await step('HOSIX (decisión de Edward): llegan carné de extranjería y pasaporte, con su tipo o inferido', async () => {
+      const casos = [
+        [{ TIPO_DOCUMENTO: 'CE', NRO_DOCUMENTO: '001234567', PACIENTE: 'EXTRANJERO HOSIX F4' }, '001234567', 'Carné de extranjería', 'PRC'],
+        [{ NRO_DOCUMENTO: 'ab-123456', PACIENTE: 'PASAPORTE INFERIDO F4' }, 'AB123456', 'Pasaporte', 'PPN'],
+        [{ TIPO_DOCUMENTO: '7', NRO_DOCUMENTO: 'X9876543', PACIENTE: 'PASAPORTE SUNAT F4' }, 'X9876543', 'Pasaporte', 'PPN'],
+        [{ TIPO_DOCUMENTO: 'DNI', NRO_DOCUMENTO: '96400050', PACIENTE: 'DNI HOSIX F4' }, '96400050', 'DNI', 'NNPER']
+      ];
+      for (const [registro, doc, etiqueta, codigo] of casos) {
+        const r = await call('POST', '/api/webhooks/hosix', { token: admin, body: registro });
+        assert.strictEqual(r.status, 200, JSON.stringify(registro) + ' → ' + r.text);
+        const p = (await call('GET', '/api/cronicos', { token: admin })).json.find(x => x.dni === doc);
+        assert.ok(p && p.tipo_documento === etiqueta, JSON.stringify(p && { dni: p.dni, tipo: p.tipo_documento }));
+        const fhir = (await call('GET', '/fhir/Patient/' + encodeURIComponent(p.id), { token: admin })).json;
+        const ident = fhir.entry[0].resource.identifier[0];
+        assert.strictEqual(ident.type.coding[0].code, codigo);
+        assert.strictEqual(ident.value, doc);
+      }
+    });
+    await step('HOSIX y FHIR rechazan documentos con inyección, tipo desconocido o formato inválido', async () => {
+      for (const registro of [
+        { NRO_DOCUMENTO: "AB1');alert(1);//", PACIENTE: 'X' },
+        { TIPO_DOCUMENTO: 'LIBRETA', NRO_DOCUMENTO: '12345678', PACIENTE: 'X' },
+        { TIPO_DOCUMENTO: 'PASAPORTE', NRO_DOCUMENTO: 'AB1', PACIENTE: 'X' }
+      ]) {
+        assert.strictEqual((await call('POST', '/api/webhooks/hosix', { token: admin, body: registro })).status, 400, JSON.stringify(registro));
+      }
+      const bundle = (ident) => ({ resourceType: 'Bundle', entry: [{ resource: { resourceType: 'Patient', id: 'pac-f4-pas-1', identifier: [ident], name: [{ text: 'PASAPORTE FHIR F4' }] } }] });
+      const pas = { type: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0203', code: 'PPN' }] } };
+      assert.strictEqual((await call('POST', '/fhir/Bundle', { token: admin, body: bundle(Object.assign({}, pas, { value: 'P1234567' })) })).status, 200);
+      assert.strictEqual((await call('POST', '/fhir/Bundle', { token: admin, body: bundle(Object.assign({}, pas, { value: "1');alert(1);//" })) })).status, 400);
+      assert.strictEqual((await call('POST', '/fhir/Bundle', { token: admin, body: bundle(Object.assign({}, pas, { value: 'P12' })) })).status, 400);
+    });
+
     await step('S-08 los estáticos de texto salen con gzip, con ETag y 304; sin recorrido de rutas', async () => {
       const r = await fetch(srv.base + '/libs/leaflet.js', { headers: { 'Accept-Encoding': 'gzip' } });
       const cuerpo = Buffer.from(await r.arrayBuffer());
