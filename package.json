@@ -4,6 +4,8 @@
   "description": "Sistema Territorial de Monitoreo de Pacientes Crónicos - Hospital II-1 Huarmey (RIS Pacífico Sur)",
   "main": "server/server.js",
   "scripts": {
+    "postinstall": "npm ci --prefix server --omit=dev",
+    "build": "npm ci --prefix server --omit=dev",
     "start": "node server/server.js",
     "dev": "node --watch server/server.js",
     "test": "npm --prefix server test"
@@ -19,11 +21,7 @@
   ],
   "author": "Hospital de Apoyo Huarmey - Red Pacífico Sur",
   "license": "MIT",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2"
-  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22 <23"
   }
 }

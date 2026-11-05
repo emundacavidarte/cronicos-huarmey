@@ -9,6 +9,9 @@
 
 const assert = require('assert');
 const path = require('path');
+// S-15: las pruebas nunca usan server/db; la base va a una carpeta temporal propia
+const DATA_DIR_PRUEBA = process.env.DATA_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'prueba-datos-'));
+process.env.DATA_DIR = DATA_DIR_PRUEBA;
 const fs = require('fs');
 
 global.XLSX = require('../../client/libs/xlsx.full.min.js');

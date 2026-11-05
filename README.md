@@ -8,12 +8,12 @@ Prototipo operativo y motor de interoperabilidad HL7 FHIR (R4) para la gestión 
 ## 🚀 Inicio Rápido
 
 ### Prerrequisitos
-* **Node.js** >= 18.0.0
+* **Node.js** 22 (probado con 22.23; ver `.node-version`)
 * **npm**
 
 ### Instalación y Ejecución Local
 ```bash
-# Instalar dependencias
+# Instalar dependencias (instala las del servidor con su package-lock.json)
 npm install
 
 # Iniciar servidor
@@ -35,14 +35,18 @@ Este repositorio contiene **únicamente 20 pacientes sintéticos/simulados** par
 ## ☁️ Despliegue en la Nube (PaaS / Render / Railway)
 
 1. Conecte este repositorio a su proveedor de nube (Render, Railway, Fly.io, etc.).
-2. **Build Command:** `npm install`
+2. **Build Command:** `npm run build` (o `npm install`: el `postinstall` instala las dependencias del servidor con `npm ci`)
 3. **Start Command:** `npm start`
 4. **Variables de Entorno recomendadas:**
    * `NODE_ENV=production`
    * `AUTH_SECRET`: cadena aleatoria de al menos 32 caracteres (obligatorio en producción).
    * `ADMIN_USER=admin`
    * `ADMIN_PASSWORD`: contraseña segura para el administrador inicial.
-   * `TRUST_PROXY=true`
+   * `TRUST_PROXY=true` (solo si el puerto no es accesible directamente; detrás del proxy del alojamiento)
+   * `DATA_DIR`: carpeta del disco persistente (allí quedan `store.json`, `store.json.bak` y `respaldos/` con una copia diaria; se conservan las últimas `RESPALDOS_DIARIOS`, 14 por defecto).
+   * `STORE_KEY` (opcional): 32 bytes aleatorios (`openssl rand -hex 32`) para cifrar los datos en reposo con AES-256-GCM. **Quien la active debe guardarla fuera del servidor: sin ella el padrón cifrado no se puede leer.**
+   * `CORS_ORIGINS` (opcional): orígenes autorizados, separados por coma. Vacío = ninguno (la interfaz usa el mismo origen).
+   * Ver `.env.example`: el servidor no arranca en producción con valores de ejemplo.
 
 ---
 

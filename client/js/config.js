@@ -1,7 +1,7 @@
 /**
  * config.js
  * Configuración centralizada de endpoints y parámetros del cliente
- * Diseñado para escalabilidad cloud, alta concurrencia (1,000+ usuarios) y desacoplamiento de entornos
+ * Separa los endpoints de cada entorno (local o nube)
  */
 
 const APP_CONFIG = {

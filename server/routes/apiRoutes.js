@@ -1,6 +1,6 @@
 /**
  * apiRoutes.js
- * Endpoints RESTful de Alta Concurrencia para Inteligencia Sanitaria e Interoperabilidad HL7 FHIR R4
+ * Endpoints REST para el seguimiento territorial e interoperabilidad HL7 FHIR R4
  * Conectores integrados: HOSIX (SIVSA), Galenos (MINSA), Pakamuros Soft (HCE MINSA)
  * Preparado con Hooks de Seguridad Fase 2 (RBAC / OAuth2-JWT / Auditoría Ley N° 29733)
  */

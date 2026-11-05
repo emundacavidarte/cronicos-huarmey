@@ -1,7 +1,7 @@
 /**
  * database.js
  * Motor de Persistencia en Memoria Indexada O(1) con Escritura Asíncrona Atómica (Debounced).
- * Diseñado para soportar 1,000+ usuarios concurrentes sin bloquear el Event Loop de Node.js,
+ * Pensado para el uso previsto (pocos usuarios a la vez, padrón de cientos a pocos miles de pacientes);
  * manteniendo compatibilidad nativa en Windows sin dependencias C++ externas.
  */
 
@@ -12,6 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { getLatestObservation } = require('../utils/latestRecord');
 const { DEFAULT_ESTABLISHMENTS } = require('../../client/js/map/establecimientos');
+const almacen = require('./almacen');
 
 // Carpeta de datos reales (store.json y padron_inicial.js). Por defecto, esta misma carpeta.
 // Se puede cambiar con la variable de entorno DATA_DIR (recomendado: una ruta fuera de OneDrive).
@@ -27,6 +28,14 @@ const MAX_AUDIT_LOGS = 5000;
 const MAX_LOGIN_FALLIDO_LOGS = 500;
 // Datos de salud: el archivo solo lo lee y escribe el usuario del servicio (F2-18)
 const FILE_MODE = 0o600;
+// Cifrado en reposo OPCIONAL (STORE_KEY, ver almacen.js). Un valor inválido detiene el arranque con un mensaje claro.
+const CLAVE_ALMACEN = almacen.claveDesdeEntorno();
+// Guardado diferido (L-04): se espera 250 ms sin escrituras, pero nunca más de 2 s desde la primera pendiente
+const GUARDADO_ESPERA_MS = 250;
+const GUARDADO_ESPERA_MAX_MS = 2000;
+// Respaldos diarios (S-09): una copia por día en DATA_DIR/respaldos, se conservan los últimos RESPALDOS_DIARIOS (14)
+const RESPALDOS_DIR = path.join(DATA_DIR, 'respaldos');
+const RESPALDOS_DIARIOS = Math.max(1, parseInt(process.env.RESPALDOS_DIARIOS || '14', 10) || 14);
 
 function protegerArchivo(file) {
   try { fs.chmodSync(file, FILE_MODE); } catch (_) { /* puede no existir todavía */ }
@@ -117,7 +126,7 @@ class Database {
       audit_logs: []
     };
 
-    // Índices en memoria O(1) para alta concurrencia (1,000+ usuarios simultáneos)
+    // Índices en memoria O(1) por DNI, id y paciente
     this.establishmentMap = new Map();
     this.patientByDniMap = new Map();
     this.patientByIdMap = new Map();
@@ -146,8 +155,10 @@ class Database {
       let parsed = null;
       try {
         raw = fs.readFileSync(DB_FILE, 'utf8');
-        parsed = JSON.parse(raw);
+        parsed = almacen.deserializar(raw, CLAVE_ALMACEN);
       } catch (e) {
+        // Sin clave o con otra clave el archivo NO está corrupto: no se toca y el servidor no arranca
+        if (e.code === 'SIN_CLAVE' || e.code === 'CLAVE_INCORRECTA') throw e;
         // Sin e.message: el texto de JSON.parse incluye un fragmento del archivo (podría ser un dato de paciente)
         console.error(`FATAL: store.json está corrupto o incompleto (${e.name}).`);
         const corruptTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -164,7 +175,7 @@ class Database {
           try {
             console.warn(`Intentando recuperar datos desde backup: ${DB_BAK_FILE}...`);
             const bakRaw = fs.readFileSync(DB_BAK_FILE, 'utf8');
-            parsed = JSON.parse(bakRaw);
+            parsed = almacen.deserializar(bakRaw, CLAVE_ALMACEN);
             fs.copyFileSync(DB_BAK_FILE, DB_FILE);
             console.warn('¡Recuperación exitosa de base de datos desde store.json.bak!');
           } catch (bakErr) {
@@ -292,14 +303,36 @@ class Database {
       return;
     }
 
+    // L-04: antes el temporizador se reiniciaba con cada escritura y, en una ráfaga continua, no se guardaba nada
+    const ahora = Date.now();
+    if (!this._pendienteDesde) this._pendienteDesde = ahora;
     if (this._saveTimer) {
       clearTimeout(this._saveTimer);
     }
-
+    const espera = Math.max(0, Math.min(GUARDADO_ESPERA_MS, this._pendienteDesde + GUARDADO_ESPERA_MAX_MS - ahora));
     this._saveTimer = setTimeout(() => {
       this._saveTimer = null;
+      this._pendienteDesde = null;
       this._flushToDiskAsync();
-    }, 250);
+    }, espera);
+  }
+
+  /** S-09: la primera vez que se guarda cada día deja una copia en respaldos/ y conserva solo las últimas N. */
+  _respaldoDiario() {
+    try {
+      if (!fs.existsSync(DB_FILE)) return;
+      const destino = path.join(RESPALDOS_DIR, `respaldo-${fechaLima.hoy()}.json`);
+      if (fs.existsSync(destino)) return;
+      fs.mkdirSync(RESPALDOS_DIR, { recursive: true, mode: 0o700 });
+      fs.copyFileSync(DB_FILE, destino);
+      protegerArchivo(destino);
+      const todos = fs.readdirSync(RESPALDOS_DIR).filter(f => /^respaldo-\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
+      for (const viejo of todos.slice(0, Math.max(0, todos.length - RESPALDOS_DIARIOS))) {
+        fs.unlinkSync(path.join(RESPALDOS_DIR, viejo));
+      }
+    } catch (e) {
+      console.error(`No se pudo crear el respaldo diario (${e.code || e.name}).`);
+    }
   }
 
   async _flushToDiskAsync() {
@@ -309,7 +342,7 @@ class Database {
     }
     this._isSaving = true;
     try {
-      const payload = JSON.stringify(this.data);
+      const payload = almacen.serializar(this.data, CLAVE_ALMACEN);
       await fsp.writeFile(DB_TMP_FILE, payload, { encoding: 'utf8', mode: FILE_MODE });
       if (fs.existsSync(DB_FILE)) {
         try {
@@ -319,6 +352,7 @@ class Database {
       }
       await fsp.rename(DB_TMP_FILE, DB_FILE);
       protegerArchivo(DB_FILE);
+      this._respaldoDiario();
     } catch (e) {
       console.error('Error en persistencia asíncrona atómica:', e.message);
     } finally {
@@ -339,8 +373,10 @@ class Database {
       clearTimeout(this._saveTimer);
       this._saveTimer = null;
     }
+    this._pendienteDesde = null;
     try {
-      const payload = JSON.stringify(this.data, null, 2);
+      // S-14: un solo formato (compacto) en todos los guardados
+      const payload = almacen.serializar(this.data, CLAVE_ALMACEN);
       fs.writeFileSync(DB_TMP_FILE, payload, { encoding: 'utf8', mode: FILE_MODE });
       if (fs.existsSync(DB_FILE)) {
         try {
@@ -350,6 +386,7 @@ class Database {
       }
       fs.renameSync(DB_TMP_FILE, DB_FILE);
       protegerArchivo(DB_FILE);
+      this._respaldoDiario();
     } catch (e) {
       console.error('Error guardando DB síncronamente (flushSync):', e.message);
     }
@@ -363,7 +400,16 @@ class Database {
    * Ejecuta múltiples operaciones en una sola transacción en memoria y persiste una sola vez
    */
   runTransaction(fn) {
-    const result = fn(this);
+    // Todo o nada: si algo falla a mitad, se vuelve al estado anterior (antes quedaba la mitad escrita)
+    const copia = structuredClone(this.data);
+    let result;
+    try {
+      result = fn(this);
+    } catch (err) {
+      this.data = copia;
+      this.rebuildIndexes();
+      throw err;
+    }
     this.invalidateCache();
     this.scheduleSave(false);
     return result;

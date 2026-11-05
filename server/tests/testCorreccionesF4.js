@@ -120,9 +120,29 @@ async function main() {
       const r = await call('POST', '/api/padron/importar-lote', { token: admin, body: [{ id: 'pac-sd-1a2b3c4d', tipo_documento: 'Sin documento', dni: '', apellidos_nombres: 'PACIENTE SIN DOCUMENTO F4', red_salud: 'PACIFICO SUR' }] });
       assert.strictEqual(r.status, 200, r.text);
     });
+    await step('S-08 los estáticos de texto salen con gzip, con ETag y 304; sin recorrido de rutas', async () => {
+      const r = await fetch(srv.base + '/libs/leaflet.js', { headers: { 'Accept-Encoding': 'gzip' } });
+      const cuerpo = Buffer.from(await r.arrayBuffer());
+      assert.strictEqual(r.headers.get('content-encoding'), 'gzip');
+      assert.ok(Number(r.headers.get('content-length')) < 60000, 'tamaño ' + r.headers.get('content-length'));
+      assert.ok(cuerpo.length > 0);
+      const r304 = await fetch(srv.base + '/libs/leaflet.js', { headers: { 'Accept-Encoding': 'gzip', 'If-None-Match': r.headers.get('etag') } });
+      assert.strictEqual(r304.status, 304);
+      assert.ok(/script-src 'self'/.test(r.headers.get('content-security-policy') || ''), 'sin cabeceras de seguridad');
+      assert.strictEqual((await fetch(srv.base + '/%2e%2e/server/server.js', { headers: { 'Accept-Encoding': 'gzip' } })).status, 404);
+    });
   } finally {
     await srv.stop();
   }
+
+  await step('STORE_KEY mal formada: el servidor no arranca y lo dice en una línea', async () => {
+    const r = spawnSync(process.execPath, ['--require', path.join(__dirname, 'helpers', 'blockDisk.js'), path.join(__dirname, '..', 'server.js')], {
+      env: Object.assign({}, process.env, { PORT: '3116', STORE_KEY: 'corta', NODE_ENV: 'development', ADMIN_RESET: '' }), encoding: 'utf8', timeout: 15000
+    });
+    const salida = (r.stdout || '') + (r.stderr || '');
+    assert.strictEqual(r.status, 1, salida);
+    assert.ok(/\[CONFIG\] No se puede arrancar: STORE_KEY/.test(salida) && !/\n\s+at /.test(salida), salida);
+  });
 
   console.log(`\nResultado Correcciones F4: ${passed} correctas, ${failed} con falla`);
   process.exit(failed ? 1 : 0);

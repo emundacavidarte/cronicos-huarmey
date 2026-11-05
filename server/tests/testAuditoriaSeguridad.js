@@ -12,6 +12,9 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+// S-15: las pruebas nunca usan server/db; la base va a una carpeta temporal propia
+const DATA_DIR_PRUEBA = process.env.DATA_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'prueba-datos-'));
+process.env.DATA_DIR = DATA_DIR_PRUEBA;
 const os = require('os');
 
 const hosixConnector = require('../fhir/connectors/hosixConnector');
@@ -202,7 +205,7 @@ async function runAsyncTests() {
       const corruptFiles = files.filter(f => f.startsWith('store.json.corrupt-'));
       assert.strictEqual(corruptFiles.length, 1, 'Debe preservarse una copia corrupt');
     } finally {
-      delete process.env.DATA_DIR;
+      process.env.DATA_DIR = DATA_DIR_PRUEBA;
       delete require.cache[require.resolve('../db/database')];
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
     }

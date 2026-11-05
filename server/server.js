@@ -1,13 +1,15 @@
 /**
  * server.js
- * Servidor Principal de Alta Concurrencia HL7 FHIR R4 y Monitoreo Territorial
+ * Servidor HL7 FHIR R4 y de Monitoreo Territorial
  * Hospital de Apoyo Huarmey (II-1) — Red Pacífico Sur
- * Optimizado para soportar 1,000+ usuarios concurrentes (Compresión Gzip nativa, Caché Inteligente, Rate Limiting y Headers de Seguridad Fase 2)
+ * Un solo proceso Node con los datos en memoria y store.json. Capacidad medida (Fase 1): con ≈550 pacientes atiende
+ * de sobra el uso previsto (máximo 5 usuarios a la vez, decisión de Edward); NO escala a miles de usuarios simultáneos.
  */
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const zlib = require('zlib');
 const crypto = require('crypto');
 
@@ -190,20 +192,61 @@ app.use((req, res, next) => {
 
 // 5. Servir Frontend Estático Responsivo con Caché ETag Inteligente
 const clientPath = path.join(__dirname, '../client');
+function cacheControlEstatico(filePath) {
+  if (filePath.endsWith('.html') || filePath.endsWith('sw.js')) {
+    // HTML y Service Worker siempre validan versión fresca
+    return 'no-cache, must-revalidate';
+  }
+  if (filePath.includes(`${path.sep}libs${path.sep}`) || filePath.includes(`${path.sep}data${path.sep}georis${path.sep}`)) {
+    // Librerías y capas GeoRIS pesadas se cachean con revalidación ETag rápida
+    return 'public, max-age=86400, must-revalidate';
+  }
+  return 'no-cache';
+}
+
+// S-08: los estáticos de texto (js, css, html, json, svg) salen comprimidos con gzip si el navegador lo acepta.
+// Se comprimen una vez por versión del archivo (tamaño + fecha) y se guardan en memoria (≈1,7 MB para todo el cliente).
+const TIPOS_COMPRIMIBLES = /\.(js|css|html|json|svg|webmanifest)$/i;
+const gzipEstaticos = new Map();
+app.use((req, res, next) => {
+  if ((req.method !== 'GET' && req.method !== 'HEAD') || !/\bgzip\b/.test(req.headers['accept-encoding'] || '')) return next();
+  let rel;
+  try { rel = decodeURIComponent(req.path); } catch (e) { return next(); }
+  if (rel.includes('\0')) return next();
+  const archivo = path.join(clientPath, rel.endsWith('/') ? rel + 'index.html' : rel);
+  if (!archivo.startsWith(clientPath + path.sep) || !TIPOS_COMPRIMIBLES.test(archivo)) return next();
+  fs.stat(archivo, (err, st) => {
+    if (err || !st.isFile() || st.size < 1024) return next();
+    const version = `${st.size}-${st.mtimeMs}`;
+    const etag = `W/"gz-${version}"`;
+    const enviar = comprimido => {
+      res.setHeader('Content-Type', express.static.mime.lookup(archivo) + (/\.(js|css|html|json|svg)$/i.test(archivo) ? '; charset=utf-8' : ''));
+      res.setHeader('Content-Encoding', 'gzip');
+      res.setHeader('Vary', 'Accept-Encoding');
+      res.setHeader('ETag', etag);
+      res.setHeader('Cache-Control', cacheControlEstatico(archivo));
+      if (req.headers['if-none-match'] === etag) return res.status(304).end();
+      res.setHeader('Content-Length', comprimido.length);
+      if (req.method === 'HEAD') return res.end();
+      res.end(comprimido);
+    };
+    const guardado = gzipEstaticos.get(archivo);
+    if (guardado && guardado.version === version) return enviar(guardado.datos);
+    fs.readFile(archivo, (e2, contenido) => {
+      if (e2) return next();
+      zlib.gzip(contenido, { level: 9 }, (e3, datos) => {
+        if (e3) return next();
+        gzipEstaticos.set(archivo, { version, datos });
+        enviar(datos);
+      });
+    });
+  });
+});
+
 app.use(express.static(clientPath, {
   etag: true,
   lastModified: true,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html') || filePath.endsWith('sw.js')) {
-      // HTML y Service Worker siempre validan versión fresca
-      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-    } else if (filePath.includes(`${path.sep}libs${path.sep}`) || filePath.includes(`${path.sep}data${path.sep}georis${path.sep}`)) {
-      // Librerías y capas GeoRIS pesadas se cachean con revalidación ETag rápida
-      res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
-    } else {
-      res.setHeader('Cache-Control', 'no-cache');
-    }
-  }
+  setHeaders: (res, filePath) => res.setHeader('Cache-Control', cacheControlEstatico(filePath))
 }));
 
 // 6. Rutas de API y Estándar HL7 FHIR R4
@@ -279,7 +322,7 @@ function startListening() {
     console.log(`================================================================`);
     console.log(` MOTOR TERRITORIAL DE CRÓNICOS - HOSPITAL DE APOYO HUARMEY II-1 `);
     console.log(` Interoperabilidad Nativa HL7 FHIR (R4) & GeoRIS MINSA           `);
-    console.log(` Alta Concurrencia (1,000+ usuarios): Gzip + Índices O(1) Activo`);
+    console.log(` Prototipo: un proceso, datos en memoria y store.json            `);
     console.log(` Servidor activo en: http://localhost:${PORT}                   `);
     console.log(` Endpoints FHIR:     http://localhost:${PORT}/fhir/Bundle        `);
     console.log(`================================================================`);

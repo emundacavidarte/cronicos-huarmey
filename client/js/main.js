@@ -51,7 +51,7 @@ class App {
   }
 
   /**
-   * Indexa en memoria O(1) y pre-calcula tokens de búsqueda para soportar >10,000 pacientes sin latencia
+   * Indexa en memoria O(1) por id y DNI y pre-calcula el texto de búsqueda de cada paciente
    */
   setPatients(list) {
     this.patients = Array.isArray(list) ? list : [];
