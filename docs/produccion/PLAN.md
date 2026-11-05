@@ -26,9 +26,9 @@ Al empezar una ventana: leer SOLO este archivo y los archivos que la fase pide. 
 |---|---|---|---|---|
 | 0 | Plan y traspaso | Sonnet 5.5 | este archivo | HECHO |
 | 1 | Diagnóstico en vivo | Sonnet 5.5 | `F1_diagnostico.md` | HECHO (05/11/2026) |
-| 2 | Auditoría de seguridad y privacidad del servidor | Opus 5.5 | `F2_seguridad_servidor.md` | PENDIENTE |
+| 2 | Auditoría de seguridad y privacidad del servidor | Opus 5.5 | `F2_seguridad_servidor.md` | HECHO con correcciones (05/11/2026) |
 | 3 | Auditoría del cliente, PWA y lógica clínica | Opus 5.5 | `F3_cliente_clinica.md` | PENDIENTE |
-| 4 | Correcciones críticas y altas | Opus 5.5 (seguridad) y Sonnet 5.5 (resto) | `F4_correcciones.md` | PENDIENTE |
+| 4 | Correcciones críticas y altas | Opus 5.5 (seguridad) y Sonnet 5.5 (resto) | `F4_correcciones.md` | PENDIENTE (las del servidor ya se hicieron en la Fase 2) |
 | 5 | Persistencia, respaldos y migración de datos reales | Opus 5.5 | `F5_datos_respaldos.md` | PENDIENTE |
 | 6 | Infraestructura: Render, CI, repositorio | Sonnet 5.5 | `F6_infraestructura.md` | PENDIENTE |
 | 7 | Staging, puesta en producción y runbook | Sonnet 5.5 (Haiku 5.5 para documentos) | `F7_produccion.md`, `RUNBOOK.md` | PENDIENTE |
@@ -42,6 +42,7 @@ Arrancar el servidor en desarrollo y con `NODE_ENV=production` (debe negarse sin
 ### Fase 2 — Seguridad y privacidad del servidor
 Autenticación y sesiones (token de 8 h sin renovación), alcance por red y establecimiento, validación de entradas, CORS (revisar el valor por defecto sin lista de orígenes), CSP, límites de tasa en memoria, inyección y contaminación de prototipos, manejo de errores, registros sin datos de pacientes, `ADMIN_RESET`, secretos, dependencias, cifrado en reposo. Intentar explotar cada hipótesis antes de reportarla.
 **Cierre:** cada hallazgo marcado reproducido / solo por lectura / descartado.
+**Resultado (05/11/2026):** ver `F2_seguridad_servidor.md`. Por instrucción de Edward («Ejecuta todas las correcciones»), la fase auditó **y corrigió**. Hubo 21 hallazgos (2 críticos, 5 altos, 8 medios, 6 bajos), 11 de ellos nuevos: escritura cruzada de red por `importar-lote`, bitácora que se vacía sin sesión, cuerpos de 10 MB leídos sin sesión, oráculo de existencia entre redes, sector por subcadena, `ADMIN_RESET` que revierte la clave, permisos 644 de `store.json`, entre otros. Quedan 20 corregidos y 1 en parte: la CSP aún necesita `'unsafe-inline'` en `script-src` por los 69 manejadores en línea del cliente. También se corrigió el XSS C-01 en el cliente. La suite nueva `server/tests/testSeguridadF2.js` (37 comprobaciones) fallaba en 34 antes de corregir; ahora `npm test` da 263 correctas y 0 fallas, y `npm audit` 0 vulnerabilidades. El humo del cliente real en Chromium no muestra violaciones de la CSP. **Cambia el comportamiento** (sección 6 del informe): 404 para pacientes fuera del alcance, `/fhir` solo con recursos FHIR, importación más estricta, CORS cerrado y cupos por usuario. Lo que no se hizo y por qué: el cifrado en reposo pasa a la Fase 5 (custodia de la clave) y la retención de la bitácora también. Scripts y salidas antes y después en `docs/produccion/evidencia/f2/`.
 
 ### Fase 3 — Cliente, PWA y lógica clínica
 XSS y renderizado de datos, service worker (qué datos de pacientes quedan en caché sin conexión y por cuánto), manejo de sesión, importación y exportación de Excel, semáforo, indicadores del convenio y reglas HEARTS contra `docs/GUIA_NORMA_HEARTS.md`. Pendientes ya conocidos en `docs/HANDOFF.md` (por ejemplo, pre-cita que muestra éxito aunque el servidor falle, cotejo de redes).
@@ -50,6 +51,7 @@ Incluye la **precarga por DNI** del Registro Clínico (requisito de Edward, ver 
 
 ### Fase 4 — Correcciones críticas y altas
 Corregir en orden de gravedad con prueba que falla antes y pasa después. Seguridad y datos primero. Lo medio y bajo queda en lista, no se mezcla.
+*Nota (Fase 2):* las correcciones del servidor (S-01 a S-07, S-11 a S-13, S-16, C-01 y los hallazgos F2) ya están hechas y probadas. La Fase 4 queda para lo que encuentre la Fase 3 en el cliente y la lógica clínica, salvo que esa fase también corrija.
 
 ### Fase 5 — Persistencia, respaldos y datos reales
 `DATA_DIR` en el disco de Render, escritura atómica y recuperación (`store.json.bak`), crecimiento de `store.json` y de la bitácora, respaldo automático y cifrado fuera del servidor, **prueba de restauración**, procedimiento de carga del padrón real (sin pasar por Git), umbral para migrar a SQLite o Postgres.
@@ -70,6 +72,11 @@ Un modelo distinto revisa el diff completo y la lista de hallazgos sin ver mis c
 - ~~Capacidad objetivo~~ — **RESUELTO el 05/11/2026**: ≤ 5 usuarios concurrentes en Render; escalada de 2 000+ como proyecto aparte (ver «Decisiones tomadas»).
 - Trabajo sin conexión (Fase 1): «sin conexión» = abrir y usar la app **sin internet** (hoy no funciona y no deja datos en el dispositivo). **Pendiente de que Edward confirme** si lo quiere o basta un aviso claro; la precarga por DNI que pidió es otra cosa y no depende de estar sin red.
 - ~~Tamaño de la instancia~~ — con ≤ 5 usuarios la memoria no es un riesgo (70 MB al inicio); queda solo confirmar el plan de Render en la Fase 6.
+- Rotación de secretos (Fase 2): si alguna vez se desplegó con los valores del antiguo `.env.example`, cambiar `AUTH_SECRET` y la clave del ADMIN. Siguen en el historial de Git.
+- Pacientes sin documento (Fase 2): ¿se registran? Hoy el servidor rechaza esas filas porque el cliente les pone a todas el mismo id; hace falta definir su identificador.
+- Integración HOSIX (Fase 2): ¿llegarán carnés de extranjería o pasaportes? Hoy esa vía exige DNI de 8 dígitos.
+- Claves de usuario (Fase 2): solo el ADMIN fija y cambia las claves; ¿se quiere que cada usuario cambie la suya y que la inicial sea obligatoria de cambiar?
+- Cifrado en reposo (Fase 2 → Fase 5): ¿quién custodia la clave? Si se pierde, se pierde el padrón.
 
 ## Plantilla para abrir cada ventana
 > Lee `docs/produccion/PLAN.md` y el informe de la fase anterior. Ejecuta la Fase N. Trabajo en la rama `claude/pensive-cray-3lwodm`. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
