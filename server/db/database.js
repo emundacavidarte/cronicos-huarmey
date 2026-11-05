@@ -317,7 +317,11 @@ class Database {
     }, espera);
   }
 
-  /** S-09: la primera vez que se guarda cada día deja una copia en respaldos/ y conserva solo las últimas N. */
+  /**
+   * S-09: antes del PRIMER guardado de cada día copia el store.json vigente (el estado con que terminó el día anterior)
+   * en respaldos/ y conserva solo los últimos N. Así, un error del día (por ejemplo, una importación equivocada) se
+   * deshace restaurando el respaldo de hoy con el servidor detenido.
+   */
   _respaldoDiario() {
     try {
       if (!fs.existsSync(DB_FILE)) return;
@@ -344,6 +348,7 @@ class Database {
     try {
       const payload = almacen.serializar(this.data, CLAVE_ALMACEN);
       await fsp.writeFile(DB_TMP_FILE, payload, { encoding: 'utf8', mode: FILE_MODE });
+      this._respaldoDiario();
       if (fs.existsSync(DB_FILE)) {
         try {
           await fsp.copyFile(DB_FILE, DB_BAK_FILE);
@@ -352,7 +357,6 @@ class Database {
       }
       await fsp.rename(DB_TMP_FILE, DB_FILE);
       protegerArchivo(DB_FILE);
-      this._respaldoDiario();
     } catch (e) {
       console.error('Error en persistencia asíncrona atómica:', e.message);
     } finally {
@@ -378,6 +382,7 @@ class Database {
       // S-14: un solo formato (compacto) en todos los guardados
       const payload = almacen.serializar(this.data, CLAVE_ALMACEN);
       fs.writeFileSync(DB_TMP_FILE, payload, { encoding: 'utf8', mode: FILE_MODE });
+      this._respaldoDiario();
       if (fs.existsSync(DB_FILE)) {
         try {
           fs.copyFileSync(DB_FILE, DB_BAK_FILE);
@@ -386,7 +391,6 @@ class Database {
       }
       fs.renameSync(DB_TMP_FILE, DB_FILE);
       protegerArchivo(DB_FILE);
-      this._respaldoDiario();
     } catch (e) {
       console.error('Error guardando DB síncronamente (flushSync):', e.message);
     }

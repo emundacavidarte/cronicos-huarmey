@@ -120,6 +120,24 @@ step('F2-18 un store.json sin cifrar se lee con STORE_KEY y queda cifrado en el 
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+step('S-09 restauración: copiar el respaldo del día sobre store.json devuelve los datos a ese momento (también cifrados)', () => {
+  for (const env of [{}, { STORE_KEY: CLAVE }]) {
+    const dir = carpeta();
+    // Estado 1: un paciente; el primer guardado del día deja el respaldo
+    assert.strictEqual(correr(dir, `db.upsertPatient(${paciente('96600007', 'ANTES DEL ERROR')});db.flushSync();`, env).status, 0);
+    // Día siguiente (se simula quitando los respaldos): el primer guardado del día copia el estado anterior
+    fs.rmSync(path.join(dir, 'respaldos'), { recursive: true, force: true });
+    // Estado 2 (por ejemplo, una importación equivocada): se cambia el nombre
+    correr(dir, `db.upsertPatient({id:'pac-00001741-96600007',dni:'96600007',apellidos_nombres:'IMPORTACION EQUIVOCADA'});db.flushSync();`, env);
+    const respaldo = path.join(dir, 'respaldos', fs.readdirSync(path.join(dir, 'respaldos'))[0]);
+    // Restaurar con el servidor detenido: copiar el respaldo sobre store.json
+    fs.copyFileSync(respaldo, path.join(dir, 'store.json'));
+    const r = correr(dir, `process.stdout.write(db.getPatientByDni('96600007').apellidos_nombres);`, env);
+    assert.strictEqual(r.out.trim(), 'ANTES DEL ERROR', (env.STORE_KEY ? 'cifrado: ' : '') + r.out);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 step('F2-18 una STORE_KEY mal formada se rechaza al cargar', () => {
   const r = correr(carpeta(), ``, { STORE_KEY: 'corta' });
   assert.notStrictEqual(r.status, 0);
