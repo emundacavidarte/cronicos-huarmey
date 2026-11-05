@@ -37,7 +37,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-8.850, -78.400],
     zoom: 9,
     hospital_principal: "HOSPITAL LA CALETA (II-2)",
-    cod_hospital_principal: "00001650"
+    cod_hospital_principal: "00001652"
   },
   101: {
     id: "RIS_101",
@@ -50,7 +50,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.530, -77.530],
     zoom: 9,
     hospital_principal: "HOSPITAL 'VICTOR RAMOS GUARDIA' - HUARAZ (II-2)",
-    cod_hospital_principal: "00001850"
+    cod_hospital_principal: "00001543"
   },
   104: {
     id: "RIS_104",
@@ -63,7 +63,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.850, -77.400],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO RECUAY (II-1)",
-    cod_hospital_principal: "00001880"
+    cod_hospital_principal: "00001472"
   },
   69: {
     id: "RIS_69",
@@ -76,7 +76,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.050, -77.800],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO CARAZ (II-1)",
-    cod_hospital_principal: "00001820"
+    cod_hospital_principal: "00001587"
   },
   111: {
     id: "RIS_111",
@@ -89,7 +89,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-8.650, -77.550],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO SIHUAS (II-1)",
-    cod_hospital_principal: "00001800"
+    cod_hospital_principal: "00001795"
   },
   87: {
     id: "RIS_87",
@@ -102,7 +102,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.350, -77.150],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO HUARI (II-1)",
-    cod_hospital_principal: "00001840"
+    cod_hospital_principal: "00001813"
   }
 };
 
@@ -170,6 +170,8 @@ const GeorisTerritory = {
         weight: cfg.weight || 2.5,
         center: cfg.center || [-9.5, -77.8],
         zoom: cfg.zoom || 9,
+        hospital_principal: cfg.hospital_principal || "",
+        cod_hospital_principal: cfg.cod_hospital_principal || null,
         feature: f
       };
     });
@@ -225,7 +227,14 @@ const GeorisTerritory = {
 
   getHospitalesArea(idRis = null) {
     if (!this.bundle || !this.bundle.eessArea) return [];
-    let list = this.bundle.eessArea.features;
+    // Solo las 7 RIS de Áncash y sin duplicados (el bundle trae a Sihuas dos veces, una con una RIS 177 inexistente)
+    const vistos = new Set();
+    let list = this.bundle.eessArea.features.filter(f => {
+      const p = f.properties;
+      if (!GEORIS_RIS_CONFIG[p.id_ris] || vistos.has(p.cod_reni)) return false;
+      vistos.add(p.cod_reni);
+      return true;
+    });
     if (idRis && idRis !== 'ALL') {
       list = list.filter(f => f.properties.id_ris === parseInt(idRis, 10));
     }
@@ -259,6 +268,39 @@ const GeorisTerritory = {
         id_ris: p.id_ris,
         id_zona: p.id_zona,
         ris: p.ris,
+        cod_hos: p.cod_hos || null,
+        lat: f.geometry.coordinates[1],
+        lng: f.geometry.coordinates[0],
+        feature: f
+      };
+    });
+  },
+
+  /** Hospital de referencia (eessArea) por su código RENIPRESS, o null. */
+  getHospitalByCode(codReni) {
+    if (!codReni) return null;
+    return this.getHospitalesArea('ALL').find(h => h.cod_renipress === String(codReni)) || null;
+  },
+
+  /** Establecimientos vinculados (satélites de una puerta de entrada) de una RIS y zona. */
+  getVinculados(idRis = 156, idZona = null) {
+    if (!this.bundle || !this.bundle.eessVinculados) return [];
+    let list = this.bundle.eessVinculados.features;
+    if (idRis && idRis !== 'ALL') list = list.filter(f => f.properties.id_ris === parseInt(idRis, 10));
+    if (idZona && idZona !== 'ALL') list = list.filter(f => f.properties.id_zona === parseInt(idZona, 10));
+    return list.map(f => {
+      const p = f.properties;
+      return {
+        cod_renipress: p.cod_reni,
+        nombre: p.ipress,
+        categoria: p.categoria || "I-1",
+        id_ris: p.id_ris,
+        id_zona: p.id_zona,
+        distrito: p.distrito,
+        provincia: p.provincia,
+        cod_hos: p.cod_hos || null,
+        rol_georis: 'Establecimiento Vinculado',
+        vinculado_a_nombre: (p.vincu_a || '').trim() || null,
         lat: f.geometry.coordinates[1],
         lng: f.geometry.coordinates[0],
         feature: f
@@ -285,6 +327,8 @@ const GeorisTerritory = {
         id_zona: p.id_zona,
         distrito: p.distrito,
         provincia: p.provincia,
+        cod_hos: p.cod_hos || null,
+        rol_georis: 'Puerta de Entrada',
         lat: f.geometry.coordinates[1],
         lng: f.geometry.coordinates[0],
         feature: f
@@ -314,13 +358,14 @@ const GeorisTerritory = {
       camas: 55,
       consultorios: 18,
       especialidades: "Medicina Interna, Cardiología, Emergencia 24h, Centro Quirúrgico, Laboratorio Clínico II, Farmacia, Teleconsulta HEARTS",
-      // Terreno oficial de 11,325 m2 detrás de Hotel La Siesta
+      // Contorno REFERENCIAL del terreno detrás de Hotel La Siesta (no es un levantamiento topográfico):
+      // dibujado con el área oficial de 11,325.98 m² alrededor del punto GeoRIS del hospital
       polygonCoords: [
-        [-10.04720, -78.15570],
-        [-10.04735, -78.15420],
-        [-10.04840, -78.15410],
-        [-10.04830, -78.15560],
-        [-10.04720, -78.15570]
+        [-10.047344, -78.155511],
+        [-10.047459, -78.154365],
+        [-10.048261, -78.154289],
+        [-10.048185, -78.155435],
+        [-10.047344, -78.155511]
       ]
     };
 
@@ -345,7 +390,11 @@ const GeorisTerritory = {
           distrito: e.distrito,
           provincia: e.provincia,
           is_enclave: !!e.is_enclave,
-          red_origen: e.red_origen || undefined
+          red_origen: e.red_origen || undefined,
+          rol_georis: e.rol_georis || 'Puerta de Entrada',
+          vinculado_a: e.vinculado_a || undefined,
+          vinculado_a_nombre: e.vinculado_a_nombre || undefined,
+          cod_hos: '00001741'
         }))
       : [
           { cod_renipress: "00001742", nombre: "PUESTO DE SALUD PUERTO HUARMEY", categoria: "I-2", lat: -10.098216, lng: -78.161813, distrito: "Huarmey", provincia: "Huarmey" },

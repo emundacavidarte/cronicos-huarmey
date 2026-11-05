@@ -348,18 +348,20 @@ class FhirAdapter {
           district: p.distrito || 'Huarmey',
           state: 'Áncash',
           country: 'PE',
+          // geolocation solo con un par de coordenadas válido (FHIR no admite valueDecimal nulo);
+          // el sector solo si se conoce (no se inventa uno)
           extension: [
-            {
+            ...(typeof p.latitud === 'number' && typeof p.longitud === 'number' && Number.isFinite(p.latitud) && Number.isFinite(p.longitud) ? [{
               url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
               extension: [
                 { url: 'latitude', valueDecimal: p.latitud },
                 { url: 'longitude', valueDecimal: p.longitud }
               ]
-            },
-            {
+            }] : []),
+            ...(p.sector_sanitario ? [{
               url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario',
-              valueString: p.sector_sanitario || 'Sector 01 - Centro Urbano'
-            }
+              valueString: p.sector_sanitario
+            }] : [])
           ]
         }
       ],

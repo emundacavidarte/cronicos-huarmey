@@ -67,7 +67,10 @@ class HosixParser {
    * Convierte registros de tabla a objetos de paciente enriquecidos con HL7 FHIR y geocodificación
    */
   processRecords(records) {
-    const geocoder = (typeof window !== 'undefined' && window.AncashGeocoder) || (typeof global !== 'undefined' && global.AncashGeocoder) || { geocode: (addr) => ({ lat: -10.0689, lng: -78.1524, sector: "Sector 01 - Centro", matched: false }) };
+    // Sin geocodificador no se inventa una ubicación: el paciente queda sin coordenadas (el servidor puede ubicarlo)
+    const geocoder = (typeof window !== 'undefined' && window.AncashGeocoder) || (typeof global !== 'undefined' && global.AncashGeocoder) || { geocode: () => ({ lat: null, lng: null, sector: null, matched: false, precision_geo: 'sin_ubicacion', es_puerta_id: null, toponym: null }) };
+    const estRef = (typeof window !== 'undefined' && window.EstablecimientosHuarmey) || null;
+    const esDeLaRed = code => !!code && (!estRef || estRef.getAllHuarmey().some(e => e.cod_renipress === String(code)));
     const hearts = (typeof window !== 'undefined' && window.HeartsEngine) || (typeof global !== 'undefined' && global.HeartsEngine) || { evaluatePatient: () => ({ semaforo: "green", estado_control: "Controlado" }) };
 
     return records.map((r, index) => {
@@ -103,11 +106,15 @@ class HosixParser {
         telefono,
         direccion,
         distrito: r.DISTRITO || r.distrito || 'Huarmey',
-        latitud: geo.lat,
-        longitud: geo.lng,
-        sector_sanitario: geo.sector,
-        puerta_entrada_id: geo.es_puerta_id || '00001741',
-        puerta_entrada: geo.toponym ? `Zona ${geo.toponym}` : 'Hospital de Apoyo Huarmey II-1',
+        latitud: geo.matched ? geo.lat : null,
+        longitud: geo.matched ? geo.lng : null,
+        precision_geo: geo.matched ? geo.precision_geo : undefined,
+        geo_fuente: geo.matched ? 'geocodificador' : undefined,
+        geo_toponimo: geo.matched ? geo.toponym : undefined,
+        sector_sanitario: geo.matched ? geo.sector : undefined,
+        // Solo un establecimiento del catálogo de la microrred (uno de otra red dejaría al paciente fuera del alcance)
+        puerta_entrada_id: esDeLaRed(geo.es_puerta_id) ? geo.es_puerta_id : '00001741',
+        puerta_entrada: (esDeLaRed(geo.es_puerta_id) && estRef && estRef.getByCode(geo.es_puerta_id)) ? estRef.getByCode(geo.es_puerta_id).nombre : 'NUEVO HOSPITAL DE APOYO HUARMEY',
         conditions: [
           {
             cie10_cod: cie10,

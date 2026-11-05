@@ -115,7 +115,8 @@ test('Los campos que SI vienen con valor real se actualizan', () => {
   assert.strictEqual(p.direccion, 'Jr. Nuevo 45');
   assert.strictEqual(p.latitud, -10.05);
   assert.strictEqual(p.longitud, -78.12);
-  assert.strictEqual(p.sector_sanitario, 'Sector 05 - Puerto');
+  // Llegan coordenadas nuevas sin sector: el sector sigue a las coordenadas (polígono GeoRIS que las contiene)
+  assert.strictEqual(p.sector_sanitario, 'Sector 69');
 });
 
 test('HOSIX con telefono y direccion reales actualiza solo esos campos', () => {
@@ -127,7 +128,9 @@ test('HOSIX con telefono y direccion reales actualiza solo esos campos', () => {
   assert.strictEqual(p.telefono, '955000111');
   assert.strictEqual(p.direccion, 'Calle Sol 9');
   assert.strictEqual(p.sector_sanitario, 'Sector 05 - Puerto');
-  assert.strictEqual(p.latitud, -10.0912);
+  // Se mudó a una dirección que no se puede ubicar: las coordenadas de la casa anterior ya no valen
+  assert.strictEqual(p.latitud, null);
+  assert.strictEqual(p.longitud, null);
 });
 
 test('Paciente NUEVO sin datos recibe los valores por defecto', () => {
@@ -138,7 +141,7 @@ test('Paciente NUEVO sin datos recibe los valores por defecto', () => {
   }));
   const p = db.getPatientByDni('90000002');
   assert.strictEqual(p.direccion, 'Sin dirección consignada');
-  assert.strictEqual(p.sector_sanitario, 'Sector 01 - Centro Urbano');
+  assert.strictEqual(p.sector_sanitario, 'Sin sector asignado');
   assert.strictEqual(p.telefono, '');
   assert.strictEqual(p.latitud, null);
   assert.strictEqual(p.longitud, null);

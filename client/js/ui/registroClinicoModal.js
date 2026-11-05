@@ -1063,8 +1063,17 @@
       try {
         const formData = this.getFormData();
         const calc = calculadora.calcularPadron(formData);
-        const geocoder = window.AncashGeocoder || { geocode: (addr) => ({ lat: -10.04780, lng: -78.15480, sector: 'Sector I – Centro', matched: true }) };
-        const geo = geocoder.geocode(direccion);
+        // Sin geocodificador no se inventa una ubicación. Con la misma dirección y una ubicación ya guardada, no se
+        // vuelve a geocodificar ni se envían coordenadas: el servidor conserva las guardadas y su precisión
+        // (la ubicación exacta tomada en campo por GPS o en el mapa no se pierde al registrar una atención).
+        const geocoder = window.AncashGeocoder || { geocode: () => ({ lat: null, lng: null, sector: null, matched: false }), claveDireccion: t => String(t || '') };
+        const previo = this.currentPatient || null;
+        const mismaDireccion = !!previo && geocoder.claveDireccion(previo.direccion || '') === geocoder.claveDireccion(direccion);
+        const conservarUbicacion = mismaDireccion && window.GeoUbicacion && window.GeoUbicacion.validarCoordenadas(previo.latitud, previo.longitud).ok;
+        const geo = conservarUbicacion ? { matched: false } : geocoder.geocode(direccion);
+        const ubicacion = conservarUbicacion
+          ? {}
+          : (geo.matched ? { latitud: geo.lat, longitud: geo.lng, precision_geo: geo.precision_geo, geo_fuente: 'geocodificador', geo_toponimo: geo.toponym, sector_sanitario: geo.sector || undefined } : {});
 
         const pas = parseInt(this.dom.pasHoy.value, 10) || null;
         const pad = parseInt(this.dom.padHoy.value, 10) || null;
@@ -1084,14 +1093,14 @@
           historia_clinica: formData.historia_clinica || '',
           apellidos_nombres: nombres.toUpperCase(),
           direccion,
-          sector_sanitario: sector,
+          // «sector» es la nomenclatura local del padrón; el sector sanitario GeoRIS sale de la ubicación
+          sector,
           distrito: calc.distrito_residencia,
           establecimiento_adscripcion: formData.establecimiento_adscripcion,
           puerta_entrada_id: ((/\((\d{8})\b/.exec(String(eess || '')) || [])[1]) || undefined,
           establecimiento_control: eess,
           puerta_entrada: eess,
-          latitud: geo.lat,
-          longitud: geo.lng,
+          ...ubicacion,
           conditions: [],
           observations: (this.currentPatient?.observations ? [...this.currentPatient.observations] : []),
           appointments: (this.currentPatient?.appointments ? [...this.currentPatient.appointments] : [])
@@ -1152,8 +1161,13 @@
           throw new Error(`La atención no se guardó: ${motivo} (código ${respuesta ? respuesta.status : 'sin respuesta'}).`);
         }
 
-        // 2. Actualizar en Memoria y Mapa Territorial
-        if (window.app) {
+        // 2. Actualizar en Memoria y Mapa Territorial desde el servidor (que decide la ubicación final)
+        if (window.app && typeof window.app.loadInitialData === 'function') {
+          await window.app.loadInitialData();
+          if (typeof window.app.showToast === 'function') {
+            window.app.showToast(`🎉 ¡Atención de ${nombres} guardada y georreferenciada en el Padrón Estandarizado!`, 'success', 5000);
+          }
+        } else if (window.app) {
           const list = Array.isArray(window.app.patients) ? [...window.app.patients] : [];
           const idx = list.findIndex(p => String(p.dni || p.nro_documento) === dni);
           if (idx >= 0) {

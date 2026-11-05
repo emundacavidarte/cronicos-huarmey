@@ -12,6 +12,8 @@ const path = require('path');
 const crypto = require('crypto');
 const { getLatestObservation } = require('../utils/latestRecord');
 const { DEFAULT_ESTABLISHMENTS } = require('../../client/js/map/establecimientos');
+const geoUbicacion = require('../../client/js/map/geoUbicacion');
+const geocoder = require('../../client/js/map/ancashGeocoder');
 
 // Carpeta de datos reales (store.json y padron_inicial.js). Por defecto, esta misma carpeta.
 // Se puede cambiar con la variable de entorno DATA_DIR (recomendado: una ruta fuera de OneDrive).
@@ -66,17 +68,57 @@ const PATIENT_DEFAULTS = {
   telefono: '',
   direccion: 'Sin dirección consignada',
   distrito: 'Huarmey',
-  sector_sanitario: 'Sector 01 - Centro Urbano',
+  sector_sanitario: 'Sin sector asignado',
   puerta_entrada_id: '00001741'
 };
+
+// Campos de la ubicación del domicilio: viajan juntos (no se guarda una latitud sin su longitud ni su precisión)
+const CAMPOS_UBICACION = ['latitud', 'longitud', 'precision_geo', 'precision_m', 'geo_fuente', 'geo_toponimo', 'geo_fecha', 'geo_registrado_por'];
+const SIN_SECTOR_GEORIS = 'Sin sector GeoRIS';
 
 // Textos de relleno que nunca deben reemplazar un dato real ya guardado
 const PLACEHOLDER_VALUES = {
   historia_clinica: ['S/N'],
   apellidos_nombres: ['PACIENTE SIN NOMBRE', 'PACIENTE HOSIX'],
   direccion: ['Sin dirección consignada', 'Huarmey'],
-  sector_sanitario: ['Sector 01 - Centro Urbano']
+  sector_sanitario: ['Sector 01 - Centro Urbano', 'Sin sector asignado']
 };
+
+/**
+ * Valida la ubicación que trae un registro entrante (importación, FHIR, formulario).
+ * - Coordenadas inválidas (texto, NaN, 0/0, fuera del Perú, una sin la otra): se descartan todos los campos de
+ *   ubicación, para no guardar basura ni pisar una ubicación buena con ella. Las invertidas se corrigen.
+ * - precision_geo desconocida: se descarta (la ubicación se mostrará como «no verificada»).
+ */
+function sanearUbicacionEntrante(clean) {
+  const traeLat = clean.latitud !== undefined && clean.latitud !== null && clean.latitud !== '';
+  const traeLng = clean.longitud !== undefined && clean.longitud !== null && clean.longitud !== '';
+  if (!traeLat && !traeLng) {
+    // Sin coordenadas no hay precisión ni fuente que guardar
+    for (const k of CAMPOS_UBICACION) if (k !== 'latitud' && k !== 'longitud') delete clean[k];
+    if (clean.latitud === '') clean.latitud = null;
+    if (clean.longitud === '') clean.longitud = null;
+    return;
+  }
+  const v = geoUbicacion.validarCoordenadas(clean.latitud, clean.longitud);
+  if (!v.ok) {
+    for (const k of CAMPOS_UBICACION) delete clean[k];
+    return;
+  }
+  clean.latitud = v.lat;
+  clean.longitud = v.lng;
+  if (clean.precision_geo !== undefined && !geoUbicacion.PRECISIONES_VALIDAS.includes(clean.precision_geo)) delete clean.precision_geo;
+  if (clean.precision_m !== undefined) {
+    const m = geoUbicacion.aNumero(clean.precision_m);
+    if (m === null || m < 0 || m > 100000) delete clean.precision_m; else clean.precision_m = Math.round(m * 10) / 10;
+  }
+}
+
+/** Sector GeoRIS («Sector N») que contiene el punto, o null si queda fuera de los sectores oficiales. */
+function sectorDeCoordenadas(lat, lng) {
+  const s = geocoder.getSectorFromCoordinates(lat, lng);
+  return s ? `Sector ${s.id_sector}` : null;
+}
 
 /**
  * Indica si un valor entrante es un dato real (no null, no vacío, no texto de relleno)
@@ -179,6 +221,8 @@ class Database {
 
     if (!this.data.patients || this.data.patients.length === 0) {
       this.seedSampleData();
+    } else if (this.migrarUbicacionSemilla() > 0) {
+      this.scheduleSave(true);
     }
     this.rebuildIndexes();
   }
@@ -474,8 +518,16 @@ class Database {
     const dniKey = clean.dni ? String(clean.dni).trim() : '';
     const idKey = clean.id ? String(clean.id).trim() : `pac-00001741-${dniKey || crypto.randomUUID()}`;
     clean.id = idKey;
+    sanearUbicacionEntrante(clean);
+    // La ubicación exacta solo se fija con setPatientLocation (usuario y fecha del servidor): un lote no puede
+    // declararse «gps» ni «mapa» por su cuenta, ni traer quién o cuándo la registró.
+    if (geoUbicacion.esPrecisionExacta(clean.precision_geo)) delete clean.precision_geo;
+    delete clean.geo_fecha;
+    delete clean.geo_registrado_por;
+    delete clean.sector_por_ubicacion;
 
     const existing = (dniKey && this.patientByDniMap.get(dniKey)) || this.patientByIdMap.get(idKey);
+    this._resolverUbicacion(clean, existing);
     if (existing) {
       // Actualiza solo los campos con valor real; conserva lo ya guardado en el resto.
       // El id NUNCA se reemplaza: las citas, atenciones, diagnósticos y medicación del paciente
@@ -499,6 +551,62 @@ class Database {
     this.invalidateCache();
     this.scheduleSave();
     return existing || clean;
+  }
+
+  /**
+   * Decide qué ubicación del domicilio queda tras un upsert (importación, FHIR, webhook, formulario):
+   * 1. Una ubicación exacta (GPS, mapa, coordenadas) con la misma dirección no se reemplaza.
+   * 2. Si no llegan coordenadas, el servidor geocodifica la dirección cuando el paciente es nuevo, se mudó o no
+   *    tenía ubicación (así todas las vías de ingreso quedan ubicadas igual).
+   * 3. Si llegan coordenadas, o el paciente se mudó, la ubicación se reemplaza como un todo (sin la precisión ni la
+   *    fuente de la anterior). Mudado y sin ubicación nueva: las coordenadas viejas se borran.
+   * 4. El sector sanitario sale del polígono GeoRIS de las coordenadas cuando el registro no trae uno.
+   */
+  _resolverUbicacion(clean, existing) {
+    const clave = t => geocoder.claveDireccion(t || '');
+    const dirReal = hasRealValue('direccion', clean.direccion);
+    const seMudo = !!existing && dirReal && clave(clean.direccion) !== clave(existing.direccion);
+    const existenteValida = !!existing && geoUbicacion.validarCoordenadas(existing.latitud, existing.longitud).ok;
+    const existenteExacta = existenteValida && geoUbicacion.esPrecisionExacta(existing.precision_geo);
+    const sectorEntrante = hasRealValue('sector_sanitario', clean.sector_sanitario);
+
+    if (existenteExacta && !seMudo) {
+      for (const k of CAMPOS_UBICACION) delete clean[k];
+      if (existing.sector_por_ubicacion) delete clean.sector_sanitario;
+      return;
+    }
+
+    let traeCoords = typeof clean.latitud === 'number' && typeof clean.longitud === 'number';
+    if (!traeCoords && dirReal && (!existing || seMudo || !existenteValida)) {
+      const geo = geocoder.geocode(clean.direccion);
+      if (geo.matched) {
+        clean.latitud = geo.lat;
+        clean.longitud = geo.lng;
+        clean.precision_geo = geo.precision_geo;
+        clean.geo_fuente = 'geocodificador';
+        clean.geo_toponimo = geo.toponym;
+        traeCoords = true;
+      }
+    }
+
+    if (traeCoords && !sectorEntrante) {
+      const sec = sectorDeCoordenadas(clean.latitud, clean.longitud);
+      if (sec) clean.sector_sanitario = sec;
+    }
+
+    if (existing && (traeCoords || seMudo)) {
+      for (const k of CAMPOS_UBICACION) {
+        if (hasRealValue(k, clean[k])) continue;
+        if (k === 'latitud' || k === 'longitud') {
+          if (!traeCoords) existing[k] = null;
+        } else {
+          delete existing[k];
+        }
+      }
+      if (!traeCoords && existing.sector_por_ubicacion && !sectorEntrante) existing.sector_sanitario = PATIENT_DEFAULTS.sector_sanitario;
+      delete existing.sector_por_ubicacion;
+      delete existing.precision_geo_revisada;
+    }
   }
 
   // --- Operaciones de Diagnósticos, Citas, Observaciones y Medicación O(1) ---
@@ -673,6 +781,72 @@ class Database {
     this.invalidateCache();
     this.scheduleSave();
     return { ok: true, patient };
+  }
+
+  /**
+   * Fija la ubicación EXACTA del domicilio del paciente (GPS del celular en la visita, punto marcado en el mapa o
+   * coordenadas ingresadas). El sector sanitario se recalcula con el polígono GeoRIS que contiene el punto.
+   * `datos` = { latitud, longitud, precision_geo: 'gps'|'mapa'|'manual', precision_m? }.
+   * Devuelve { ok:true, patient, territorio } o { ok:false, error }.
+   */
+  setPatientLocation(idOrDni, datos, registrante) {
+    if (!registrante || !registrante.username) return { ok: false, error: 'Se requiere un usuario registrante' };
+    const src = sanitizeRecord(datos);
+    if (!geoUbicacion.esPrecisionExacta(src.precision_geo)) {
+      return { ok: false, error: `precision_geo debe ser una de: ${geoUbicacion.PRECISIONES_EXACTAS.join(', ')}` };
+    }
+    const v = geoUbicacion.validarCoordenadas(src.latitud, src.longitud);
+    if (!v.ok) return { ok: false, error: v.error };
+    let precisionM = null;
+    if (src.precision_m !== undefined && src.precision_m !== null && src.precision_m !== '') {
+      precisionM = geoUbicacion.aNumero(src.precision_m);
+      if (precisionM === null || precisionM < 0 || precisionM > 100000) return { ok: false, error: 'precision_m debe ser un número de metros entre 0 y 100000' };
+      precisionM = Math.round(precisionM * 10) / 10;
+    }
+    if (src.precision_geo === 'gps' && precisionM === null) return { ok: false, error: 'Una ubicación por GPS debe indicar su precisión en metros (precision_m)' };
+
+    const pid = this.resolvePatientId(idOrDni);
+    const patient = this.patientByIdMap.get(String(pid));
+    if (!patient) return { ok: false, error: 'El paciente no existe' };
+
+    const territorio = geocoder.getTerritorioFromCoordinates(v.lat, v.lng);
+    patient.latitud = v.lat;
+    patient.longitud = v.lng;
+    patient.precision_geo = src.precision_geo;
+    if (precisionM !== null) patient.precision_m = precisionM; else delete patient.precision_m;
+    patient.geo_fuente = src.precision_geo === 'gps' ? 'GPS del dispositivo' : (src.precision_geo === 'mapa' ? 'Punto marcado en el mapa' : 'Coordenadas ingresadas');
+    delete patient.geo_toponimo;
+    patient.geo_fecha = new Date().toISOString();
+    patient.geo_registrado_por = String(registrante.username);
+    patient.sector_sanitario = territorio.sector ? `Sector ${territorio.sector.id_sector}` : SIN_SECTOR_GEORIS;
+    patient.sector_por_ubicacion = true;
+    this.invalidateCache();
+    this.scheduleSave();
+    return { ok: true, patient: this._enrichPatient(patient), territorio };
+  }
+
+  /**
+   * Las 20 fichas sintéticas de demostración (ids «pac-sim-») guardadas antes de la corrección geográfica tenían
+   * sectores que no correspondían a sus coordenadas y puntos en el mar o lejos de su localidad. Si una ficha
+   * sintética nunca recibió una ubicación (no tiene precision_geo), toma la ubicación corregida de la semilla.
+   * No toca pacientes reales ni fichas cuya ubicación ya fue fijada.
+   */
+  migrarUbicacionSemilla() {
+    let semillas;
+    try { semillas = require(DEFAULT_SEED_FILE); } catch (e) { return 0; }
+    if (!Array.isArray(semillas)) return 0;
+    let n = 0;
+    for (const s of semillas) {
+      if (!s || !String(s.id || '').startsWith('pac-sim-')) continue;
+      const p = this.data.patients.find(x => String(x.id) === String(s.id));
+      if (!p || p.precision_geo || p.sector_por_ubicacion || p.precision_geo_revisada) continue;
+      for (const k of ['latitud', 'longitud', 'sector_sanitario', 'precision_geo', 'geo_fuente', 'geo_toponimo']) {
+        if (s[k] !== undefined) p[k] = s[k];
+      }
+      p.precision_geo_revisada = true;
+      n++;
+    }
+    return n;
   }
 
   // --- Línea de tiempo del paciente (A11): eventos, no historia clínica ---

@@ -20,6 +20,18 @@ const auth = require('../auth/auth');
 const fechaLima = require('../../client/js/utils/fechaLima');
 const scope = require('../auth/scope');
 const { sameRed, normalizeRed } = require('../auth/redes');
+const geoUbicacion = require('../../client/js/map/geoUbicacion');
+
+/** Conteo de la ubicación del domicilio: exacta (GPS/mapa/coordenadas), aproximada (dirección) o sin ubicación. */
+function contarUbicaciones(patients) {
+  const c = { exacta: 0, aproximada: 0, sin_ubicacion: 0 };
+  for (const p of patients) {
+    if (!geoUbicacion.validarCoordenadas(p.latitud, p.longitud).ok) c.sin_ubicacion++;
+    else if (geoUbicacion.esPrecisionExacta(p.precision_geo)) c.exacta++;
+    else c.aproximada++;
+  }
+  return c;
+}
 
 /**
  * Autorización (T-03a). server.js ya exige sesión (auth.authenticate) en /api y /fhir;
@@ -136,7 +148,7 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
   const patients = scope.filterPatients(req.user, db.getAllPatients());
   const hoy = new Date();
   const features = patients
-    .filter(p => p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined)
+    .filter(p => typeof p.latitud === 'number' && typeof p.longitud === 'number' && Number.isFinite(p.latitud) && Number.isFinite(p.longitud))
     .map(p => {
       const latestAppt = getLatestAppointment(p.appointments);
       const latestObs = getLatestObservation(p.observations);
@@ -166,6 +178,8 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
           telefono: p.telefono,
           direccion: p.direccion,
           sector_sanitario: p.sector_sanitario,
+          precision_geo: p.precision_geo || null,
+          precision_m: p.precision_m === undefined ? null : p.precision_m,
           puerta_entrada: p.puerta_entrada,
           diagnosticos: (p.conditions || []).map(c => c.cie10_cod),
           estado_control: latestObs ? latestObs.estado_control : (p.estado_control || 'No Registrado'),
@@ -179,6 +193,8 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
 
   res.json({
     type: 'FeatureCollection',
+    // Los pacientes sin coordenadas no salen como puntos: se informa cuántos son para que no pasen inadvertidos
+    ubicaciones: contarUbicaciones(patients),
     features
   });
 });
@@ -221,7 +237,8 @@ router.get('/alerts/summary', requireScope(ROLES_DASHBOARD), (req, res) => {
       hosix_brecha_morado: purple,
       fallecidos_negro: black,
       sin_cita_gris: gray
-    }
+    },
+    ubicaciones: contarUbicaciones(patients)
   });
 });
 
@@ -316,6 +333,49 @@ router.put('/patients/:id/consentimiento', requireScope(ROLES_ESCRITURA), (req, 
       consentimiento: result.patient.consentimiento,
       consentimiento_fecha: result.patient.consentimiento_fecha,
       consentimiento_registrado_por: result.patient.consentimiento_registrado_por
+    }
+  });
+});
+
+// --- Ubicación exacta del domicilio (GPS del celular en la visita, punto marcado en el mapa o coordenadas) ---
+router.put('/patients/:id/ubicacion', requireScope(ROLES_ESCRITURA), (req, res) => {
+  const patient = db.getPatientByIdOrDni(String(req.params.id || '').trim().slice(0, 64));
+  // Un paciente de otra red o establecimiento responde igual que uno inexistente
+  if (!patient || !scope.canSeePatient(req.user, patient)) return res.status(404).json({ error: 'Paciente no encontrado' });
+  const denied = scope.checkWrite(req.user, [{ patients: [], observations: [{ patient_id: patient.id }] }]);
+  if (denied) return forbidden(res, denied);
+  const body = req.body || {};
+  const result = db.setPatientLocation(patient.id, {
+    latitud: body.latitud,
+    longitud: body.longitud,
+    precision_geo: body.precision_geo,
+    precision_m: body.precision_m
+  }, { username: req.user.username, role: req.user.role });
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  const t = result.territorio || {};
+  db.addAuditLog('SISTEMA_LOCAL', 'UBICACION_PACIENTE_FIJADA', {
+    patient_id: patient.id,
+    precision_geo: result.patient.precision_geo,
+    precision_m: result.patient.precision_m === undefined ? null : result.patient.precision_m,
+    sector_sanitario: result.patient.sector_sanitario
+  }, req.auditContext);
+  res.json({
+    success: true,
+    data: {
+      patient_id: result.patient.id,
+      latitud: result.patient.latitud,
+      longitud: result.patient.longitud,
+      precision_geo: result.patient.precision_geo,
+      precision_m: result.patient.precision_m === undefined ? null : result.patient.precision_m,
+      geo_fuente: result.patient.geo_fuente,
+      geo_fecha: result.patient.geo_fecha,
+      geo_registrado_por: result.patient.geo_registrado_por,
+      sector_sanitario: result.patient.sector_sanitario,
+      territorio: {
+        sector: t.sector ? { id_sector: t.sector.id_sector, ipress: t.sector.ipress, cod_reni: t.sector.cod_reni } : null,
+        zona: t.zona ? { id_zona: t.zona.id_zona, id_ris: t.zona.id_ris, cabecera: t.zona.cabecera } : null,
+        ris: t.ris ? { id_ris: t.ris.id_ris, nombre: t.ris.nombre } : null
+      }
     }
   });
 });
@@ -415,17 +475,17 @@ router.get(['/Bundle', '/fhir/Bundle'], requireScope(ROLES_PACIENTES), (req, res
           state: 'Áncash',
           country: 'PE',
           extension: [
-            {
+            ...(typeof p.latitud === 'number' && typeof p.longitud === 'number' && Number.isFinite(p.latitud) && Number.isFinite(p.longitud) ? [{
               url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
               extension: [
                 { url: 'latitude', valueDecimal: p.latitud },
                 { url: 'longitude', valueDecimal: p.longitud }
               ]
-            },
-            {
+            }] : []),
+            ...(p.sector_sanitario ? [{
               url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario',
               valueString: p.sector_sanitario
-            }
+            }] : [])
           ]
         }]
       }

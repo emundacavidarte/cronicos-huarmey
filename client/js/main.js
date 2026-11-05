@@ -101,13 +101,21 @@ class App {
           ? incoming.conditions
           : (existing.conditions || []);
 
-        currentList[foundIndex] = {
+        const merged = {
           ...existing,
           ...incoming,
           observations: mergedObs,
           appointments: mergedAppts,
           conditions: mergedConds
         };
+        // Un registro entrante sin coordenadas válidas no borra la ubicación que ya se mostraba
+        const geoU = window.GeoUbicacion;
+        if (geoU && !geoU.validarCoordenadas(incoming.latitud, incoming.longitud).ok) {
+          ['latitud', 'longitud', 'precision_geo', 'precision_m', 'geo_fuente', 'geo_toponimo', 'geo_fecha', 'geo_registrado_por'].forEach(k => {
+            if (existing[k] !== undefined) merged[k] = existing[k]; else delete merged[k];
+          });
+        }
+        currentList[foundIndex] = merged;
       } else {
         currentList.push(incoming);
       }
@@ -117,13 +125,19 @@ class App {
   }
 
   setBaseMapGlobal(type) {
-    if (this.mapManager) {
-      this.mapManager.setBaseMap(type);
-    }
+    // Los dos selectores se sincronizan siempre, aunque el mapa base falle al cambiar
+    const nombre = this.mapManager ? (this.mapManager.nombreMapaBase(type) || type) : type;
     const selTop = document.getElementById('select-basemap');
     const selSide = document.getElementById('select-basemap-sidebar');
-    if (selTop && selTop.value !== type) selTop.value = type;
-    if (selSide && selSide.value !== type) selSide.value = type;
+    if (selTop && selTop.value !== nombre) selTop.value = nombre;
+    if (selSide && selSide.value !== nombre) selSide.value = nombre;
+    if (this.mapManager) {
+      try {
+        this.mapManager.setBaseMap(nombre);
+      } catch (e) {
+        console.error('No se pudo cambiar el mapa base:', e);
+      }
+    }
   }
 
   /**
@@ -487,6 +501,8 @@ class App {
     this.resetFiltros();
 
     if (this.mapManager) {
+      if (this.mapManager.seleccion) this.mapManager.cancelarSeleccionUbicacion(true);
+      if (this.mapManager.limpiarFoco) this.mapManager.limpiarFoco();
       const capa = this.mapManager.layers && this.mapManager.layers.pacientes;
       if (capa) capa.clearLayers();
       if (this.mapManager.map) this.mapManager.map.closePopup();
@@ -496,7 +512,7 @@ class App {
       }
     }
 
-    ['modal-patient-detail', 'reference-inspector-card'].forEach(id => {
+    ['modal-patient-detail', 'reference-inspector-card', 'modal-ubicacion'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.remove();
     });
@@ -603,55 +619,87 @@ class App {
 
     this.actualizarSelectorZonas(156);
     this.actualizarSelectorPuertas(156, 'ALL');
+    this.actualizarSelectorHospitales('00001741');
   }
 
   selectRis(risId) {
     this.selectedRisId = risId;
     this.selectedZonaId = 'ALL';
-    
+    const selectRis = document.getElementById('select-ris');
+    if (selectRis && String(selectRis.value) !== String(risId)) selectRis.value = String(risId);
+
     this.actualizarSelectorZonas(risId);
     this.actualizarSelectorPuertas(risId, 'ALL');
     this.mapManager.flyToRis(risId);
     this.actualizarPanelInfoRis(risId);
   }
 
+  /** Opciones de zona con su RIS («156|6»): el número de zona se repite entre las 7 RIS. */
   actualizarSelectorZonas(risId) {
     const selectZona = document.getElementById('select-zona');
     if (!selectZona || !window.GeorisTerritory) return;
 
     const zonas = window.GeorisTerritory.getZonasByRis(risId);
+    const todas = risId === 'ALL';
     selectZona.innerHTML = `
       <option value="ALL" selected>-- Todas las Zonas Sanitarias (${zonas.length}) --</option>
-      ${zonas.map(z => `<option value="${z.id_zona}">ZONA ${z.id_zona}: ${z.distrito || z.cabecera}</option>`).join('')}
+      ${zonas.map(z => `<option value="${escapeHtml(z.id_ris)}|${escapeHtml(z.id_zona)}">${todas ? `${escapeHtml(z.ris)} · ` : ''}ZONA ${escapeHtml(z.id_zona)}: ${escapeHtml(z.distrito || z.cabecera)}</option>`).join('')}
     `;
   }
 
-  selectZona(zonaId) {
+  /** zonaValor: 'ALL', 'ris|zona' o solo el número de zona (de la RIS elegida). */
+  selectZona(zonaValor) {
+    let risId = this.selectedRisId;
+    let zonaId = zonaValor;
+    if (typeof zonaValor === 'string' && zonaValor.includes('|')) {
+      const partes = zonaValor.split('|');
+      risId = partes[0];
+      zonaId = partes[1];
+    }
+    if (zonaId !== 'ALL' && String(risId) !== String(this.selectedRisId)) {
+      // Elegir una zona de otra RIS (o desde «Todas las RIS») deja seleccionada esa RIS
+      this.selectedRisId = risId;
+      const selectRis = document.getElementById('select-ris');
+      if (selectRis) selectRis.value = String(risId);
+      this.actualizarSelectorZonas(risId);
+      this.actualizarPanelInfoRis(risId);
+    }
     this.selectedZonaId = zonaId;
-    this.actualizarSelectorPuertas(this.selectedRisId, zonaId);
-    this.mapManager.flyToZona(zonaId);
-    this.actualizarPanelInfoZona(this.selectedRisId, zonaId);
+    const selectZona = document.getElementById('select-zona');
+    const valorSelect = zonaId === 'ALL' ? 'ALL' : `${risId}|${zonaId}`;
+    if (selectZona && selectZona.value !== valorSelect) selectZona.value = valorSelect;
+    this.actualizarSelectorPuertas(risId, zonaId);
+    this.mapManager.flyToZona(zonaId, risId);
+    this.actualizarPanelInfoZona(risId, zonaId);
   }
 
+  /** Puertas de entrada y establecimientos vinculados de la RIS y zona elegidas. */
   actualizarSelectorPuertas(risId, zonaId) {
     const selectPuerta = document.getElementById('select-puerta');
     if (!selectPuerta || !window.GeorisTerritory) return;
 
-    let puertas = [];
-    if (risId == 156) {
-      const net = window.GeorisTerritory.getHuarmeyNetwork();
-      puertas = net.puertas;
-      if (zonaId && zonaId !== 'ALL' && zonaId != 6) {
-        puertas = window.GeorisTerritory.getPuertasEntrada(risId, zonaId);
-      }
-    } else {
-      puertas = window.GeorisTerritory.getPuertasEntrada(risId, zonaId);
-    }
+    const G = window.GeorisTerritory;
+    const lista = [];
+    const vistos = new Set();
+    const agregar = e => { if (!vistos.has(e.cod_renipress)) { vistos.add(e.cod_renipress); lista.push(e); } };
+    const incluyeHuarmey = (risId === 'ALL' || String(risId) === '156') && (!zonaId || zonaId === 'ALL' || String(zonaId) === '6');
+    if (incluyeHuarmey) G.getHuarmeyNetwork().puertas.forEach(agregar);
+    G.getPuertasEntrada(risId, zonaId).forEach(agregar);
+    if (G.getVinculados) G.getVinculados(risId, zonaId).forEach(agregar);
 
     selectPuerta.innerHTML = `
-      <option value="ALL">-- Seleccionar Puerta de Entrada (${puertas.length}) --</option>
-      ${puertas.map(p => `<option value="${p.cod_renipress}">${p.nombre} (${p.categoria || 'I-1'})</option>`).join('')}
+      <option value="ALL">-- Seleccionar Puerta de Entrada o Vinculado (${lista.length}) --</option>
+      ${lista.map(p => `<option value="${escapeHtml(p.cod_renipress)}">${escapeHtml(p.nombre)} (${escapeHtml(p.categoria || 'I-1')})${p.rol_georis === 'Establecimiento Vinculado' ? ' · vinculado' : ''}</option>`).join('')}
     `;
+  }
+
+  /** Opciones de hospital de referencia generadas desde GeoRIS (códigos RENIPRESS reales). */
+  actualizarSelectorHospitales(codSeleccionado) {
+    const sel = document.getElementById('select-hospital');
+    if (!sel || !window.GeorisTerritory) return;
+    const hospitales = window.GeorisTerritory.getHospitalesArea('ALL')
+      .sort((a, b) => (a.cod_renipress === '00001741' ? -1 : b.cod_renipress === '00001741' ? 1 : String(a.ris).localeCompare(String(b.ris)) || String(a.nombre).localeCompare(String(b.nombre))));
+    sel.innerHTML = hospitales.map(h => `<option value="${escapeHtml(h.cod_renipress)}" ${h.cod_renipress === codSeleccionado ? 'selected' : ''}>${escapeHtml(h.nombre)} (${escapeHtml(h.categoria)}) · ${escapeHtml(h.ris)}</option>`).join('');
   }
 
   selectPuertaEntrada(codReni) {
@@ -662,11 +710,18 @@ class App {
   seleccionarHospitalReferencia(codReni) {
     if (!codReni || !window.GeorisTerritory) return;
 
-    const hospArea = window.GeorisTerritory.getHospitalesArea('ALL').find(h => h.cod_renipress === codReni);
-    if (!hospArea) return;
+    const hospArea = window.GeorisTerritory.getHospitalByCode
+      ? window.GeorisTerritory.getHospitalByCode(codReni)
+      : window.GeorisTerritory.getHospitalesArea('ALL').find(h => h.cod_renipress === codReni);
+    if (!hospArea) {
+      this.showToast(`El hospital ${codReni} no figura en las capas GeoRIS.`, 'warning');
+      return;
+    }
+    const sel = document.getElementById('select-hospital');
+    if (sel && sel.value !== codReni) sel.value = codReni;
 
     this.mapManager.flyTo(hospArea.lat, hospArea.lng, 15);
-    
+
     if (codReni === "00001741") {
       this.mapManager.renderLineasDeReferencia();
       this.mostrarCardHospitalHuarmey(hospArea);
@@ -729,23 +784,48 @@ class App {
     }
   }
 
+  /**
+   * Traza la referencia de un establecimiento hacia SU hospital de referencia (cod_hos de GeoRIS).
+   * La red de Huarmey va al Nuevo Hospital de Apoyo Huarmey; las demás, a su propio hospital.
+   */
   trazarReferenciaHaciaHospital(esCod) {
     if (!window.GeorisTerritory) return;
-
-    const net = window.GeorisTerritory.getHuarmeyNetwork();
+    const G = window.GeorisTerritory;
+    const net = G.getHuarmeyNetwork();
     let es = net.puertas.find(e => e.cod_renipress === esCod);
-    if (!es) es = (net.cabecera.cod_renipress === esCod) ? net.cabecera : null;
+    let hosp = es ? net.hospital : null;
+    if (!es && net.cabecera.cod_renipress === esCod) {
+      es = net.cabecera;
+      hosp = net.hospital;
+    }
     if (!es) {
-      const allPuertas = window.GeorisTerritory.getPuertasEntrada('ALL', 'ALL');
-      es = allPuertas.find(p => p.cod_renipress === esCod);
+      const candidatos = [
+        ...G.getPuertasEntrada('ALL', 'ALL'),
+        ...(G.getVinculados ? G.getVinculados('ALL', 'ALL') : []),
+        ...G.getEessZona('ALL')
+      ];
+      es = candidatos.find(p => p.cod_renipress === esCod) || null;
+      if (es) {
+        const h = G.getHospitalByCode ? G.getHospitalByCode(es.cod_hos) : null;
+        if (h) {
+          hosp = h;
+          const distKm = window.haversineDistance(es.lat, es.lng, h.lat, h.lng);
+          const minutos = window.estimateTravelTimeMinutes(distKm);
+          es = { ...es, distancia_hospital_km: distKm, tiempo_traslado_min: minutos, tiempo_traslado_txt: window.formatMinutes(minutos) };
+        }
+      }
     }
 
-    const hosp = net.hospital;
-
-    if (es && hosp) {
-      this.mapManager.resaltarReferencia(es, hosp);
-      this.mostrarCardInspectorReferencia(es, hosp);
+    if (!es) {
+      this.showToast('El establecimiento no figura en las capas GeoRIS.', 'warning');
+      return;
     }
+    if (!hosp) {
+      this.showToast(`${es.nombre}: GeoRIS no indica su hospital de referencia.`, 'warning');
+      return;
+    }
+    this.mapManager.resaltarReferencia(es, hosp);
+    this.mostrarCardInspectorReferencia(es, hosp);
   }
 
   mostrarCardInspectorReferencia(es, hosp) {
@@ -763,7 +843,7 @@ class App {
     const cumple = tiempoMin <= 240;
 
     const verPac = this.permisos().verPacientes;
-    const pacCount = verPac ? this.patients.filter(p => (p.puerta_entrada || '').toLowerCase().includes((es.nombre || '').toLowerCase().replace('puesto de salud ', '').replace('centro de salud ', '').trim())).length : null;
+    const pacCount = verPac ? this.patients.filter(p => String(p.puerta_entrada_id || '') === String(es.cod_renipress)).length : null;
 
     card.innerHTML = `
       <div class="ref-card-header">
@@ -771,16 +851,16 @@ class App {
           ${window.AppIcons ? window.AppIcons.layers(18, '#0284c7') : '<span>📐</span>'}
           <span style="font-weight:700;">INSPECTOR DE REFERENCIA GEORIS</span>
         </div>
-        <button type="button" class="btn-close-accessible" aria-label="Cerrar inspector de referencia" onclick="document.getElementById('reference-inspector-card').remove()">✕</button>
+        <button type="button" class="btn-close-accessible" aria-label="Cerrar inspector de referencia" onclick="document.getElementById('reference-inspector-card').remove(); window.app.mapManager.limpiarResaltado();">✕</button>
       </div>
       <div class="ref-card-body">
         <div style="font-size:var(--font-sm); margin-bottom:8px;">
-          <strong>Origen:</strong> <span style="color:#0284c7; font-weight:700;">${es.nombre} (${es.categoria || 'I-1'})</span><br>
-          <strong>Destino:</strong> <span style="color:#9F1239; font-weight:700;">${hosp.nombre} (${hosp.categoria})</span>
+          <strong>Origen:</strong> <span style="color:#0284c7; font-weight:700;">${escapeHtml(es.nombre)} (${escapeHtml(es.categoria || 'I-1')})</span><br>
+          <strong>Destino:</strong> <span style="color:#9F1239; font-weight:700;">${escapeHtml(hosp.nombre)} (${escapeHtml(hosp.categoria)})</span>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; background:var(--slate-50); padding:8px; border-radius:6px; border:1px solid var(--border-subtle);">
           <div>
-            <span style="font-size:var(--font-xs); color:var(--text-muted); display:block;">Distancia Vial:</span>
+            <span style="font-size:var(--font-xs); color:var(--text-muted); display:block;">Distancia en línea recta:</span>
             <span style="font-size:var(--font-md); font-weight:800; color:var(--text-main);">${distKm} km</span>
           </div>
           <div>
@@ -794,7 +874,7 @@ class App {
           • Pacientes Crónicos en Jurisdicción: <strong>${verPac ? pacCount + ' pacientes' : 'no disponible para su rol'}</strong>
         </div>
         <div style="display:flex; gap:6px;">
-          ${verPac ? `<button class="btn-mini btn-precita" style="flex:1;" onclick="window.app.filtrarPorPuerta('${es.nombre}')">Ver Pacientes</button>` : ''}
+          ${verPac ? `<button class="btn-mini btn-precita" style="flex:1;" onclick="window.app.filtrarPorPuerta('${escapeHtml(es.cod_renipress)}')">Ver Pacientes</button>` : ''}
           <button class="btn-mini btn-ubicar" onclick="window.app.mapManager.home()">Vista General</button>
         </div>
       </div>
@@ -838,11 +918,15 @@ class App {
     card.style.display = 'block';
   }
 
-  filtrarPorPuerta(nombrePuerta) {
-    const clean = (nombrePuerta || '').toLowerCase().replace('puesto de salud ', '').replace('centro de salud ', '').trim();
+  /** Filtra la lista por establecimiento (código RENIPRESS o nombre). */
+  filtrarPorPuerta(codONombre) {
+    const est = window.EstablecimientosHuarmey ? window.EstablecimientosHuarmey.getByCode(codONombre) : null;
+    const nombre = est ? est.nombre : String(codONombre || '');
+    const clean = nombre.toLowerCase().replace('puesto de salud ', '').replace('centro de salud ', '').trim();
     this.currentFilter.search = clean;
     const searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.value = clean;
+    this.toggleHeartsPanel(true);
     this.render();
   }
 
@@ -968,7 +1052,10 @@ class App {
 
     const subEl = document.getElementById('patient-count-subtitle');
     const countEl = document.getElementById('filter-active-label');
-    if (subEl) subEl.textContent = `${patients.length} de ${this.patients.length} pacientes filtrados`;
+    if (subEl) {
+      const sinUbic = window.GeoUbicacion ? patients.filter(p => !window.GeoUbicacion.validarCoordenadas(p.latitud, p.longitud).ok).length : 0;
+      subEl.textContent = `${patients.length} de ${this.patients.length} pacientes filtrados${sinUbic ? ` · ${sinUbic} sin ubicación en el mapa` : ''}`;
+    }
     if (countEl) countEl.textContent = `Mostrando ${Math.min(patients.length, this.visibleLimit)} de ${patients.length} pacientes`;
 
     container.innerHTML = '';
@@ -1011,6 +1098,13 @@ class App {
 
       const iconLoc = window.AppIcons ? window.AppIcons.location(13, '#5F6368') : '📍';
       const iconLocBlue = window.AppIcons ? window.AppIcons.location(13, '#1A73E8') : '📍';
+      const ubic = window.GeoUbicacion ? window.GeoUbicacion.describirPrecision(p) : { clave: 'no_verificada', exacta: false, etiqueta: '' };
+      const sinUbic = ubic.clave === 'sin_ubicacion';
+      const ubicBadge = `<span class="badge-ubicacion ${ubic.exacta ? 'is-exacta' : (sinUbic ? 'is-sin' : 'is-aprox')}" title="${escapeHtml(ubic.etiqueta)}">${ubic.exacta ? '📍 Exacta' : (sinUbic ? '⚠️ Sin ubicación' : '≈ Aproximada')}</span>`;
+      const puedeUbicar = this.permisos().escribir;
+      const btnVer = sinUbic
+        ? (puedeUbicar ? `<button class="btn-mini btn-ubicar" onclick="window.app.iniciarFijarUbicacion('${safeId}')" title="Fijar la ubicación del domicilio" aria-label="Fijar la ubicación de ${safeName}">${iconLocBlue} Ubicar</button>` : '')
+        : `<button class="btn-mini btn-ubicar" onclick="window.app.centrarPaciente('${safeId}')" title="Ubicar en el mapa" aria-label="Ubicar a ${safeName} en el mapa">${iconLocBlue} Ver</button>`;
       const iconFicha = window.AppIcons ? window.AppIcons.clipboardCheck(13, '#1E8E3E') : '📋';
       const iconWp = window.AppIcons ? window.AppIcons.whatsapp(13, '#25D366') : '📱';
 
@@ -1018,7 +1112,7 @@ class App {
         <div class="patient-card-header" onclick="window.app.openPatientDetail('${safeId}')" role="button" tabindex="0" aria-label="Abrir ficha clínica de ${safeName}">
           <div class="patient-card-title-group">
             <span class="patient-name" title="${safeName}">${safeName}</span>
-            <div class="patient-card-badges">${diagBadges} ${hosixTag}</div>
+            <div class="patient-card-badges">${diagBadges} ${hosixTag} ${ubicBadge}</div>
           </div>
           ${badgeHtml}
         </div>
@@ -1045,7 +1139,7 @@ class App {
         <div class="pcard-bottom-bar">
           <span class="pcard-address" title="${safeAddr} • ${escapeHtml(p.puerta_entrada || '')}">${iconLoc} ${safeAddr}</span>
           <div class="patient-actions">
-            <button class="btn-mini btn-ubicar" onclick="window.app.centrarPaciente('${safeId}')" title="Ubicar en el mapa" aria-label="Ubicar a ${safeName} en el mapa">${iconLocBlue} Ver</button>
+            ${btnVer}
             <button class="btn-mini btn-precita" onclick="window.app.openPatientDetail('${safeId}')" title="Ver Ficha Clínica HEARTS" aria-label="Ver Ficha Clínica de ${safeName}">${iconFicha} Ficha</button>
             <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp('${safeId}')" title="Enviar recordatorio por WhatsApp"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Enviar recordatorio WhatsApp a ${safeName}">${iconWp} WhatsApp</button>
           </div>
@@ -1070,14 +1164,321 @@ class App {
     container.appendChild(fragment);
   }
 
+  /** Centra el mapa en el domicilio del paciente (con su radio de incertidumbre) y abre su ficha rápida. */
   centrarPaciente(idOrDni) {
     const p = this.findPatient(idOrDni);
-    if (p && p.latitud && p.longitud) {
-      this.mapManager.flyTo(p.latitud, p.longitud, 16);
-      if (window.innerWidth <= 768) {
-        document.getElementById('hearts-panel').classList.add('collapsed');
+    if (!p) return;
+    if (!this.mapManager.enfocarPaciente(p)) {
+      const puede = this.permisos().escribir;
+      this.showToast(`${p.apellidos_nombres || 'El paciente'} no tiene ubicación en el mapa.${puede ? ' Use «Fijar ubicación exacta» en su ficha.' : ''}`, 'warning', 5000);
+      return;
+    }
+    if (window.innerWidth <= 768) {
+      const panel = document.getElementById('hearts-panel');
+      if (panel) panel.classList.add('collapsed');
+    }
+  }
+
+  // ===================== UBICACIÓN EXACTA DEL DOMICILIO =====================
+
+  /** Datos de ubicación que muestra la ficha clínica (precisión, coordenadas, aviso de sector). */
+  _datosUbicacionFicha(p) {
+    const G = window.GeoUbicacion;
+    const desc = G ? G.describirPrecision(p) : { clave: 'no_verificada', exacta: false, etiqueta: 'Ubicación no verificada' };
+    const tieneCoords = desc.clave !== 'sin_ubicacion';
+    const partes = [];
+    if (tieneCoords) partes.push(`<span style="font-family:monospace;">${Number(p.latitud).toFixed(6)}, ${Number(p.longitud).toFixed(6)}</span>`);
+    if (p.geo_fuente) partes.push(escapeHtml(p.geo_fuente) + (p.geo_toponimo ? ` («${escapeHtml(p.geo_toponimo)}»)` : ''));
+    if (p.geo_registrado_por) {
+      const f = p.geo_fecha ? String(p.geo_fecha).slice(0, 10).split('-').reverse().join('/') : '';
+      partes.push(`registrada por ${escapeHtml(p.geo_registrado_por)}${f ? ` el ${escapeHtml(f)}` : ''}`);
+    }
+    if (!tieneCoords) partes.push('La dirección no se pudo ubicar en el mapa');
+    else if (!desc.exacta) partes.push('Verifíquela en la visita domiciliaria');
+
+    // Sector que corresponde a las coordenadas (polígono GeoRIS) frente al registrado
+    let avisoSector = '';
+    const geo = window.AncashGeocoder || window.ancashGeocoder;
+    if (tieneCoords && geo && geo.getSectorFromCoordinates) {
+      const s = geo.getSectorFromCoordinates(p.latitud, p.longitud);
+      const segunCoords = s ? `Sector ${s.id_sector}` : null;
+      if (segunCoords && String(p.sector_sanitario || '').trim() !== segunCoords) {
+        avisoSector = `<span class="ficha-aviso-sector" title="El punto del domicilio cae en el polígono oficial del ${escapeHtml(segunCoords)}">Según el mapa: ${escapeHtml(segunCoords)}</span>`;
       }
     }
+    return {
+      desc,
+      tieneCoords,
+      detalle: partes.join(' · '),
+      avisoSector,
+      clase: desc.exacta ? 'is-exacta' : (tieneCoords ? 'is-aprox' : 'is-sin'),
+      puedeUbicar: this.permisos().escribir
+    };
+  }
+
+  /** Punto de referencia para medir la distancia del domicilio: el establecimiento del paciente. */
+  _referenciaUbicacion(p) {
+    const est = window.EstablecimientosHuarmey ? window.EstablecimientosHuarmey.getByCode(p.puerta_entrada_id) : null;
+    return est ? { lat: est.latitud, lng: est.longitud, nombre: est.nombre } : null;
+  }
+
+  cerrarModalUbicacion() {
+    if (this._gpsWatchId !== undefined && this._gpsWatchId !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(this._gpsWatchId);
+    }
+    this._gpsWatchId = null;
+    if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+    const m = document.getElementById('modal-ubicacion');
+    if (m) m.remove();
+  }
+
+  /**
+   * Abre las opciones para fijar la ubicación EXACTA del domicilio: GPS del celular (en la puerta de la vivienda),
+   * marcar el punto en el mapa o escribir/pegar coordenadas. Toda opción termina con una confirmación en el mapa.
+   */
+  iniciarFijarUbicacion(idOrDni) {
+    const p = this.findPatient(idOrDni);
+    if (!p) return;
+    if (!this.permisos().escribir) {
+      this.showToast('Su rol no puede modificar la ubicación de los pacientes.', 'warning');
+      return;
+    }
+    this.cerrarModalUbicacion();
+    const desc = window.GeoUbicacion ? window.GeoUbicacion.describirPrecision(p) : { etiqueta: '' };
+    const gpsDisponible = ('geolocation' in navigator) && (window.isSecureContext !== false);
+    const modal = document.createElement('div');
+    modal.id = 'modal-ubicacion';
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+      <div class="modal-box modal-ubicacion-box" role="dialog" aria-modal="true" aria-labelledby="modal-ubicacion-titulo">
+        <div class="modal-ubicacion-header">
+          <span id="modal-ubicacion-titulo">📍 Ubicación exacta del domicilio</span>
+          <button type="button" class="btn-close-accessible" data-ubic-accion="cerrar" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="modal-ubicacion-body">
+          <div class="modal-ubicacion-paciente">
+            <strong>${escapeHtml(p.apellidos_nombres)}</strong> · DNI ${escapeHtml(p.dni || '—')}<br>
+            <span>${escapeHtml(p.direccion || 'Sin dirección')}</span><br>
+            <span class="modal-ubicacion-actual">Ubicación actual: ${escapeHtml(desc.etiqueta)}</span>
+          </div>
+          <div class="modal-ubicacion-opciones" id="modal-ubicacion-opciones">
+            <button type="button" class="opcion-ubicacion" data-ubic-accion="gps" ${gpsDisponible ? '' : 'disabled'}>
+              <span class="opcion-ubicacion-icono">📡</span>
+              <span><strong>Usar el GPS de este celular</strong><br><small>${gpsDisponible ? 'Solo si está ahora en la puerta de la vivienda del paciente.' : 'No disponible: el GPS del navegador exige abrir el sistema por https:// (o en localhost).'}</small></span>
+            </button>
+            <button type="button" class="opcion-ubicacion" data-ubic-accion="mapa">
+              <span class="opcion-ubicacion-icono">🗺️</span>
+              <span><strong>Marcar la vivienda en el mapa</strong><br><small>Arrastre el marcador sobre el techo o la puerta (con vista satélite).</small></span>
+            </button>
+            <button type="button" class="opcion-ubicacion" data-ubic-accion="coords">
+              <span class="opcion-ubicacion-icono">⌨️</span>
+              <span><strong>Escribir o pegar coordenadas</strong><br><small>Decimales, grados (10°04'08"S) o un enlace de Google Maps / WhatsApp.</small></span>
+            </button>
+          </div>
+          <div id="modal-ubicacion-paso" class="modal-ubicacion-paso"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) { this.cerrarModalUbicacion(); return; }
+      const b = e.target.closest('[data-ubic-accion]');
+      if (!b || b.disabled) return;
+      const accion = b.getAttribute('data-ubic-accion');
+      if (accion === 'cerrar') this.cerrarModalUbicacion();
+      else if (accion === 'gps') this._ubicacionPorGps(p);
+      else if (accion === 'mapa') this._abrirSeleccionEnMapa(p, null);
+      else if (accion === 'coords') this._ubicacionPorCoordenadas(p);
+    });
+    const primero = modal.querySelector('.opcion-ubicacion:not([disabled])');
+    if (primero) primero.focus();
+  }
+
+  /** Lleva al mapa en modo selección (punto inicial: lectura GPS, coordenadas, ubicación actual o su establecimiento). */
+  _abrirSeleccionEnMapa(p, inicial) {
+    this.cerrarModalUbicacion();
+    const detalle = document.getElementById('modal-patient-detail');
+    if (detalle) detalle.classList.remove('active');
+    if (window.innerWidth <= 768) {
+      const panel = document.getElementById('hearts-panel');
+      if (panel) panel.classList.add('collapsed');
+    }
+    const G = window.GeoUbicacion;
+    const ref = this._referenciaUbicacion(p);
+    let punto = inicial;
+    if (!punto && G && G.validarCoordenadas(p.latitud, p.longitud).ok) punto = { lat: Number(p.latitud), lng: Number(p.longitud), precision_geo: 'mapa' };
+    if (!punto && ref) punto = { lat: ref.lat, lng: ref.lng, precision_geo: 'mapa', zoom: 16 };
+    if (!punto) punto = { lat: -10.06866, lng: -78.15187, precision_geo: 'mapa', zoom: 16 }; // Plaza de Armas de Huarmey
+
+    this.mapManager.iniciarSeleccionUbicacion({
+      lat: punto.lat,
+      lng: punto.lng,
+      zoom: punto.zoom || 18,
+      precision_geo: punto.precision_geo || 'mapa',
+      precision_m: punto.precision_m,
+      titulo: `Domicilio de ${p.apellidos_nombres || 'paciente'}`,
+      referencia: ref,
+      onConfirm: (datos) => this.guardarUbicacion(p, datos)
+    });
+  }
+
+  /** Lectura del GPS: se queda con la más precisa durante unos segundos y luego se confirma en el mapa. */
+  _ubicacionPorGps(p) {
+    const paso = document.getElementById('modal-ubicacion-paso');
+    if (!paso) return;
+    if (!('geolocation' in navigator)) {
+      paso.innerHTML = '<div class="ubic-error">Este navegador no ofrece GPS. Use «Marcar la vivienda en el mapa».</div>';
+      return;
+    }
+    if (this._gpsWatchId !== undefined && this._gpsWatchId !== null) navigator.geolocation.clearWatch(this._gpsWatchId);
+    let mejor = null;
+    const OBJETIVO_M = 15;
+    const LIMITE_MS = 25000;
+    paso.innerHTML = `
+      <div class="ubic-gps">
+        <div class="ubic-gps-estado" id="ubic-gps-estado" aria-live="polite">Buscando señal GPS… acepte el permiso de ubicación si el navegador lo pide. Al aire libre la señal mejora.</div>
+        <div class="ubic-gps-acciones">
+          <button type="button" class="btn-mini" id="ubic-gps-cancelar">Cancelar</button>
+          <button type="button" class="btn-mini btn-precita" id="ubic-gps-usar" disabled>Usar esta lectura</button>
+        </div>
+      </div>
+    `;
+    const estado = () => document.getElementById('ubic-gps-estado');
+    const terminar = () => {
+      if (this._gpsWatchId !== null && this._gpsWatchId !== undefined) navigator.geolocation.clearWatch(this._gpsWatchId);
+      this._gpsWatchId = null;
+      if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+      if (!mejor) {
+        const el = estado();
+        if (el) el.innerHTML = '<span class="ubic-error">No se obtuvo ninguna lectura del GPS. Salga al exterior y reintente, o marque la vivienda en el mapa.</span>';
+        return;
+      }
+      const v = window.GeoUbicacion.validarCoordenadas(mejor.lat, mejor.lng);
+      if (!v.ok) {
+        const el = estado();
+        if (el) el.innerHTML = `<span class="ubic-error">${escapeHtml(v.error)}</span>`;
+        return;
+      }
+      this._abrirSeleccionEnMapa(p, { lat: v.lat, lng: v.lng, precision_geo: 'gps', precision_m: Math.max(1, Math.round(mejor.acc)) });
+      if (mejor.acc > 50) this.showToast(`Precisión del GPS baja (±${Math.round(mejor.acc)} m). Ajuste el marcador sobre la vivienda antes de confirmar.`, 'warning', 7000);
+    };
+    document.getElementById('ubic-gps-cancelar').onclick = () => {
+      if (this._gpsWatchId !== null && this._gpsWatchId !== undefined) navigator.geolocation.clearWatch(this._gpsWatchId);
+      this._gpsWatchId = null;
+      if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+      paso.innerHTML = '';
+    };
+    document.getElementById('ubic-gps-usar').onclick = terminar;
+
+    this._gpsWatchId = navigator.geolocation.watchPosition((pos) => {
+      const acc = Number(pos.coords.accuracy);
+      if (!Number.isFinite(acc)) return;
+      if (!mejor || acc < mejor.acc) mejor = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc };
+      const el = estado();
+      if (el) el.innerHTML = `Lectura GPS: <b>${mejor.lat.toFixed(6)}, ${mejor.lng.toFixed(6)}</b> · precisión <b>±${Math.round(mejor.acc)} m</b>${mejor.acc > OBJETIVO_M ? ' · esperando más precisión…' : ''}`;
+      const usar = document.getElementById('ubic-gps-usar');
+      if (usar) usar.disabled = false;
+      if (mejor.acc <= OBJETIVO_M) terminar();
+    }, (err) => {
+      const motivos = {
+        1: 'Permiso de ubicación denegado. Actívelo para este sitio en el navegador o marque la vivienda en el mapa.',
+        2: 'El dispositivo no pudo determinar la ubicación (sin señal GPS).',
+        3: 'El GPS tardó demasiado en responder.'
+      };
+      if (mejor && err.code === 3) { terminar(); return; }
+      if (this._gpsWatchId !== null && this._gpsWatchId !== undefined) navigator.geolocation.clearWatch(this._gpsWatchId);
+      this._gpsWatchId = null;
+      if (this._gpsTimer) { clearTimeout(this._gpsTimer); this._gpsTimer = null; }
+      const el = estado();
+      if (el) el.innerHTML = `<span class="ubic-error">${escapeHtml(motivos[err.code] || err.message || 'Error del GPS.')}</span>`;
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: LIMITE_MS });
+    this._gpsTimer = setTimeout(terminar, LIMITE_MS);
+  }
+
+  /** Coordenadas escritas o pegadas: se interpretan en vivo y se confirman en el mapa. */
+  _ubicacionPorCoordenadas(p) {
+    const paso = document.getElementById('modal-ubicacion-paso');
+    if (!paso) return;
+    const actual = (window.GeoUbicacion && window.GeoUbicacion.validarCoordenadas(p.latitud, p.longitud).ok)
+      ? `${Number(p.latitud).toFixed(6)}, ${Number(p.longitud).toFixed(6)}` : '';
+    paso.innerHTML = `
+      <label class="ux-field-label" for="ubic-coords-input">Coordenadas (latitud, longitud)</label>
+      <input id="ubic-coords-input" class="georis-select" type="text" inputmode="text" autocomplete="off" spellcheck="false"
+        placeholder="-10.068950, -78.152100" value="${escapeHtml(actual)}">
+      <div id="ubic-coords-resultado" class="ubic-coords-resultado" aria-live="polite"></div>
+      <div class="ubic-gps-acciones">
+        <button type="button" class="btn-mini btn-precita" id="ubic-coords-ver" disabled>Ver en el mapa y confirmar</button>
+      </div>
+    `;
+    const input = document.getElementById('ubic-coords-input');
+    const res = document.getElementById('ubic-coords-resultado');
+    const btn = document.getElementById('ubic-coords-ver');
+    let ultimo = null;
+    const evaluar = () => {
+      const r = window.GeoUbicacion.interpretarTexto(input.value);
+      ultimo = r.ok ? r : null;
+      btn.disabled = !r.ok;
+      if (!input.value.trim()) { res.textContent = ''; return; }
+      if (!r.ok) { res.innerHTML = `<span class="ubic-error">${escapeHtml(r.error)}</span>`; return; }
+      const geo = window.AncashGeocoder || window.ancashGeocoder;
+      const s = geo && geo.getSectorFromCoordinates ? geo.getSectorFromCoordinates(r.lat, r.lng) : null;
+      res.innerHTML = `Latitud <b>${r.lat.toFixed(6)}</b>, longitud <b>${r.lng.toFixed(6)}</b> · ${s ? `Sector ${escapeHtml(s.id_sector)}` : 'fuera de los sectores GeoRIS'}`
+        + (r.invertidas ? '<br><span class="ubic-aviso">Se corrigió el orden: venían longitud y latitud invertidas.</span>' : '')
+        + (!r.enAncash ? '<br><span class="ubic-aviso">⚠️ El punto está fuera de Áncash.</span>' : '');
+    };
+    input.addEventListener('input', evaluar);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && ultimo) { e.preventDefault(); btn.click(); } });
+    btn.onclick = () => {
+      if (!ultimo) return;
+      this._abrirSeleccionEnMapa(p, { lat: ultimo.lat, lng: ultimo.lng, precision_geo: 'manual' });
+    };
+    evaluar();
+    input.focus();
+  }
+
+  /**
+   * Guarda en el servidor la ubicación confirmada (PUT /api/patients/:id/ubicacion). Lanza Error si no se guardó
+   * (la selección en el mapa queda abierta para reintentar). El sector lo recalcula el servidor con GeoRIS.
+   */
+  async guardarUbicacion(p, datos) {
+    const base = this.apiEndpoints().API_PATIENTS || '/api/patients';
+    const url = `${base}/${encodeURIComponent(p.id)}/ubicacion`;
+    let res;
+    try {
+      res = await this.session.authFetch(url, {
+        method: 'PUT',
+        body: JSON.stringify({ latitud: datos.lat, longitud: datos.lng, precision_geo: datos.precision_geo, precision_m: datos.precision_m })
+      });
+    } catch (e) {
+      throw new Error('Sin conexión con el servidor: la ubicación no se guardó. Reintente cuando haya señal.');
+    }
+    if (!res || !res.ok) {
+      let motivo = '';
+      try { const b = await res.json(); motivo = (b && (b.error || (b.issue && b.issue[0] && b.issue[0].diagnostics))) || ''; } catch (e) { /* sin cuerpo */ }
+      if (res && res.status === 401) throw new Error('La sesión venció: ingrese de nuevo y repita la ubicación.');
+      throw new Error(`La ubicación no se guardó${motivo ? ': ' + motivo : ''} (código ${res ? res.status : 'sin respuesta'}).`);
+    }
+    const cuerpo = await res.json();
+    const d = cuerpo.data || {};
+    const objetivo = this.findPatient(p.id) || p;
+    objetivo.latitud = d.latitud;
+    objetivo.longitud = d.longitud;
+    objetivo.precision_geo = d.precision_geo;
+    if (d.precision_m === null || d.precision_m === undefined) delete objetivo.precision_m; else objetivo.precision_m = d.precision_m;
+    objetivo.geo_fuente = d.geo_fuente;
+    objetivo.geo_fecha = d.geo_fecha;
+    objetivo.geo_registrado_por = d.geo_registrado_por;
+    delete objetivo.geo_toponimo;
+    objetivo.sector_por_ubicacion = true;
+    if (d.sector_sanitario) objetivo.sector_sanitario = d.sector_sanitario;
+    objetivo._searchStr = `${objetivo.dni || ''} ${objetivo.historia_clinica || ''} ${objetivo.apellidos_nombres || ''} ${objetivo.direccion || ''} ${objetivo.puerta_entrada || ''} ${objetivo.sector_sanitario || ''}`.toLowerCase();
+    this.render();
+    // El mapa ya está sobre el punto confirmado: se enfoca sin animación (una animación en curso movería la vista)
+    this.mapManager.enfocarPaciente(objetivo, { animar: false });
+    const t = d.territorio || {};
+    const zona = t.zona ? ` · Zona ${t.zona.id_zona}` : '';
+    this.showToast(`Ubicación exacta guardada: ${objetivo.sector_sanitario}${zona}.`, 'success', 5000);
+    return d;
   }
 
   openPatientDetail(idOrDni) {
@@ -1377,6 +1778,7 @@ class App {
     const iconBtnCalendar = window.AppIcons ? window.AppIcons.calendar(14, '#FFFFFF') : '';
     const iconBtnWhatsapp = window.AppIcons ? window.AppIcons.whatsapp(14, '#FFFFFF') : '';
     const iconRefresh = window.AppIcons ? window.AppIcons.refresh(12, '#1A73E8') : '';
+    const ubicFicha = this._datosUbicacionFicha(p);
 
     modal.innerHTML = `
       <div class="modal-box hearts-ficha-modal" role="dialog" aria-modal="true" aria-labelledby="ficha-paciente-title">
@@ -1449,10 +1851,24 @@ class App {
               <div class="hearts-id-item">
                 <span class="hearts-id-label">${iconMap} Sector Sanitario</span>
                 <span class="hearts-id-val">${escapeHtml(p.sector_sanitario || 'Sin sector')}</span>
+                ${ubicFicha.avisoSector}
               </div>
               <div class="hearts-id-item">
                 <span class="hearts-id-label">${iconHospital} IPRESS Adscrita</span>
                 <span class="hearts-id-val" style="color:#0369a1;">${escapeHtml(p.puerta_entrada || 'Hospital II-1 Huarmey')}</span>
+              </div>
+            </div>
+
+            <!-- Ubicación del domicilio: precisión, coordenadas y cómo fijarla exactamente -->
+            <div class="ficha-ubicacion ${ubicFicha.clase}">
+              <div class="ficha-ubicacion-info">
+                <span class="hearts-id-label">${iconLocation} Ubicación del domicilio</span>
+                <span class="ficha-ubicacion-estado">${escapeHtml(ubicFicha.desc.etiqueta)}</span>
+                <span class="ficha-ubicacion-detalle">${ubicFicha.detalle}</span>
+              </div>
+              <div class="ficha-ubicacion-acciones">
+                ${ubicFicha.tieneCoords ? `<button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente('${escapeHtml(p.id)}')">Ver en el mapa</button>` : ''}
+                ${ubicFicha.puedeUbicar ? `<button class="btn-mini btn-precita" onclick="window.app.iniciarFijarUbicacion('${escapeHtml(p.id)}')">📍 ${ubicFicha.desc.exacta ? 'Corregir ubicación' : 'Fijar ubicación exacta'}</button>` : ''}
               </div>
             </div>
           </div>
@@ -1601,7 +2017,7 @@ class App {
         </div>
 
         <div class="modal-footer">
-          <button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente('${p.id}')">${iconBtnLocation} Ubicar en Mapa</button>
+          <button class="btn-mini btn-ubicar" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.centrarPaciente('${escapeHtml(p.id)}')">${iconBtnLocation} Ubicar en Mapa</button>
           <button class="btn-mini btn-precita" style="background:#16a34a; border-color:#15803d; color:#ffffff;" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); if(window.RegistroClinicoModal) window.RegistroClinicoModal.open('${p.dni || p.nro_documento || ''}');" title="Registrar nueva atención médica en Padrón Estandarizado">${iconBtnEdit} Registrar Atención</button>
           <button class="btn-mini btn-precita" onclick="document.getElementById('modal-patient-detail').classList.remove('active'); window.app.abrirModalPreCita('${p.id}')">${iconBtnCalendar} Pre-cita HOSIX</button>
           <button class="btn-mini btn-whatsapp" ${hasPhone ? `onclick="window.app.enviarWhatsApp('${p.id}')"` : 'disabled title="Paciente sin número de celular registrado" aria-disabled="true"'} aria-label="Notificar por WhatsApp a ${escapeHtml(p.apellidos_nombres)}">${iconBtnWhatsapp} Notificar por WhatsApp</button>
@@ -2056,6 +2472,10 @@ class App {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        // La selección de ubicación en el mapa y su ventana manejan su propio Escape
+        if (this.mapManager && this.mapManager.seleccion) return;
+        const modalUbic = document.getElementById('modal-ubicacion');
+        if (modalUbic) { this.cerrarModalUbicacion(); return; }
         const modalDetail = document.getElementById('modal-patient-detail');
         const modalPre = document.getElementById('modal-precita');
         if (modalDetail && modalDetail.classList.contains('active')) {

@@ -26,6 +26,20 @@ function patientRed(p) {
   return est ? normalizeRed(est.red_salud) : null;
 }
 
+/** Sector en minúsculas, sin tildes ni signos («Sector I – Centro» → «sector i centro»). */
+function normSector(v) {
+  return String(v === null || v === undefined ? '' : v)
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/** Mismo sector si son iguales o si uno es el otro más palabras («sector i» abarca «sector i centro»). */
+function mismoSector(a, b) {
+  if (a === b) return true;
+  const [corto, largo] = a.length < b.length ? [a, b] : [b, a];
+  return largo.startsWith(corto + ' ');
+}
+
 function canSeePatient(user, patient) {
   if (!user) return false;
   if (isAdmin(user)) return true;
@@ -38,11 +52,12 @@ function canSeePatient(user, patient) {
     if (pEst && userEst !== pEst) return false;
   }
 
-  // Ámbito granular por sector sanitario si el usuario lo tiene asignado
+  // Ámbito granular por sector sanitario si el usuario lo tiene asignado. Se compara por palabras completas:
+  // «Sector 6» no abarca «Sector 67» (antes una subcadena dejaba ver los sectores 60-69).
   if (user.sector_sanitario || user.sector) {
-    const userSec = String(user.sector_sanitario || user.sector).trim().toLowerCase();
-    const pSec = String(patient.sector_sanitario || patient.sector || '').trim().toLowerCase();
-    if (pSec && !pSec.includes(userSec) && !userSec.includes(pSec)) return false;
+    const userSec = normSector(user.sector_sanitario || user.sector);
+    const pSecs = [patient.sector_sanitario, patient.sector].map(normSector).filter(Boolean);
+    if (userSec && pSecs.length && !pSecs.some(ps => mismoSector(ps, userSec))) return false;
   }
 
   return true;

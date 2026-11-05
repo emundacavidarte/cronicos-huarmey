@@ -49,7 +49,9 @@ Este repositorio contiene **únicamente 20 pacientes sintéticos/simulados** par
 ## 📡 Endpoints de Interoperabilidad HL7 FHIR (R4)
 * **CapabilityStatement FHIR:** `GET /fhir/metadata`
 * **Catálogo LOINC v2.78:** `GET /fhir/loinc-catalog`
-* **Padrón Territorial:** `GET /api/cronicos`
+* **Padrón Territorial:** `GET /api/cronicos`
+* **Ubicación exacta del domicilio:** `PUT /api/patients/:id/ubicacion` `{latitud, longitud, precision_geo: "gps"|"mapa"|"manual", precision_m}` (ADMIN y COORDINADOR de la red; el sector se recalcula con el polígono GeoRIS)
+* **Pacientes en GeoJSON:** `GET /api/patients/geo` (incluye `ubicaciones`: exactas, aproximadas y sin ubicación)
 * **Ingesta Transaccional FHIR Bundle:** `POST /fhir/Bundle`
 * **Health Check:** `GET /health`
 

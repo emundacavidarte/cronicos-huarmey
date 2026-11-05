@@ -14,7 +14,7 @@ module.exports = [
     "direccion": "Jr. Pativilca 245",
     "direccion_dnt": "Jr. Pativilca 245",
     "sector": "Sector I – Centro",
-    "sector_sanitario": "Sector 62",
+    "sector_sanitario": "Sector 67",
     "distrito": "Huarmey",
     "latitud": -10.0682,
     "longitud": -78.1522,
@@ -80,7 +80,10 @@ module.exports = [
     "pad_abr": 80,
     "pas_ene": 125,
     "pad_ene": 80,
-    "caso_clinico": "Caso 1: HTA Esencial Controlada en Meta HEARTS (Verde)"
+    "caso_clinico": "Caso 1: HTA Esencial Controlada en Meta HEARTS (Verde)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "JR PATIVILCA"
   },
   {
     "id": "pac-sim-10000002",
@@ -96,10 +99,10 @@ module.exports = [
     "telefono": "943111002",
     "direccion": "Av. El Olivar 412",
     "sector": "Sector II – La Victoria",
-    "sector_sanitario": "Sector 63",
+    "sector_sanitario": "Sector 67",
     "distrito": "Huarmey",
-    "latitud": -10.0635,
-    "longitud": -78.148,
+    "latitud": -10.0643,
+    "longitud": -78.1532,
     "puerta_entrada": "C. S. La Victoria I-3",
     "puerta_entrada_id": "00001744",
     "establecimiento_adscripcion": "C. S. La Victoria (00001744, I-3)",
@@ -169,7 +172,10 @@ module.exports = [
     "pad_set": 80,
     "pas_ago": 132,
     "pad_ago": 82,
-    "caso_clinico": "Caso 2: DM2 + HTA en Meta, Cita Próxima en 4 días (Amarillo)"
+    "caso_clinico": "Caso 2: DM2 + HTA en Meta, Cita Próxima en 4 días (Amarillo)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "AV EL OLIVAR"
   },
   {
     "id": "pac-sim-10000003",
@@ -185,10 +191,10 @@ module.exports = [
     "telefono": "943111003",
     "direccion": "Jr. Grau 580",
     "sector": "Sector III – Santo Domingo",
-    "sector_sanitario": "Sector 64",
+    "sector_sanitario": "Sector 69",
     "distrito": "Huarmey",
-    "latitud": -10.071,
-    "longitud": -78.145,
+    "latitud": -10.06638,
+    "longitud": -78.146668,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -247,7 +253,10 @@ module.exports = [
     "pad_set": 102,
     "pas_ago": 160,
     "pad_ago": 98,
-    "caso_clinico": "Caso 3: HTA Severa Fuera de Meta con Cita Vencida (Rojo)"
+    "caso_clinico": "Caso 3: HTA Severa Fuera de Meta con Cita Vencida (Rojo)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "JR GRAU"
   },
   {
     "id": "pac-sim-10000004",
@@ -263,10 +272,10 @@ module.exports = [
     "telefono": "943111004",
     "direccion": "Calle Belaunde 130",
     "sector": "Sector IV – Buenos Aires",
-    "sector_sanitario": "Sector 65",
+    "sector_sanitario": "Sector 69",
     "distrito": "Huarmey",
-    "latitud": -10.061,
-    "longitud": -78.156,
+    "latitud": -10.070371,
+    "longitud": -78.148454,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -335,7 +344,10 @@ module.exports = [
     "pad_ago": 82,
     "pas_jun": 134,
     "pad_jun": 84,
-    "caso_clinico": "Caso 4: Enfermedad Renal Crónica G3b + HTA en Seguimiento (Verde)"
+    "caso_clinico": "Caso 4: Enfermedad Renal Crónica G3b + HTA en Seguimiento (Verde)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "CALLE BELAUNDE"
   },
   {
     "id": "pac-sim-10000005",
@@ -351,10 +363,10 @@ module.exports = [
     "telefono": "943111005",
     "direccion": "Caleta Puerto Huarmey Mz. C Lt. 4",
     "sector": "Puerto Huarmey",
-    "sector_sanitario": "Sector 68",
+    "sector_sanitario": "Sector 66",
     "distrito": "Huarmey",
-    "latitud": -10.095,
-    "longitud": -78.172,
+    "latitud": -10.098216,
+    "longitud": -78.161813,
     "puerta_entrada": "P. S. Puerto Huarmey I-2",
     "puerta_entrada_id": "00001742",
     "establecimiento_adscripcion": "P. S. Puerto Huarmey (00001742, I-2)",
@@ -419,7 +431,10 @@ module.exports = [
     "pad_oct": 80,
     "pas_set": 128,
     "pad_set": 82,
-    "caso_clinico": "Caso 5: Procedente de Ingesta HOSIX SIVSA Hospital (Morado)"
+    "caso_clinico": "Caso 5: Procedente de Ingesta HOSIX SIVSA Hospital (Morado)",
+    "precision_geo": "localidad",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "CALETA PUERTO HUARMEY"
   },
   {
     "id": "pac-sim-10000006",
@@ -435,7 +450,7 @@ module.exports = [
     "telefono": "943111006",
     "direccion": "Jr. Arequipa 310",
     "sector": "Sector I – Centro",
-    "sector_sanitario": "Sector 62",
+    "sector_sanitario": "Sector 67",
     "distrito": "Huarmey",
     "latitud": -10.067,
     "longitud": -78.151,
@@ -501,7 +516,7 @@ module.exports = [
     "telefono": "943111007",
     "direccion": "Caserío La Pampa S/N",
     "sector": "Culebras",
-    "sector_sanitario": "Sector 72",
+    "sector_sanitario": "Sector 62",
     "distrito": "Culebras",
     "latitud": -9.928,
     "longitud": -78.225,
@@ -583,10 +598,10 @@ module.exports = [
     "telefono": "943111008",
     "direccion": "Valle Huamba Km 8",
     "sector": "Huamba",
-    "sector_sanitario": "Sector 69",
+    "sector_sanitario": "Sector 70",
     "distrito": "Huarmey",
-    "latitud": -10.052,
-    "longitud": -78.121,
+    "latitud": -9.9652,
+    "longitud": -77.856912,
     "puerta_entrada": "P. S. Huamba I-1",
     "puerta_entrada_id": "00001751",
     "establecimiento_adscripcion": "P. S. Huamba (00001751, I-1)",
@@ -659,7 +674,10 @@ module.exports = [
     "pad_oct": 86,
     "pas_set": 138,
     "pad_set": 88,
-    "caso_clinico": "Caso 8: Muy Alto Riesgo Cardiovascular OMS ≥ 20% (Amarillo)"
+    "caso_clinico": "Caso 8: Muy Alto Riesgo Cardiovascular OMS ≥ 20% (Amarillo)",
+    "precision_geo": "localidad",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "VALLE HUAMBA"
   },
   {
     "id": "pac-sim-10000009",
@@ -759,10 +777,10 @@ module.exports = [
     "telefono": "943111010",
     "direccion": "Fundo Congón S/N",
     "sector": "Congón – San Isidro",
-    "sector_sanitario": "Sector 71",
+    "sector_sanitario": "Sector 69",
     "distrito": "Huarmey",
     "latitud": -10.035,
-    "longitud": -78.132,
+    "longitud": -78.092,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -828,7 +846,10 @@ module.exports = [
     "pad_jun": 82,
     "pas_mar": 140,
     "pad_mar": 85,
-    "caso_clinico": "Caso 10: Adulto Mayor Frágil con Cita Vencida hace 3 días (Rojo)"
+    "caso_clinico": "Caso 10: Adulto Mayor Frágil con Cita Vencida hace 3 días (Rojo)",
+    "precision_geo": "localidad",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "FUNDO CONGON"
   },
   {
     "id": "pac-sim-10000011",
@@ -845,10 +866,10 @@ module.exports = [
     "direccion": "Jr. Belaunde 315",
     "direccion_dnt": "Jr. Belaunde 315",
     "sector": "Sector I – Centro",
-    "sector_sanitario": "Sector 62",
+    "sector_sanitario": "Sector 69",
     "distrito": "Huarmey",
-    "latitud": -10.0675,
-    "longitud": -78.151,
+    "latitud": -10.067416,
+    "longitud": -78.148744,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -903,7 +924,10 @@ module.exports = [
         "estado": "booked"
       }
     ],
-    "caso_clinico": "Caso 11: Mujer 60a HTA Leve Controlada en Meta HEARTS (Verde)"
+    "caso_clinico": "Caso 11: Mujer 60a HTA Leve Controlada en Meta HEARTS (Verde)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "JR BELAUNDE"
   },
   {
     "id": "pac-sim-10000012",
@@ -920,10 +944,10 @@ module.exports = [
     "direccion": "P.J. Santo Domingo Mz. C Lote 8",
     "direccion_dnt": "P.J. Santo Domingo Mz. C Lote 8",
     "sector": "Sector III – Santo Domingo",
-    "sector_sanitario": "Sector 65",
+    "sector_sanitario": "Sector 69",
     "distrito": "Huarmey",
-    "latitud": -10.071,
-    "longitud": -78.156,
+    "latitud": -10.0682,
+    "longitud": -78.1495,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -987,7 +1011,10 @@ module.exports = [
         "estado": "noshow"
       }
     ],
-    "caso_clinico": "Caso 12: DM2 + HTA Descompensado con Inasistencia a Cita (Rojo)"
+    "caso_clinico": "Caso 12: DM2 + HTA Descompensado con Inasistencia a Cita (Rojo)",
+    "precision_geo": "sector",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "PJ SANTO DOMINGO"
   },
   {
     "id": "pac-sim-10000013",
@@ -1004,10 +1031,10 @@ module.exports = [
     "direccion": "Jr. Casma 180",
     "direccion_dnt": "Jr. Casma 180",
     "sector": "Sector I – Centro",
-    "sector_sanitario": "Sector 62",
+    "sector_sanitario": "Sector 67",
     "distrito": "Huarmey",
-    "latitud": -10.069,
-    "longitud": -78.153,
+    "latitud": -10.0691,
+    "longitud": -78.150075,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -1071,7 +1098,10 @@ module.exports = [
         "estado": "booked"
       }
     ],
-    "caso_clinico": "Caso 13: Adulto Mayor HTA + ERC 3a con Cita Próxima en 6 días (Amarillo)"
+    "caso_clinico": "Caso 13: Adulto Mayor HTA + ERC 3a con Cita Próxima en 6 días (Amarillo)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "JR CASMA"
   },
   {
     "id": "pac-sim-10000014",
@@ -1088,7 +1118,7 @@ module.exports = [
     "direccion": "C.P. Puerto Huarmey Mz. 14 Lote 2",
     "direccion_dnt": "C.P. Puerto Huarmey Mz. 14 Lote 2",
     "sector": "Puerto Huarmey",
-    "sector_sanitario": "Sector 68",
+    "sector_sanitario": "Sector 66",
     "distrito": "Huarmey",
     "latitud": -10.103,
     "longitud": -78.163,
@@ -1139,7 +1169,10 @@ module.exports = [
       }
     ],
     "appointments": [],
-    "caso_clinico": "Caso 14: Brecha HOSIX en Puerto Huarmey sin Cita Programada (Morado)"
+    "caso_clinico": "Caso 14: Brecha HOSIX en Puerto Huarmey sin Cita Programada (Morado)",
+    "precision_geo": "localidad",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "CP PUERTO HUARMEY"
   },
   {
     "id": "pac-sim-10000015",
@@ -1156,10 +1189,10 @@ module.exports = [
     "direccion": "Av. Garcilaso de la Vega 520",
     "direccion_dnt": "Av. Garcilaso de la Vega 520",
     "sector": "Sector II – La Victoria",
-    "sector_sanitario": "Sector 63",
+    "sector_sanitario": "Sector 69",
     "distrito": "Huarmey",
-    "latitud": -10.0645,
-    "longitud": -78.1495,
+    "latitud": -10.06467,
+    "longitud": -78.150638,
     "puerta_entrada": "C. S. La Victoria I-3",
     "puerta_entrada_id": "00001744",
     "establecimiento_adscripcion": "C. S. La Victoria (00001744, I-3)",
@@ -1214,7 +1247,10 @@ module.exports = [
         "estado": "booked"
       }
     ],
-    "caso_clinico": "Caso 15: HTA Grado 2 en Meta Terapéutica con Terapia Dual (Verde)"
+    "caso_clinico": "Caso 15: HTA Grado 2 en Meta Terapéutica con Terapia Dual (Verde)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "AV GARCILASO DE LA VEGA"
   },
   {
     "id": "pac-sim-10000016",
@@ -1231,7 +1267,7 @@ module.exports = [
     "direccion": "Calle Los Andes 142",
     "direccion_dnt": "Calle Los Andes 142",
     "sector": "Sector I – Centro",
-    "sector_sanitario": "Sector 62",
+    "sector_sanitario": "Sector 67",
     "distrito": "Huarmey",
     "latitud": -10.0668,
     "longitud": -78.1518,
@@ -1311,7 +1347,7 @@ module.exports = [
     "direccion": "Pasaje San Martín 104",
     "direccion_dnt": "Pasaje San Martín 104",
     "sector": "Sector II – La Victoria",
-    "sector_sanitario": "Sector 63",
+    "sector_sanitario": "Sector 69",
     "distrito": "Huarmey",
     "latitud": -10.062,
     "longitud": -78.1472,
@@ -1390,7 +1426,7 @@ module.exports = [
     "direccion": "C.P. Culebras Mz. B Lote 4",
     "direccion_dnt": "C.P. Culebras Mz. B Lote 4",
     "sector": "Culebras",
-    "sector_sanitario": "Sector 69",
+    "sector_sanitario": "Sector 62",
     "distrito": "Culebras",
     "latitud": -9.932,
     "longitud": -78.225,
@@ -1448,7 +1484,10 @@ module.exports = [
         "estado": "noshow"
       }
     ],
-    "caso_clinico": "Caso 18: Deserción Crónica en Culebras >60 días sin control (Rojo)"
+    "caso_clinico": "Caso 18: Deserción Crónica en Culebras >60 días sin control (Rojo)",
+    "precision_geo": "localidad",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "CP CULEBRAS"
   },
   {
     "id": "pac-sim-10000019",
@@ -1465,10 +1504,10 @@ module.exports = [
     "direccion": "Jr. Bolognesi 640",
     "direccion_dnt": "Jr. Bolognesi 640",
     "sector": "Sector I – Centro",
-    "sector_sanitario": "Sector 62",
+    "sector_sanitario": "Sector 67",
     "distrito": "Huarmey",
-    "latitud": -10.0695,
-    "longitud": -78.154,
+    "latitud": -10.06678,
+    "longitud": -78.154365,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -1528,7 +1567,10 @@ module.exports = [
         "estado": "booked"
       }
     ],
-    "caso_clinico": "Caso 19: Obesidad I + HTA en Manejo con Estilo de Vida y Losartán (Verde)"
+    "caso_clinico": "Caso 19: Obesidad I + HTA en Manejo con Estilo de Vida y Losartán (Verde)",
+    "precision_geo": "calle",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "JR BOLOGNESI"
   },
   {
     "id": "pac-sim-10000020",
@@ -1547,8 +1589,8 @@ module.exports = [
     "sector": "Huamba",
     "sector_sanitario": "Sector 70",
     "distrito": "Huarmey",
-    "latitud": -10.015,
-    "longitud": -78.082,
+    "latitud": -9.9652,
+    "longitud": -77.856912,
     "puerta_entrada": "Hospital de Apoyo Huarmey II-1",
     "puerta_entrada_id": "00001741",
     "establecimiento_adscripcion": "Hospital de Apoyo Huarmey (00001741, II-1)",
@@ -1593,6 +1635,9 @@ module.exports = [
     ],
     "observations": [],
     "appointments": [],
-    "caso_clinico": "Caso 20: Paciente Fallecido Auditoría Red Pacífico Sur (Negro)"
+    "caso_clinico": "Caso 20: Paciente Fallecido Auditoría Red Pacífico Sur (Negro)",
+    "precision_geo": "localidad",
+    "geo_fuente": "geocodificador",
+    "geo_toponimo": "CASERIO HUAMBA"
   }
 ];

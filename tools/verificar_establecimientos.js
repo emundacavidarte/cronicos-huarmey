@@ -60,19 +60,22 @@ for (const e of dbList) {
 }
 
 console.log('\n== B. ancashGeocoder.js (entradas de establecimientos) vs GeoRIS ==');
+// Por cada establecimiento que usa el geocodificador se toma la entrada que lo representa (la más cercana a su
+// punto GeoRIS): las calles y barrios que también lo citan como puerta de entrada están, con razón, en otro lugar.
 let totalErroresGeo = 0;
-const seen = new Set();
+const mejorPorEs = new Map();
 for (const e of geoEntries) {
   if (!e.es) continue;
   const g = georis.get(e.es);
   if (!g) { console.log(`SIN-GEORIS ${e.es} "${e.kw}"`); totalErroresGeo++; continue; }
   const d = Math.round(hav(e.lat, e.lng, g.lat, g.lng));
-  if (!seen.has(e.es)) {
-    seen.add(e.es);
-    const veredicto = d <= 500 ? 'OK' : (d <= 2000 ? 'REVISAR' : 'ERROR');
-    if (veredicto === 'ERROR') totalErroresGeo++;
-    console.log(`${veredicto.padEnd(8)} "${e.kwOriginal || e.kw}" -> ${e.es} (${g.nombre}) dist=${d} m`);
-  }
+  const prev = mejorPorEs.get(e.es);
+  if (!prev || d < prev.d) mejorPorEs.set(e.es, { e, g, d });
+}
+for (const { e, g, d } of mejorPorEs.values()) {
+  const veredicto = d <= 500 ? 'OK' : (d <= 2000 ? 'REVISAR' : 'ERROR');
+  if (veredicto === 'ERROR') totalErroresGeo++;
+  console.log(`${veredicto.padEnd(8)} "${e.kwOriginal || e.kw}" -> ${e.es} (${g.nombre}) dist=${d} m`);
 }
 const codesGeo = new Set(geoEntries.map(e => e.es).filter(Boolean));
 console.log('\nCodigos usados por el geocodificador que NO existen en GeoRIS:', [...codesGeo].filter(c => !georis.has(c)).join(', ') || 'ninguno');

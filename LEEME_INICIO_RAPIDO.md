@@ -47,6 +47,16 @@ Luego abra su navegador en:
 7. **Ficha Clínica HEARTS MINSA / OPS (Datos 100% Individualizados):**
    * Al hacer clic en cualquier paciente o en el botón **`📋 Ficha`**, se despliega la ficha clínica estructurada en **5 pilares y 2 columnas**, con cada campo demográfico y metabólico en su propia celda independiente (`DNI`, `Historia Clínica`, `Edad Actual`, `Sexo Biológico`, `Fecha de Nacimiento`, `Seguro de Salud`, `Teléfono`, `Dirección`, `Sector Sanitario`, `IPRESS Adscrita`, `Presión Arterial`, `Glucosa Basal`, `HbA1c`, `Perfil Renal`, `Perfil Lipídico` y `Cronograma Anual 2026`).
 
+8. **Ubicación exacta del domicilio del paciente (GPS, mapa o coordenadas):**
+   * En la ficha del paciente, en su popup del mapa o en la lista (botón **`Ubicar`** si no tiene ubicación) pulse **`📍 Fijar ubicación exacta`** y elija:
+     * **GPS de este celular:** solo estando en la puerta de la vivienda. El sistema toma la lectura más precisa durante unos segundos y muestra su precisión (± metros). *El GPS del navegador solo funciona si el sistema se abre por `https://` o en `localhost`.*
+     * **Marcar en el mapa:** arrastre el marcador rojo (o toque el mapa) sobre la vivienda; el botón **`🛰️ Satélite`** muestra los techos.
+     * **Escribir o pegar coordenadas:** acepta `-10.06895, -78.15210`, coma decimal, grados (`10°04'08"S 78°09'07"W`) y enlaces de Google Maps o de la ubicación compartida por WhatsApp.
+   * Siempre se confirma en el mapa viendo en vivo el **sector GeoRIS**, la zona y la distancia al establecimiento. Al guardar, el servidor recalcula el sector sanitario con el polígono oficial y registra quién y cuándo la fijó.
+   * **Pin con borde continuo y ✓** = ubicación exacta. **Pin con borde punteado** = aproximada por dirección (a nivel de calle, barrio o localidad: el catastro no tiene numeración de casas). Al centrar un paciente se dibuja su radio de incertidumbre.
+   * Una ubicación exacta **no se pierde** al reimportar el padrón ni al registrar una atención con la misma dirección; si el paciente se muda (otra dirección), vale la nueva.
+9. **Herramienta de medición:** botón **`📏`** en los controles del mapa (clic en 2 o más puntos; vuelva a pulsarlo para terminar).
+
 ---
 
 ## 3. Endpoints Principales (REST & HL7 FHIR R4)
@@ -54,7 +64,8 @@ Luego abra su navegador en:
 * **Health Check & Estado de Memoria:** `GET http://localhost:3000/health`
 * **CapabilityStatement HL7 FHIR R4:** `GET http://localhost:3000/fhir/metadata`
 * **Catálogo LOINC v2.78:** `GET http://localhost:3000/fhir/loinc-catalog`
-* **Padrón Completo (Gzip + ETag):** `GET http://localhost:3000/api/cronicos`
+* **Padrón Completo (Gzip + ETag):** `GET http://localhost:3000/api/cronicos`
+* **Fijar ubicación exacta del domicilio:** `PUT http://localhost:3000/api/patients/:id/ubicacion`
 * **Expediente Individual FHIR Bundle:** `GET http://localhost:3000/fhir/Patient/10000001/bundle`
 * **Ingesta Transaccional FHIR Bundle:** `POST http://localhost:3000/fhir/Bundle`
 * **Webhooks HOSIX / Galenos / Pakamuros:** `POST http://localhost:3000/api/webhooks/hosix`

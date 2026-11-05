@@ -705,14 +705,30 @@
       this.dom.btnCargar.textContent = '⏳ Geocodificando y persistiendo en el sistema...';
 
       try {
-        const geocoder = window.AncashGeocoder || { geocode: (addr) => ({ lat: -10.04780, lng: -78.15480, sector: 'Sector I - Centro', matched: true }) };
+        // Sin geocodificador no se inventa una ubicación: se envía sin coordenadas y el servidor la resuelve
+        const geocoder = window.AncashGeocoder || { geocode: () => ({ lat: null, lng: null, sector: null, matched: false, precision_geo: 'sin_ubicacion' }), claveDireccion: t => String(t || '') };
+        const pacientesActuales = (window.app && Array.isArray(window.app.patients)) ? window.app.patients : [];
+        const geoU = window.GeoUbicacion;
         const hearts = window.HeartsEngine || { evaluatePatient: () => ({ semaforo: 'green', estado_control: 'Controlado' }) };
 
         // 1. Transformar filas limpias en pacientes con recursos clínicos FHIR y coordenadas
         const processedPatients = this.patients.map((r, idx) => {
           const dni = String(r.nro_documento || '').replace(/\D/g, '');
           const direccion = r.direccion || '';
-          const geo = geocoder.geocode(direccion || 'Huarmey');
+          // Si el paciente ya está en el padrón con la misma dirección y una ubicación, no se vuelve a geocodificar
+          // ni se envían coordenadas: el servidor conserva las guardadas (una ubicación exacta de campo no se pierde)
+          const previo = pacientesActuales.find(x => String(x.dni || x.nro_documento || '').replace(/\D/g, '') === dni);
+          const mismaDireccion = !!previo && !!direccion && geocoder.claveDireccion(previo.direccion || '') === geocoder.claveDireccion(direccion);
+          const conservarUbicacion = mismaDireccion && geoU && geoU.validarCoordenadas(previo.latitud, previo.longitud).ok;
+          const geo = (direccion && !conservarUbicacion) ? geocoder.geocode(direccion) : { matched: false, lat: null, lng: null, sector: null };
+          const ubicacion = conservarUbicacion ? {} : (geo.matched ? {
+            latitud: geo.lat,
+            longitud: geo.lng,
+            precision_geo: geo.precision_geo,
+            geo_fuente: 'geocodificador',
+            geo_toponimo: geo.toponym,
+            sector_sanitario: geo.sector || undefined
+          } : {});
 
           // Buscar última PAS y PAD registradas en el año
           let pas = null, pad = null;
@@ -740,14 +756,14 @@
             seguro: r.seguro_salud || '',
             telefono: r.telefono || '',
             direccion,
-            sector_sanitario: r.sector || geo.sector || 'Sector I – Centro',
+            // «sector» es la nomenclatura local del padrón v4; el sector sanitario GeoRIS sale de las coordenadas
+            sector: r.sector || '',
             distrito: r.sector && r.sector.includes('Culebras') ? 'Culebras' : (r.sector && r.sector.includes('Huayán') ? 'Huayán' : 'Huarmey'),
             establecimiento_adscripcion: r.establecimiento_adscripcion || 'Hospital de Apoyo Huarmey (00001741, II-1)',
             puerta_entrada_id: codigoRenipress(r.establecimiento_control) || undefined,
             establecimiento_control: r.establecimiento_control || '',
             puerta_entrada: r.establecimiento_control || '',
-            latitud: geo.lat,
-            longitud: geo.lng,
+            ...ubicacion,
             conditions: [],
             observations: (fechaUltima && (pas || pad || hba1c || glucosa)) ? [
               {
@@ -791,7 +807,7 @@
             hba1c: hba1c,
             glucosa: glucosa,
             diagnosticos: pObj.conditions.map(c => c.cie10_cod),
-            sector: pObj.sector_sanitario,
+            sector: r.sector || '',
             edad: r.edad ? parseInt(r.edad, 10) : (r.fecha_nacimiento ? (new Date().getFullYear() - new Date(r.fecha_nacimiento).getFullYear()) : null),
             estado_paciente: r.estado_paciente || 'Activo',
             tratamiento_hta: r.tratamiento_hta || '',
@@ -822,8 +838,11 @@
           }
         }
 
-        // 3. Sincronizar en la Aplicación (combinando con existentes)
-        if (window.app) {
+        // 3. Sincronizar en la Aplicación: si el servidor guardó, se recarga desde él (es quien decide la ubicación final)
+        if (window.app && savedInBackend && typeof window.app.loadInitialData === 'function') {
+          await window.app.loadInitialData();
+          window.app.showToast(`🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron ${processedPatients.length} pacientes en el servidor.`, 'success', 6000);
+        } else if (window.app) {
           if (typeof window.app.upsertPatients === 'function') {
             window.app.upsertPatients(processedPatients);
           } else {

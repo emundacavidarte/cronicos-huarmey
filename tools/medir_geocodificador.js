@@ -71,7 +71,9 @@ test('"Jr Casma 123" resuelve en calle Casma de Huarmey, mientras "Ciudad de Cas
   const rCalle = geocoder.geocode('Jr Casma 123');
   const rCiudad = geocoder.geocode('Ciudad de Casma');
   assert.strictEqual(rCalle.matched, true);
-  assert.strictEqual(rCalle.es_puerta_id, '00001741');
+  // Puerta de entrada oficial del sector GeoRIS del Jr. Casma (Sector 69): C. S. La Victoria
+  assert.strictEqual(rCalle.es_puerta_id, '00001744');
+  assert.strictEqual(rCalle.localidad, 'HUARMEY');
   assert.strictEqual(rCiudad.matched, true);
   assert.strictEqual(rCiudad.es_puerta_id, '00001719');
 });

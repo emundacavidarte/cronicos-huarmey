@@ -16,6 +16,8 @@
 
   // Catálogo maestro oficial de la Microrred Huarmey (Zona Sanitaria 6 - RIS Pacífico Sur N° 156)
   // Coordenadas verificadas al 100% contra GeoRIS MINSA (georisDataBundle.js) y RENIPRESS SUSALUD.
+  // Rol GeoRIS según el bundle oficial: Puertas de Entrada (p_ent = SI) = La Victoria, Culebras, Huamba, Huayán y
+  // Huanchay; los demás puestos son Establecimientos Vinculados (p_vin = SI) a la puerta indicada en vinculado_a.
   // Nota: Hospital 00001741 apunta al Nuevo Hospital de Apoyo Huarmey (detrás de Hotel La Siesta).
   const ESTABLECIMIENTOS_MICRORRED_HUARMEY = [
     {
@@ -52,7 +54,7 @@
       cod_renipress: "00001742",
       nombre: "PUESTO DE SALUD PUERTO HUARMEY",
       categoria: "I-2",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado", vinculado_a: "00001744", vinculado_a_nombre: "CENTRO DE SALUD LA VICTORIA",
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -82,7 +84,7 @@
       cod_renipress: "00001745",
       nombre: "PUESTO DE SALUD MOLINO",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado", vinculado_a: "00001743", vinculado_a_nombre: "PUESTO DE SALUD CULEBRAS",
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -97,7 +99,7 @@
       cod_renipress: "00001746",
       nombre: "PUESTO DE SALUD QUIAN",
       categoria: "I-2",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado", vinculado_a: "00001744", vinculado_a_nombre: "CENTRO DE SALUD LA VICTORIA",
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -142,7 +144,7 @@
       cod_renipress: "00001753",
       nombre: "PUESTO DE SALUD MALVAS",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado", vinculado_a: "00001751", vinculado_a_nombre: "PUESTO DE SALUD HUAMBA",
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -157,7 +159,7 @@
       cod_renipress: "00001801",
       nombre: "PUESTO DE SALUD SAN MIGUEL",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado", vinculado_a: "00001751", vinculado_a_nombre: "PUESTO DE SALUD HUAMBA",
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -172,7 +174,7 @@
       cod_renipress: "00001747",
       nombre: "PUESTO DE SALUD RAYPA",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado", vinculado_a: "00001744", vinculado_a_nombre: "CENTRO DE SALUD LA VICTORIA",
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -202,7 +204,7 @@
       cod_renipress: "00001749",
       nombre: "PUESTO DE SALUD COCHAPETI",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado", vinculado_a: "00001751", vinculado_a_nombre: "PUESTO DE SALUD HUAMBA",
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,

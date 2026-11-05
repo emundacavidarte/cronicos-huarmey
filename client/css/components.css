@@ -1612,3 +1612,146 @@
 #modal-consentimiento {
   z-index: 1600;
 }
+
+/* ==========================================================================
+   GEOLOCALIZACIÓN EXACTA DEL DOMICILIO (v20261105)
+   ========================================================================== */
+/* Pin aproximado (ubicación por dirección): anillo punteado; exacto (GPS/mapa): marca verde */
+.pin-patient-container.pin-aprox .pin-patient-avatar {
+  border-style: dashed !important;
+  opacity: 0.88;
+}
+.pin-patient-container { position: relative; }
+.pin-check {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 9px;
+  line-height: 13px;
+  font-weight: 900;
+  text-align: center;
+  border: 1.5px solid #ffffff;
+  pointer-events: none;
+}
+/* Punto real compartido por varios pacientes (abanico en pantalla) */
+.pin-grupo-centro {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0f172a;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.45);
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Halo del paciente enfocado */
+.foco-pulso {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+  animation: focoPulso 1.6s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes focoPulso {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .foco-pulso { animation: none; }
+}
+/* Establecimiento vinculado (satélite de una puerta de entrada) */
+.pin-puerta-badge.is-vinculado {
+  background: #38BDF8 !important;
+  border-style: dashed !important;
+}
+/* Marcador arrastrable de la selección */
+.pin-seleccion { filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); cursor: grab; }
+.leaflet-container.modo-seleccion-ubicacion,
+.leaflet-container.modo-seleccion-ubicacion .leaflet-interactive,
+.leaflet-container.modo-medicion,
+.leaflet-container.modo-medicion .leaflet-interactive { cursor: crosshair !important; }
+.georis-ctrl-btn.active { background: #e0f2fe; border-color: #0284c7; }
+
+/* Banner de selección de ubicación sobre el mapa */
+.ubicacion-banner {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(560px, calc(100% - 24px));
+  background: #ffffff;
+  border: 2px solid #dc2626;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+  padding: 12px 14px;
+  font-size: var(--font-sm, 13px);
+  color: #0f172a;
+  cursor: default;
+}
+.ubicacion-banner-titulo { font-weight: 800; font-size: 14px; margin-bottom: 4px; }
+.ubicacion-banner-ayuda { color: #475569; font-size: 12px; margin-bottom: 6px; }
+.ubicacion-banner-datos { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px; font-size: 12px; line-height: 1.55; }
+.ubicacion-banner-aviso { color: #b45309; font-weight: 700; margin-top: 2px; }
+.ubicacion-banner-error { color: #b91c1c; font-weight: 700; font-size: 12px; min-height: 0; margin-top: 4px; }
+.ubicacion-banner-error:empty { display: none; }
+.ubicacion-banner-acciones { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin-top: 8px; }
+.ubicacion-banner-acciones .btn-mini { min-height: 36px; }
+
+/* Ventana de opciones para fijar la ubicación */
+.modal-ubicacion-box { max-width: 520px; width: calc(100% - 24px); padding: 0; overflow: hidden; }
+.modal-ubicacion-header { display: flex; justify-content: space-between; align-items: center; background: #0f234d; color: #ffffff; padding: 12px 16px; font-weight: 800; }
+.modal-ubicacion-header .btn-close-accessible { color: #ffffff; }
+.modal-ubicacion-body { padding: 14px 16px 16px; }
+.modal-ubicacion-paciente { font-size: 13px; line-height: 1.5; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.modal-ubicacion-actual { color: #b45309; font-weight: 700; }
+.modal-ubicacion-opciones { display: flex; flex-direction: column; gap: 8px; }
+.opcion-ubicacion { display: flex; gap: 10px; align-items: center; text-align: left; width: 100%; min-height: 56px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; cursor: pointer; font-size: 13px; color: #0f172a; }
+.opcion-ubicacion:hover:not([disabled]), .opcion-ubicacion:focus-visible { border-color: #0284c7; background: #f0f9ff; outline: none; }
+.opcion-ubicacion[disabled] { opacity: 0.55; cursor: not-allowed; }
+.opcion-ubicacion small { color: #475569; }
+.opcion-ubicacion-icono { font-size: 22px; flex: 0 0 28px; text-align: center; }
+.modal-ubicacion-paso { margin-top: 10px; }
+.modal-ubicacion-paso:empty { display: none; }
+.ubic-gps-estado, .ubic-coords-resultado { font-size: 12px; line-height: 1.5; margin-top: 6px; }
+.ubic-gps-acciones { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+.ubic-error { color: #b91c1c; font-weight: 700; }
+.ubic-aviso { color: #b45309; font-weight: 700; }
+
+/* Estado de la ubicación en la lista y en la ficha */
+.badge-ubicacion { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+.badge-ubicacion.is-exacta { background: #dcfce7; color: #166534; border-color: #86efac; }
+.badge-ubicacion.is-aprox { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.badge-ubicacion.is-sin { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.ficha-ubicacion { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; }
+.ficha-ubicacion.is-exacta { border-color: #86efac; background: #f0fdf4; }
+.ficha-ubicacion.is-aprox { border-color: #fcd34d; background: #fffbeb; }
+.ficha-ubicacion.is-sin { border-color: #fca5a5; background: #fef2f2; }
+.ficha-ubicacion-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ficha-ubicacion-estado { font-weight: 800; font-size: 13px; color: #0f172a; }
+.ficha-ubicacion-detalle { font-size: 12px; color: #475569; word-break: break-word; }
+.ficha-ubicacion-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+.ficha-aviso-sector { display: block; font-size: 11px; color: #b45309; font-weight: 700; margin-top: 2px; }
+
+/* Mientras se fija una ubicación, nada tapa el mapa: se ocultan las pestañas laterales y la barra de indicadores */
+body.seleccionando-ubicacion .drawer-edge-handle,
+body.seleccionando-ubicacion .hud-kpi-dock { display: none !important; }
+@media (max-width: 768px) {
+  .ubicacion-banner { top: 8px; width: calc(100% - 16px); padding: 8px 10px; }
+  .ubicacion-banner-titulo { font-size: 13px; }
+  .ubicacion-banner-ayuda { display: none; }
+  .ubicacion-banner-datos { font-size: 11px; line-height: 1.4; padding: 4px 6px; }
+  .ubicacion-banner-acciones { margin-top: 6px; gap: 4px; }
+  .ubicacion-banner-acciones .btn-mini { min-height: 36px; padding: 4px 8px; font-size: 12px; }
+}
