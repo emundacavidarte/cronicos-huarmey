@@ -71,6 +71,9 @@ const CSP = [
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
+  // C3-05: los mosaicos del mapa vienen de terceros (Google, Esri, Carto, OSM-fr). Con «strict-origin-when-cross-origin» solo
+  // reciben el ORIGEN de la aplicación (nunca la ruta ni datos de pacientes). NO se usa «no-referrer»: proveedores como OpenStreetMap
+  // exigen un Referer y bloquearían el mapa. Lo que sí expone un mosaico es la zona que se mira: decisión de Edward (ver el informe).
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
   // El filtro XSS antiguo de los navegadores se desactiva (OWASP): puede introducir fallas y la CSP lo reemplaza

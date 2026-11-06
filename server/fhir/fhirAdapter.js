@@ -10,6 +10,8 @@ const fechaLima = require('../../client/js/utils/fechaLima');
 const { getLatestObservation } = require('../utils/latestRecord');
 const { ErrorValidacion, texto } = require('../utils/validacion');
 const documentos = require('../utils/documentos');
+// Quién cuenta como fallecido: la bandera o el estado «Fallecido» (K3-02), igual que en el semáforo y el cliente
+const { esFallecido } = require('../../client/js/clinical/reglasClinicas');
 
 const LOINC_CATALOG = {
   BP_PANEL: { code: '85354-9', display: 'Blood pressure panel with all children optional', unit: 'mm[Hg]' },
@@ -349,8 +351,8 @@ class FhirAdapter {
           value: String(p.historia_clinica || '')
         }
       ],
-      active: !p.fallecido,
-      deceasedBoolean: Boolean(p.fallecido),
+      active: !esFallecido(p),
+      deceasedBoolean: esFallecido(p),
       name: [{ use: 'official', text: p.apellidos_nombres }],
       telecom: p.telefono ? [{ system: 'phone', value: String(p.telefono), use: 'mobile' }] : [],
       gender: p.sexo === 'M' ? 'male' : (p.sexo === 'F' ? 'female' : 'unknown'),

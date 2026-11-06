@@ -193,10 +193,11 @@ async function main() {
       assert.ok(f.properties.dias_restantes > 7, 'dias_restantes = ' + f.properties.dias_restantes);
     });
 
-    await step('Error B: usa la observacion mas reciente (Controlado, frecuencia 90)', async () => {
+    await step('Error B: usa la observacion mas reciente (Controlado; K3-04: sin «controlado y estable» la frecuencia por omision es 30, no 90)', async () => {
       const f = await getGeoFeature();
       assert.strictEqual(f.properties.estado_control, 'Controlado');
-      assert.strictEqual(f.properties.frecuencia_hearts, 90);
+      // K3-04 (Fase 4b): 90 dias solo si esta Controlado Y estable (3 controles en meta); este paciente no trae controlado_estable
+      assert.strictEqual(f.properties.frecuencia_hearts, 30);
     });
 
     await step('POST /fhir/Bundle (mismo paciente SIN direccion/telefono/geo/sector) responde 200', async () => {

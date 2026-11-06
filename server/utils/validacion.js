@@ -6,6 +6,8 @@
  */
 
 const fechaLima = require('../../client/js/utils/fechaLima');
+// Única fuente de las reglas clínicas (cliente y servidor): aquí, quién cuenta como fallecido (K3-02)
+const ReglasClinicas = require('../../client/js/clinical/reglasClinicas');
 
 class ErrorValidacion extends Error {
   constructor(message) {
@@ -106,6 +108,35 @@ function revisarTextoCorto(v, campo, donde, max) {
   if (SIN_MARCADO.test(s)) throw new ErrorValidacion(`${donde}: ${campo} contiene caracteres no permitidos (< o >).`);
 }
 
+/** true / false si el valor es una bandera clara (booleano, «true»/«false», «sí»/«no», 1/0); undefined si no lo es. */
+function banderaClara(v) {
+  if (typeof v === 'boolean') return v;
+  if (v === 1 || v === 0) return v === 1;
+  if (typeof v === 'string') {
+    const t = v.trim().toLowerCase();
+    if (t === 'true' || t === 'sí' || t === 'si') return true;
+    if (t === 'false' || t === 'no') return false;
+  }
+  return undefined;
+}
+
+/**
+ * K3-02: la interfaz y la cuadrícula del padrón solo envían `estado_paciente = "Fallecido"`; nadie fijaba `fallecido`
+ * y el semáforo contaba al paciente como desertor. Regla: si el registro trae una bandera `fallecido` explícita, se
+ * respeta; si no la trae pero sí `estado_paciente`, la bandera sale de ReglasClinicas.esFallecido. Sin ninguno de los
+ * dos no se toca lo ya guardado (upsertPatient ignora un campo ausente).
+ */
+function fijarFallecido(p, donde) {
+  if (vacio(p.fallecido)) {
+    delete p.fallecido;
+    if (!vacio(p.estado_paciente)) p.fallecido = ReglasClinicas.esFallecido(p);
+    return;
+  }
+  const bandera = banderaClara(p.fallecido);
+  if (bandera === undefined) throw new ErrorValidacion(`${donde}: fallecido debe ser verdadero o falso.`);
+  p.fallecido = bandera;
+}
+
 function revisarNumeros(obj, campos, donde) {
   for (const c of campos) {
     if (!esNumero(obj[c])) throw new ErrorValidacion(`${donde}: ${c} debe ser un número.`);
@@ -176,7 +207,12 @@ function validarLotePadron(lista, db) {
       throw new ErrorValidacion(`${donde}: puerta_entrada_id debe ser un código RENIPRESS de 8 dígitos.`);
     }
     for (const c of ['historia_clinica', 'telefono', 'sector_sanitario', 'red_salud']) revisarTextoCorto(p[c], c, donde, 200);
+    // C3-01 (defensa en profundidad): la nota del duplicado se pinta en la ficha; si llegara a pintarse sin escape, un
+    // «<button>» inyectado actuaría con la sesión de quien lo pulsa. Se rechaza < y > igual que los textos cortos.
+    // Los textos libres (observaciones, tratamientos…) NO se tocan: «PA < 140» es legítimo y el cliente los escapa.
+    revisarTextoCorto(p.nota_duplicado_padron, 'nota_duplicado_padron', donde, MAX_TEXTO);
     revisarNumeros(p, NUMEROS_PACIENTE, donde);
+    fijarFallecido(p, donde);
 
     // Registros clínicos anidados
     revisarLista(p.conditions, 'conditions', donde).forEach((c, j) => {

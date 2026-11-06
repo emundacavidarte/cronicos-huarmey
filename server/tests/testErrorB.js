@@ -121,7 +121,8 @@ test('upsertObservation: una observacion NUEVA si actualiza los signos vitales',
 });
 
 test('/patients/geo usa la cita y observacion mas recientes (la ultima de la lista NO es la mas reciente)', () => {
-  db.upsertPatient({ id: 'pac-t-3', dni: '91000003', apellidos_nombres: 'TEST TRES', latitud: -10.05, longitud: -78.15 });
+  // K3-04 (Fase 4b): 90 dias por omision solo si la ultima observacion es «Controlado» Y el paciente es estable
+  db.upsertPatient({ id: 'pac-t-3', dni: '91000003', apellidos_nombres: 'TEST TRES', latitud: -10.05, longitud: -78.15, controlado_estable: 'Sí' });
   // Orden de llegada: primero la cita futura (+30 dias), luego una vencida (-60 dias) agregada al final
   db.upsertAppointment({ id: 'a-futura', patient_id: 'pac-t-3', fecha_cita: isoDaysFromNow(30) });
   db.upsertAppointment({ id: 'a-vencida', patient_id: 'pac-t-3', fecha_cita: isoDaysFromNow(-60) });

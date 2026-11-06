@@ -18,6 +18,8 @@ const galenosConnector = require('../fhir/connectors/galenosConnector');
 const pakamurosConnector = require('../fhir/connectors/pakamurosConnector');
 const { getLatestAppointment, getLatestObservation } = require('../utils/latestRecord');
 const semaforoHearts = require('../../client/js/clinical/semaforo');
+// Reglas clínicas compartidas con el cliente (fallecido, rótulo CIE-10, intervalo entre controles)
+const ReglasClinicas = require('../../client/js/clinical/reglasClinicas');
 const indicadoresConvenio = require('../../client/js/clinical/indicadoresConvenio');
 const auth = require('../auth/auth');
 const fechaLima = require('../../client/js/utils/fechaLima');
@@ -99,6 +101,19 @@ function marcarModificacion(p, req) {
 }
 
 /**
+ * K3-02: un paciente con estado «Fallecido» cuenta como fallecido aunque su bandera `fallecido` no esté en true
+ * (registros guardados antes de la corrección, cuando solo se guardaba el estado). Copia solo los que difieren.
+ */
+function conBanderaFallecido(p) {
+  return p && p.fallecido !== true && ReglasClinicas.esFallecido(p) ? Object.assign({}, p, { fallecido: true }) : p;
+}
+
+/** Pacientes del alcance del usuario, con la bandera de fallecido ya resuelta (lecturas y semáforo). */
+function pacientesDelAlcance(user) {
+  return scope.filterPatients(user, db.getAllPatients()).map(conBanderaFallecido);
+}
+
+/**
  * Helper de paginación y filtrado opcional (retrocompatible al 100% con clientes que esperan el array completo)
  */
 function filterAndPaginatePatients(patients, query) {
@@ -157,7 +172,7 @@ router.get('/patients', requireScope(ROLES_PACIENTES), (req, res) => {
     return res.status(304).end();
   }
 
-  const patients = scope.filterPatients(req.user, db.getAllPatients());
+  const patients = pacientesDelAlcance(req.user);
   const filtered = filterAndPaginatePatients(patients, req.query);
   auditarLectura(req, 'patients');
   res.json({
@@ -175,7 +190,7 @@ router.get('/cronicos', requireScope(ROLES_PACIENTES), (req, res) => {
     return res.status(304).end();
   }
 
-  const patients = scope.filterPatients(req.user, db.getAllPatients());
+  const patients = pacientesDelAlcance(req.user);
   const filtered = filterAndPaginatePatients(patients, req.query);
   auditarLectura(req, 'cronicos');
   if (filtered.paginated) {
@@ -190,7 +205,7 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
     return res.status(304).end();
   }
 
-  const patients = scope.filterPatients(req.user, db.getAllPatients());
+  const patients = pacientesDelAlcance(req.user);
   auditarLectura(req, 'patients/geo');
   const hoy = new Date();
   const features = patients
@@ -199,10 +214,11 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
       const latestAppt = getLatestAppointment(p.appointments);
       const latestObs = getLatestObservation(p.observations);
 
-      let diasFrecuencia = 30;
-      if (latestObs && latestObs.estado_control === 'Controlado') {
-        diasFrecuencia = 90;
-      }
+      // K3-04: intervalo por omisión (cuando el paciente no trae `frecuencia_hearts`) según la regla compartida:
+      // 90 días solo si está «Controlado» Y estable (3 controles en meta); antes bastaba con la etiqueta «Controlado».
+      const estadoControl = latestObs ? latestObs.estado_control : p.estado_control;
+      const diasFrecuencia = ReglasClinicas.frecuenciaDias(estadoControl, /^s[ií]$/i.test(String(p.controlado_estable === undefined || p.controlado_estable === null ? '' : p.controlado_estable).trim()));
+      const traeFrecuencia = p.frecuencia_hearts !== undefined && p.frecuencia_hearts !== null && p.frecuencia_hearts !== '';
 
       // Única fuente de verdad del semáforo (client/js/clinical/semaforo.js): fechas locales, fallecidos aparte
       const sem = semaforoHearts.calcularSemaforo(p, hoy);
@@ -227,7 +243,7 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
           puerta_entrada: p.puerta_entrada,
           diagnosticos: (p.conditions || []).map(c => c.cie10_cod),
           estado_control: latestObs ? latestObs.estado_control : (p.estado_control || 'No Registrado'),
-          frecuencia_hearts: p.frecuencia_hearts !== undefined ? p.frecuencia_hearts : diasFrecuencia,
+          frecuencia_hearts: traeFrecuencia ? p.frecuencia_hearts : diasFrecuencia,
           semaforo,
           dias_restantes: diasRestantes,
           dias_vencido: diasVencido
@@ -243,7 +259,7 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
 
 // --- 3. Endpoints Clínicos de Resumen de Alertas HEARTS ---
 router.get('/alerts/summary', requireScope(ROLES_DASHBOARD), (req, res) => {
-  const patients = scope.filterPatients(req.user, db.getAllPatients());
+  const patients = pacientesDelAlcance(req.user);
   const hoy = new Date();
   let green = 0;
   let yellow = 0;
@@ -453,7 +469,7 @@ fhirRouter.get('/metadata', (req, res) => {
 });
 
 fhirRouter.get('/Bundle', requireScope(ROLES_PACIENTES), (req, res) => {
-  const allPatients = scope.filterPatients(req.user, db.getAllPatients());
+  const allPatients = pacientesDelAlcance(req.user);
   const filtered = filterAndPaginatePatients(allPatients, req.query);
   res.setHeader('Cache-Control', 'private, no-store');
   auditarLectura(req, 'fhir/Bundle');
@@ -650,6 +666,81 @@ function derivarEstablecimientoDelControl(p) {
   p.red_salud = normalizeRed(est.red_salud) || p.red_salud;
 }
 
+// ---------- Controles y citas del paciente: id por CONTENIDO y unión con lo ya guardado (P3-06) ----------
+// Antes el id era la POSICIÓN en la lista que mandaba el cliente (`obs-<paciente>-<n>`): si B guardaba una atención y A,
+// con la lista que abrió antes, guardaba otra el mismo día, la de A caía en la misma posición y SOBRESCRIBÍA la de B
+// (pérdida de datos). Ahora el servidor es la autoridad: el id sale de la fecha y los valores, un registro idéntico a uno
+// ya guardado se reconoce (no se duplica) y uno distinto se agrega. Nada de lo guardado se borra por faltar en la lista.
+const fechaDia = v => String(v === undefined || v === null ? '' : v).trim().slice(0, 10);
+const informado = v => v !== undefined && v !== null && !(typeof v === 'string' && v.trim() === '');
+const huella = texto => crypto.createHash('sha1').update(texto).digest('hex').slice(0, 12);
+function numeroCanonico(v) {
+  if (!informado(v)) return '';
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? String(n) : '';
+}
+/** Identidad de un control: fecha y valores medidos. La etiqueta estado_control NO es parte de la identidad (se deduce de ellos). */
+const claveControl = (o, fechaPorOmision = '') =>
+  [fechaDia(o.fecha_registro) || fechaPorOmision, numeroCanonico(o.pa_sistolica), numeroCanonico(o.pa_diastolica), numeroCanonico(o.hba1c), numeroCanonico(o.glucosa)].join('|');
+/** Identidad de una cita: fecha y tipo (pre-cita o cita), igual que la regla de idempotencia de db.upsertAppointment. */
+const claveCita = a => fechaDia(a.fecha_cita) + '|' + (Number(a.es_precita || 0) ? 1 : 0);
+
+/**
+ * Guarda `entrantes` en la tabla de `pid` uniéndolos con lo que ya había (`previas`, una foto tomada ANTES de escribir).
+ * - Misma clave que algo guardado → mismo id (se actualiza ese registro, no se duplica).
+ * - Clave nueva → id `<prefijo>-<paciente>-c<huella del contenido>` (dos usuarios con listas distintas no se pisan).
+ * - Si lo guardado solo vivía dentro del registro del paciente (semilla/datos antiguos, `enTabla` falso), se pasa a la
+ *   tabla: de lo contrario, al agregar el primer registro la vista del paciente dejaría de mostrar los demás.
+ */
+function guardarUnion({ pid, prefijo, previas, enTabla, entrantes, clave, registroDe, upsert }) {
+  const idPorClave = new Map();
+  const pasados = new Set();
+  for (const r of previas) {
+    const k = clave(r);
+    if (!idPorClave.has(k)) idPorClave.set(k, r.id ? String(r.id) : `${prefijo}-${pid}-c${huella(k)}`);
+    if (!enTabla && !pasados.has(k)) {
+      pasados.add(k);
+      upsert(Object.assign({}, r, { id: idPorClave.get(k), patient_id: pid }));
+    }
+  }
+  for (const e of entrantes) {
+    const k = clave(e);
+    let id = idPorClave.get(k);
+    if (!id) { id = `${prefijo}-${pid}-c${huella(k)}`; idPorClave.set(k, id); }
+    upsert(Object.assign(registroDe(e), { id, patient_id: pid }));
+  }
+}
+
+/** Solo los valores informados: un valor ausente no debe borrar el que ya estaba guardado en ese control. */
+function registroControl(o, hoy) {
+  const r = { fecha_registro: o.fecha_registro || hoy };
+  for (const campo of ['pa_sistolica', 'pa_diastolica', 'hba1c', 'glucosa', 'estado_control']) if (informado(o[campo])) r[campo] = o[campo];
+  return r;
+}
+function registroCita(a) {
+  const r = { fecha_cita: a.fecha_cita, estado: a.estado || 'booked' };
+  if (informado(a.es_precita)) r.es_precita = Number(a.es_precita) ? 1 : 0;
+  return r;
+}
+
+/**
+ * P3-09: el rótulo sale del CÓDIGO (antes el Registro Clínico rotulaba todo E1x «Diabetes Mellitus Tipo 2» y N18, también)
+ * y la fecha del diagnóstico ya guardado se CONSERVA (antes pasaba a hoy cada vez que se guardaba una atención).
+ * Un código que las reglas no conocen: se queda con el rótulo ya guardado y, si no hay, con el propio código.
+ */
+function registroDiagnostico(c, previas, pid, fechaPorOmision) {
+  const codigo = String(c.cie10_cod === undefined || c.cie10_cod === null ? '' : c.cie10_cod).trim();
+  const previa = previas.find(x => String(x.cie10_cod).trim() === codigo) || null;
+  const propia = informado(c.fecha_diagnostico) && validacion.esFechaIso(c.fecha_diagnostico) ? String(c.fecha_diagnostico).trim().slice(0, 10) : '';
+  return {
+    id: previa && previa.id ? previa.id : `cond-${pid}-${codigo}`,
+    patient_id: pid,
+    cie10_cod: codigo,
+    diagnostico: ReglasClinicas.rotuloCie10(codigo) || (previa && previa.diagnostico) || codigo,
+    fecha_diagnostico: (previa && previa.fecha_diagnostico) || propia || fechaPorOmision
+  };
+}
+
 router.post('/padron/importar-lote', requireScope(ROLES_ESCRITURA), (req, res) => {
   const list = Array.isArray(req.body) ? req.body
     : (req.body && typeof req.body === 'object' && Array.isArray(req.body.patients) ? req.body.patients : []);
@@ -677,6 +768,9 @@ router.post('/padron/importar-lote', requireScope(ROLES_ESCRITURA), (req, res) =
   }
   validos.forEach(derivarEstablecimientoDelControl);
 
+  // Alcance del usuario sobre el registro de partida Y sobre el resultante (P3-13: no sacar al paciente de su alcance).
+  // P3-12 (ACEPTADO): si el documento ya existe en otra red este paso responde 403 y uno inexistente se crea. Es inherente
+  // a exigir un documento único (ver scope.checkWrite); la lectura, en cambio, no distingue (404 idéntico).
   const denied = scope.checkWrite(req.user, [{ patients: validos }]);
   if (denied) return forbidden(res, denied);
 
@@ -690,6 +784,15 @@ router.post('/padron/importar-lote', requireScope(ROLES_ESCRITURA), (req, res) =
       // Los diagnósticos se acumulan (igual que los registros de Condition): una importación o una atención que no
       // repite un diagnóstico ya no lo borra. Antes se perdía, por ejemplo, la dislipidemia (C-08).
       const previo = (p.dni && db.getPatientByDni(p.dni)) || (p.id && db.getPatientByIdOrDni(p.id)) || null;
+      // Foto de lo ya guardado ANTES de escribir (upsertPatient reemplaza las listas del registro del paciente)
+      const guardado = {
+        conditions: previo ? (previo.conditions || []).map(c => Object.assign({}, c)) : [],
+        observations: previo ? (previo.observations || []).map(o => Object.assign({}, o)) : [],
+        appointments: previo ? (previo.appointments || []).map(a => Object.assign({}, a)) : [],
+        conditionsEnTabla: !!previo && (db.conditionsByPatient.get(String(previo.id)) || []).length > 0,
+        observationsEnTabla: !!previo && (db.observationsByPatient.get(String(previo.id)) || []).length > 0,
+        appointmentsEnTabla: !!previo && (db.appointmentsByPatient.get(String(previo.id)) || []).length > 0
+      };
       if (previo && Array.isArray(previo.diagnosticos) && previo.diagnosticos.length > 0) {
         const nuevos = Array.isArray(p.diagnosticos) ? p.diagnosticos : [];
         p.diagnosticos = [...new Set(previo.diagnosticos.concat(nuevos).map(String))];
@@ -731,38 +834,27 @@ router.post('/padron/importar-lote', requireScope(ROLES_ESCRITURA), (req, res) =
       const pid = String(db.upsertPatient(p).id);
       ids.push(pid);
       if (Array.isArray(p.conditions)) {
+        const hoy = fechaLima.hoy();
+        // Diagnósticos que solo vivían dentro del registro del paciente (semilla/datos antiguos): pasan a la tabla antes de
+        // agregar los nuevos, o la vista del paciente dejaría de mostrarlos
+        if (!guardado.conditionsEnTabla) {
+          guardado.conditions.filter(c => c.cie10_cod).forEach(c => db.upsertCondition(Object.assign({}, c, { id: c.id || `cond-${pid}-${String(c.cie10_cod).trim()}`, patient_id: pid })));
+        }
         p.conditions.forEach(c => {
-          db.upsertCondition({
-            id: `cond-${pid}-${c.cie10_cod}`,
-            patient_id: pid,
-            cie10_cod: c.cie10_cod,
-            diagnostico: c.diagnostico,
-            fecha_diagnostico: p.fecha_captacion || fechaLima.hoy()
-          });
+          db.upsertCondition(registroDiagnostico(c, guardado.conditions, pid, fechaDia(p.fecha_captacion) || hoy));
         });
       }
       if (Array.isArray(p.observations)) {
-        p.observations.forEach((o, oIdx) => {
-          db.upsertObservation({
-            id: `obs-${pid}-${oIdx + 1}`,
-            patient_id: pid,
-            fecha_registro: o.fecha_registro || fechaLima.hoy(),
-            pa_sistolica: o.pa_sistolica,
-            pa_diastolica: o.pa_diastolica,
-            hba1c: o.hba1c,
-            glucosa: o.glucosa,
-            estado_control: o.estado_control
-          });
+        const hoy = fechaLima.hoy();
+        guardarUnion({
+          pid, prefijo: 'obs', previas: guardado.observations, enTabla: guardado.observationsEnTabla, entrantes: p.observations,
+          clave: o => claveControl(o, hoy), registroDe: o => registroControl(o, hoy), upsert: o => db.upsertObservation(o)
         });
       }
       if (Array.isArray(p.appointments)) {
-        p.appointments.forEach((a, aIdx) => {
-          db.upsertAppointment({
-            id: `app-${pid}-${aIdx + 1}`,
-            patient_id: pid,
-            fecha_cita: a.fecha_cita,
-            estado: a.estado || 'booked'
-          });
+        guardarUnion({
+          pid, prefijo: 'app', previas: guardado.appointments, enTabla: guardado.appointmentsEnTabla, entrantes: p.appointments,
+          clave: claveCita, registroDe: registroCita, upsert: a => db.upsertAppointment(a)
         });
       }
       count++;
