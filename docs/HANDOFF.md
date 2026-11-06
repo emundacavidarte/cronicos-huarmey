@@ -5,15 +5,16 @@
 Este bloque resume todo lo hecho el 05/11/2026: las Fases 0, 1, 2 y 4 del plan de paso a producción y las decisiones de Edward. La cola T-xx / G-xx de más abajo es la anterior y sus estados se actualizaron con lo que estas fases cerraron. El detalle completo está en `docs/produccion/`.
 
 ### Dónde está el trabajo
-- **Rama:** `claude/pensive-cray-3lwodm`, con 28 commits sobre `main` (este es el último). `main` no tiene nada de esto. No hay pull request: se abre solo si Edward lo pide.
+- **Rama:** `claude/pensive-cray-3lwodm`, con 35 commits sobre `main` (este es el último). `main` no tiene nada de esto. No hay pull request: se abre solo si Edward lo pide.
 - **Documento rector:** `docs/produccion/PLAN.md`, con las fases, las decisiones tomadas y los pendientes de Edward.
 - **Informes:**
   - `docs/produccion/F1_diagnostico.md`: los 38 hallazgos de la Fase 1, con severidad y pasos para reproducirlos.
   - `docs/produccion/F2_seguridad_servidor.md`: los 21 hallazgos de seguridad del servidor y su corrección.
   - `docs/produccion/F4_correcciones.md`: qué se corrigió, qué no y por qué, y las decisiones por defecto. La sección 9 recoge las decisiones de Edward ya implementadas.
   - `docs/produccion/F3_cliente_clinica.md`: auditoría de la lógica clínica y del cliente (**sin cambios de código**): 37 hallazgos, 19 preguntas para la licenciada de crónicos (sección 7) y la ventana siguiente (sección 10).
+  - `docs/produccion/F4b_correcciones.md`: las correcciones de la Fase 3 (por «corrige todo»): qué se corrigió, qué no y por qué, y **las decisiones clínicas por defecto** (sección 4) que Edward o la licenciada confirman. Las reglas clínicas viven en **un solo archivo**: `client/js/clinical/reglasClinicas.js`.
 - **Evidencia ejecutable:** `docs/produccion/evidencia/f1/`, `f2/`, `f3/` y `f4/`, cada una con su `README.md`. Usa solo datos inventados.
-- **Pruebas:** `npm test` da **22 suites, 298 correctas y 0 fallas** (05/11/2026). `npm audit` da 0 vulnerabilidades. Las dependencias siguen siendo solo `express` y `cors`. Node 22.
+- **Pruebas:** `npm test` da **26 suites, 493 correctas y 0 fallas** (06/11/2026). `npm audit` da 0 vulnerabilidades. Las dependencias siguen siendo solo `express` y `cors`. Node 22.
 
 ### Fases del plan
 | Fase | Estado al 05/11/2026 |
@@ -23,8 +24,8 @@ Este bloque resume todo lo hecho el 05/11/2026: las Fases 0, 1, 2 y 4 del plan d
 | 2 · Seguridad y privacidad del servidor | Hecha y corregida. 21 hallazgos, todos corregidos; F2-17, la CSP, se cerró en la Fase 4 |
 | 3 · Cliente, PWA y lógica clínica | **Hecha como auditoría, sin cambios de código.** 37 hallazgos (0 críticos, 10 altos, 16 medios, 10 bajos, 1 informativo) y 19 preguntas para la licenciada |
 | 4 · Correcciones | Hecha, también las medias y bajas, y además las decisiones de Edward |
-| 4b · Correcciones de la Fase 3 | **Pendiente: es la siguiente.** Seguridad del cliente, datos y precarga, y lo técnico del motor clínico. Se puede abrir ya |
-| 4c · Reglas clínicas | Pendiente: espera las respuestas de la licenciada (sección 7 de `F3_cliente_clinica.md`) |
+| 4b · Correcciones de la Fase 3 | **Hecha (06/11/2026).** Los 37 hallazgos corregidos salvo P3-11 (falta el catálogo de otras redes), P3-12 (aceptado), C3-05 y C3-07 (ver `F4b_correcciones.md`, sección 3). Valores clínicos por defecto en `reglasClinicas.js` |
+| 4c · Reglas clínicas | **Pendiente: es la siguiente.** Confirmar o cambiar los valores por defecto con las respuestas de la licenciada (sección 7 de `F3_cliente_clinica.md`) y con el texto íntegro de la vía HEARTS |
 | 5 · Persistencia, respaldos y datos reales | Pendiente, ya avanzada en la Fase 4 |
 | 6 · Infraestructura (Render, CI) | Pendiente, ya avanzada en la Fase 4 |
 | 7 · Staging y producción | Pendiente |
@@ -163,26 +164,27 @@ Este bloque resume todo lo hecho el 05/11/2026: las Fases 0, 1, 2 y 4 del plan d
 ### Cómo retomar en cualquier momento
 0. **La ventana puede abrir en otra rama y sin dependencias** (el entorno asigna una rama propia, por ejemplo `claude/practical-pasteur-…`; ahí no existe `docs/produccion/` y `npm test` falla con `MODULE_NOT_FOUND`). Pasó al abrir la Fase 3. El detalle está en la sección «Arranque de ventana» de `docs/produccion/PLAN.md`.
 1. `git fetch origin` (completo, no solo la rama) y luego `git checkout -B claude/pensive-cray-3lwodm origin/claude/pensive-cray-3lwodm`. Comprobar con `git branch --show-current`. Trabajo y push van a esta rama, no a la que asigne el entorno ni a `main`.
-2. `npm ci --prefix server`, y luego `npm test`: debe dar 0 fallas (al 05/11/2026: 298 correctas) **antes de tocar nada**.
-3. Leer `docs/produccion/PLAN.md` y las secciones 3, 4, 5.2, 6.1, 8 y 10 de `docs/produccion/F3_cliente_clinica.md`.
+2. `npm ci --prefix server`, y luego `npm test`: debe dar 0 fallas (al 06/11/2026: 26 suites, 493 correctas) **antes de tocar nada**.
+3. Leer `docs/produccion/PLAN.md`, la sección 4 de `docs/produccion/F4b_correcciones.md` y `client/js/clinical/reglasClinicas.js`.
 4. Para ver la evidencia en el navegador, seguir `docs/produccion/evidencia/f4/README.md`: levanta un servidor de prueba con `srv.sh`, en una carpeta temporal y con datos inventados.
 5. Abrir la siguiente ventana con esta plantilla:
    > Primero el arranque: `git fetch origin && git checkout -B claude/pensive-cray-3lwodm origin/claude/pensive-cray-3lwodm && npm ci --prefix server`. Comprueba que `git branch --show-current` dice `claude/pensive-cray-3lwodm` (la ventana puede abrir en otra rama) y que existe `docs/produccion/PLAN.md`; confirma que `npm test` da 0 fallas.
-   > Después: lee `docs/produccion/PLAN.md` (sección «Arranque de ventana») y las secciones 3, 4, 5.2, 6.1, 8 y 10 de `docs/produccion/F3_cliente_clinica.md`. Ejecuta la Fase 4b (correcciones de la Fase 3, sin tocar las reglas clínicas que esperan a la licenciada). Trabajo y push en la rama `claude/pensive-cray-3lwodm`, no en la que asigne el entorno. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
+   > Después: lee `docs/produccion/PLAN.md` (sección «Arranque de ventana»), la sección 4 de `docs/produccion/F4b_correcciones.md` y `client/js/clinical/reglasClinicas.js`. Ejecuta la Fase 4c (reglas clínicas) con estas respuestas de la licenciada: [pegar aquí]. Trabajo y push en la rama `claude/pensive-cray-3lwodm`, no en la que asigne el entorno. Al terminar: actualiza el estado en el plan, commit y push, y dime la siguiente ventana.
 
 ### Lo que falta
 
 **Técnico**
-- **Fase 3: hecha como auditoría** (`F3_cliente_clinica.md`). Revisó contra la norma el semáforo, HEARTS, los indicadores del convenio y `padronCalculadora.js`; auditó los 62 sumideros de HTML del cliente; validó la precarga por DNI por rol, red y establecimiento; y dejó las 19 preguntas para la licenciada. **No se cambió código.** Lo que sigue:
-  - **Fase 4b (se puede abrir ya):** corregir lo técnico, con una prueba que falle antes y pase después.
-    - Seguridad del cliente: C3-01 (`nota_duplicado_padron` sin escape; `clicEn`, `quitarElemento` y `cerrarModal` aceptan cualquier id), C3-02 (la cuadrícula del padrón sobrevive al cierre de sesión), C3-03, C3-04 y C3-06.
-    - Datos y precarga: P3-01 a P3-14 (guardar sin tocar no debe escribir valores por defecto, copiar el control anterior ni perder una atención).
-    - Motor clínico técnico: K3-02, K3-03, K3-10 y T3-01 a T3-06 (fechas en UTC, tres copias del semáforo, fallecidos, aviso de WhatsApp, parser de HOSIX).
-  - **Fase 4c (espera a la licenciada):** meta de PA, HbA1c, «controlado», regla de 30 / 90 días, semáforo, alta y baja de diagnósticos (K3-01, K3-04 a K3-09 y K3-11).
-  - **Edward:** llevar la sección 7 a la licenciada, decidir los mosaicos de mapa de terceros (C3-05) y corregir o confirmar `GUIA_NORMA_HEARTS.md`.
+- **Fase 3 (auditoría) y Fase 4b (correcciones): hechas** (`F3_cliente_clinica.md`, `F4b_correcciones.md`). Lo que sigue:
+  - **Fase 4c (reglas clínicas):** confirmar o cambiar los valores por defecto de `client/js/clinical/reglasClinicas.js` con las respuestas de la licenciada (sección 7 de `F3_cliente_clinica.md`: 19 preguntas) y con el texto íntegro de la vía HEARTS. Los valores por defecto están listados en la sección 4 de `F4b_correcciones.md`. Es cambiar constantes y sus pruebas (`testReglasClinicas.js`, `testClinicoF3.js`).
+  - **Edward:**
+    - Llevar la sección 7 a la licenciada de crónicos.
+    - **Traer el texto oficial de la vía HEARTS** (adjuntarlo, subirlo a Drive o autorizar Microsoft 365): `PC-EDWARD` no ofrece sus carpetas a sesiones en la nube.
+    - Decidir C3-05 (los mosaicos del mapa de terceros reciben la zona que se mira).
+    - C3-07: reemplazar SheetJS por la 0.20.3 (paso manual en `F4b_correcciones.md`, sección 3).
+    - P3-11: el catálogo de establecimientos de las otras redes (hoy solo Pacífico Sur).
 - **Verificado al escribir esta nota y sin corregir** (solo por lectura):
   - `INICIAR_PROTOTIPO.bat` abre el navegador antes de que arranque el servidor, sin esperar a `/health` ni revisar `node` y `node_modules` (resto de T-14).
-  - `heartsEngine.evaluatePatient` reordena con `sort` la lista de controles del propio paciente y solo reconoce I10 y E11 (T-13).
+  - ~~`heartsEngine.evaluatePatient` reordena con `sort` y solo reconoce I10 y E11 (T-13)~~ **Corregido en la Fase 4b** (copia de la lista; HTA I10–I15 y DM E10–E14; fechas locales; delega en `reglasClinicas.js` y `semaforo.js`).
   - El servidor solo valida que la latitud y la longitud sean números, no que caigan en Áncash (G-04).
   - La exportación CSV de pre-citas **ya** duplica comillas y antepone `'` a `= + - @`: esa parte de T-10 estaba hecha.
 - **Cola anterior aún abierta:**
@@ -255,7 +257,7 @@ Este bloque resume todo lo hecho el 05/11/2026: las Fases 0, 1, 2 y 4 del plan d
 2. **Toda la seguridad se hace al final**, cuando el proyecto esté terminado: T-04, T-05, T-10 y T-15 (ver «Seguridad al final»). La autenticación de T-03 ya está hecha y no se toca.
 3. **HOSIX sigue como propuesta.** Los conectores (`server/fhir/connectors/*`) están listos como propuesta y la intención es pedir a HOSIX una API real. **No se modifican los conectores** hasta tener esa API (ver H-01, bloqueada). Las correcciones de ingesta (T-06, T-07, T-09) se hacen en `database.js`, `fhirAdapter.js` y `hosixParser.js` (CSV del cliente), no en los conectores.
 
-**SIGUIENTE (05/11/2026): Fase 4b de `docs/produccion/PLAN.md`** (correcciones de la Fase 3: seguridad del cliente, datos y precarga, y lo técnico del motor clínico; ver la sección 10 de `docs/produccion/F3_cliente_clinica.md`). Las reglas clínicas (4c) esperan a la licenciada. Ver el bloque «🧭 ESTADO AL 05/11/2026» arriba. Línea anterior, como referencia: A15 (geolocalización honesta: «sin ubicar» y «ubicación aproximada»); luego A13, A14 y A22. A8, A11 y A12 quedaron hechas el 29/10/2026 · Última actualización: 29/10/2026 (Esquema v4, parser y cuadrícula Excel de 76 columnas, calculadoras CKD-EPI/riesgo CV/IMC, combinación incremental y exportación XLSX completadas; 18 suites y 226 pruebas en verde; revisión R1-R13 corregida el 30/10/2026)
+**SIGUIENTE (06/11/2026): Fase 4c de `docs/produccion/PLAN.md`** (reglas clínicas: confirmar o cambiar los valores por defecto de `client/js/clinical/reglasClinicas.js` con las respuestas de la licenciada; ver la sección 4 de `docs/produccion/F4b_correcciones.md`). La Fase 4b (correcciones de la Fase 3) está hecha. Ver el bloque «🧭 ESTADO AL 05/11/2026» arriba. Línea anterior, como referencia: A15 (geolocalización honesta: «sin ubicar» y «ubicación aproximada»); luego A13, A14 y A22. A8, A11 y A12 quedaron hechas el 29/10/2026 · Última actualización: 29/10/2026 (Esquema v4, parser y cuadrícula Excel de 76 columnas, calculadoras CKD-EPI/riesgo CV/IMC, combinación incremental y exportación XLSX completadas; 18 suites y 226 pruebas en verde; revisión R1-R13 corregida el 30/10/2026)
 
 ## Línea base verificada el 22/10/2026 (carpeta `Prototipo_Trabajo`)
 - Sintaxis: los 25 archivos JS propios pasan `node --check`. `npm audit --omit=dev`: 0 vulnerabilidades. Node v24.20.0.
@@ -311,6 +313,7 @@ Este bloque resume todo lo hecho el 05/11/2026: las Fases 0, 1, 2 y 4 del plan d
 | 05/11/2026 | Fase 2 (seguridad del servidor) | Auditoría y corrección: 21 hallazgos (11 nuevos), entre ellos la escritura cruzada de red, la bitácora que se vaciaba, los cuerpos de 10 MB sin sesión, el oráculo de existencia, el sector por subcadena y el `ADMIN_RESET` repetido. Suite `testSeguridadF2.js`. Informe `F2_seguridad_servidor.md`. |
 | 05/11/2026 | Fase 4 (correcciones) | CSP sin scripts en línea (69 manejadores → `acciones.js`); C-02 a C-14; persistencia (2 s, transacciones, respaldo diario, `STORE_KEY`); gzip; `npm ci` y Node 22. Corrige F4-01 a F4-03, entre ellos que se borraba la dislipidemia. Informe `F4_correcciones.md`. |
 | 05/11/2026 | Fase 3 (auditoría; sin cambios de código) | `F3_cliente_clinica.md` y `evidencia/f3/`: 37 hallazgos (11 clínicos, 6 técnicos del motor, 7 del cliente, 15 de la precarga con 2 repetidos). Entre los altos: el estado de control guardado ignora la HbA1c, la regla de 30 / 90 días no se aplica, un «Fallecido» sigue como desertor, y guardar sin tocar escribe valores por defecto, falsea un control o pierde una atención. 62 sumideros de HTML: 58 seguros o no alcanzables; la CSP bloqueó todo el código inyectado. 19 preguntas para la licenciada. `npm test`: 22 suites, 298 correctas, 0 fallas. Siguiente: Fase 4b. |
+| 06/11/2026 | Fase 4b (correcciones de la Fase 3) | Por «corrige todo»: reglas clínicas en un solo módulo (`reglasClinicas.js`); estado de control desde las mediciones; regla de 30 / 90 aplicada; «Fallecido» por estado; WhatsApp con la fecha de la cita real; precarga que no escribe valores por defecto ni pierde atenciones; HTML inyectado escapado, ids de acciones en lista cerrada, sesión que vacía la cuadrícula del padrón; motor que falla cerrado. `npm test`: 26 suites, 493 correctas, 0 fallas. Guía `GUIA_NORMA_HEARTS.md` alineada con la vía (resumen de la skill; falta el texto íntegro). Queda P3-11, P3-12 (aceptado), C3-05 y C3-07. Siguiente: Fase 4c. |
 | 05/11/2026 | Decisiones de Edward | El documento es obligatorio; CE y pasaporte también por HOSIX y FHIR (`documentos.js`); correo obligatorio, cambiar y recuperar la contraseña con código (`correo.js`, `testClavesF4.js`). `npm test`: 22 suites, 298 correctas, 0 fallas. Chromium: 32 de 32 acciones, 19 de 19 comprobaciones del cliente y 11 de 11 flujos de contraseña. |
 | 05/11/2026 | HANDOFF | Se agregó el bloque «🧭 ESTADO AL 05/11/2026» con todo lo hecho, lo pendiente y cómo retomar. Estados de la cola actualizados (T-04, T-05 y T-09 ✅; T-10, T-14, T-15 y G-04 🟡). |
 

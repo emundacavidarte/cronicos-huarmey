@@ -1,0 +1,9 @@
+Antes:  desertores_rojo=6 fallecidos_negro=2
+POST estado_paciente="Fallecido"      → HTTP 200
+POST fallecido:true (importar-lote)   → HTTP 200 
+POST activo con cita vencida (control)→ HTTP 200
+DNI 96000011: /patients/geo semaforo=black · /cronicos estado_paciente=Fallecido fallecido=true semaforo=black
+DNI 96000012: /patients/geo semaforo=black · /cronicos estado_paciente=Fallecido fallecido=true semaforo=black
+DNI 96000013: /patients/geo semaforo=red · /cronicos estado_paciente=Activo fallecido=false semaforo=red
+Después: desertores_rojo=7 fallecidos_negro=4
+Diferencia: +1 desertores, +2 fallecidos (hay 3 pacientes nuevos: 1 «Fallecido» por la vía de la interfaz, 1 con fallecido:true si el servidor lo admite, 1 activo)

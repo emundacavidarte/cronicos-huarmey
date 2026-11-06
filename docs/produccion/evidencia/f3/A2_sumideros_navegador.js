@@ -19,6 +19,7 @@ const path = require('path');
 const RAIZ = path.resolve(__dirname, '../../../..');
 const BASE = process.env.BASE || 'http://127.0.0.1:3261';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const SUF = process.env.SALIDA_SUFIJO || ''; // p. ej. «_despues»: así la corrida nueva no pisa la salida «antes»
 const out = [];
 const log = (s = '') => { out.push(s); console.log(s); };
 const XLSX = require(path.join(RAIZ, 'client/libs/xlsx.full.min.js'));
@@ -384,9 +385,10 @@ function tabla(campos, S) {
   await w.page.evaluate(() => window.app.openPatientDetail('pac-00001741-96800001'));
   await sleep(600);
   const cubre = await w.page.evaluate(() => { const e = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2); return e ? (e.id || e.tagName) : null; });
-  log(`Elemento que recibe un clic físico en el centro de la pantalla: #${cubre} (el div inyectado a pantalla completa tapa la aplicación: suplantación visual)`);
+  log(`Elemento que recibe un clic físico en el centro de la pantalla: #${cubre} (si fuera #xss_n_div, el div inyectado a pantalla completa tapa la aplicación: suplantación visual)`);
   const antes = await w.page.evaluate(() => document.getElementById('login-overlay').classList.contains('active'));
-  await w.page.evaluate(() => document.getElementById('xss_n_btn').click());
+  const hayBoton = await w.page.evaluate(() => { const b = document.getElementById('xss_n_btn'); if (b) b.click(); return !!b; });
+  if (!hayBoton) log('(el botón inyectado no existe en la ficha de la víctima: no hay nada que pulsar)');
   await sleep(900);
   const despues = await w.page.evaluate(() => ({ login: document.getElementById('login-overlay').classList.contains('active'), tok: sessionStorage.getItem('maxime_cronicos_sesion_v1') }));
   log(`Clic en el botón inyectado (data-accion="clicEn" data-arg="btn-logout"): sesión cerrada = ${despues.login && !despues.tok} (antes: pantalla de acceso visible = ${antes})`);
@@ -399,7 +401,8 @@ function tabla(campos, S) {
   const w2 = await abrir(browser, 'c3.coord2', CLAVE);
   await w2.page.evaluate(() => window.app.openPatientDetail('pac-00001741-96800005'));
   await sleep(500);
-  await w2.page.evaluate(() => document.getElementById('xss_n_precita').click());
+  const hayBoton2 = await w2.page.evaluate(() => { const b = document.getElementById('xss_n_precita'); if (b) b.click(); return !!b; });
+  if (!hayBoton2) log('(el botón inyectado «confirmarPreCita» no existe en la ficha de la víctima: no hay nada que pulsar)');
   await sleep(1500);
   const despuesPre = await contarPre();
   log(`Botón inyectado «Cerrar» con data-accion="confirmarPreCita": pre-citas del paciente antes = ${antesPre}, después del clic de la víctima (COORDINADORA) = ${despuesPre} (se escribió en el servidor con su sesión, sin ejecutar ningún script)`);
@@ -417,6 +420,49 @@ function tabla(campos, S) {
 
   // Un script en línea sí quedaría bloqueado: se comprueba con una ficha y registrando las violaciones
   log('Resumen de la CSP: script en línea y manejadores bloqueados = ' + (efectos.pwn === 'no ejecutado') + `; violaciones registradas: ${efectos.csp.length}`);
+
+  // =====================================================================================
+  log('\n=== PARTE 3a-bis — la misma carga puesta EN MEMORIA (defensa del cliente, aunque el servidor la dejara pasar) y botones inyectados a mano ===');
+  const vb = await abrir(browser, 'admin', process.env.ADMIN_PASSWORD);
+  const pBis = pacienteBase('96800010', 810, { nota_duplicado_padron: cargaFuerte });
+  const efBis = await vb.page.evaluate(async (pac) => {
+    window.app.setPatients([pac]);
+    window.app.openPatientDetail(pac.id);
+    await new Promise(r => setTimeout(r, 400));
+    const q = id => !!document.getElementById(id);
+    const ficha = document.getElementById('modal-patient-detail');
+    return { img: q('xss_n_img'), btn: q('xss_n_btn'), btn2: q('xss_n_btn2'), a: q('xss_n_a'), form: q('xss_n_form'), ifr: q('xss_n_ifr'), style: q('xss_n_style'), base: q('xss_n_base'),
+      link: q('xss_n_link'), svg: q('xss_n_svg'), div: q('xss_n_div'), meta: !!document.querySelector('meta[id^="xss_n"]'), pwn: window.__pwn === undefined ? 'no ejecutado' : 'EJECUTADO ' + window.__pwn,
+      textoVisible: /Trazabilidad:/.test(ficha.textContent) && ficha.textContent.includes('<img src=x id="xss_n_img"'), baseUri: document.baseURI };
+  }, pBis);
+  log('Carga fuerte en nota_duplicado_padron, en memoria: elementos presentes en la ficha = ' + JSON.stringify(efBis));
+  // botones con data-accion armados a mano (lo que quedaría de una inyección): ids fuera de la lista cerrada
+  const inyec = await vb.page.evaluate(async () => {
+    document.getElementById('modal-patient-detail').classList.remove('active');
+    const ctrl = {};
+    const tapa = document.createElement('div'); tapa.id = 'inj_contenedor'; document.body.appendChild(tapa);
+    const poner = (id, accion, arg) => { const b = document.createElement('button'); b.id = id; b.setAttribute('data-accion', accion); b.setAttribute('data-arg', arg); tapa.appendChild(b); return b; };
+    poner('inj_logout', 'clicEn', 'btn-logout').click();
+    poner('inj_quitar_login', 'quitarElemento', 'login-overlay').click();
+    poner('inj_quitar_mapa', 'quitarElemento', 'map').click();
+    window.RegistroClinicoModal.open();
+    poner('inj_cerrar_registro', 'cerrarModal', 'modal-registro-clinico').click();
+    await new Promise(r => setTimeout(r, 900));
+    ctrl.sesionAbierta = !!sessionStorage.getItem('maxime_cronicos_sesion_v1');
+    ctrl.loginVisible = document.getElementById('login-overlay').classList.contains('active');
+    ctrl.loginEnDom = !!document.getElementById('login-overlay');
+    ctrl.mapaEnDom = !!document.getElementById('map');
+    ctrl.registroSigueAbierto = document.getElementById('modal-registro-clinico').classList.contains('active');
+    // control positivo: un id de la lista sí actúa
+    document.getElementById('modal-registro-clinico').classList.remove('active');
+    const t2 = poner('inj_ficha', 'cerrarModal', 'modal-patient-detail');
+    window.app.openPatientDetail(window.app.patients[0].id);
+    t2.click();
+    ctrl.fichaCerradaConIdDeLaLista = !document.getElementById('modal-patient-detail').classList.contains('active');
+    return ctrl;
+  });
+  log('Botones inyectados a mano (clicEn «btn-logout», quitarElemento «login-overlay» y «map», cerrarModal «modal-registro-clinico»): ' + JSON.stringify(inyec));
+  await vb.ctx.close();
 
   // =====================================================================================
   log('\n=== PARTE 3b — acciones.js: ¿se puede invocar algo fuera de la lista cerrada? ===');
@@ -621,8 +667,11 @@ function tabla(campos, S) {
   await cargarEnGrilla(libro([filaRechazada]), 'fila con nombre, historia clínica, teléfono y CIE-10 con < >');
   await page.click('#padron-btn-cargar');
   await sleep(2500);
-  const aviso = await page.evaluate(() => [...document.querySelectorAll('#toast-container .toast')].map(t => t.textContent.trim()).filter(t => /servidor/i.test(t)).pop() || '(sin aviso)');
+  const aviso = await page.evaluate(() => [...document.querySelectorAll('#toast-container .toast')].map(t => t.textContent.trim()).filter(t => /servidor|guard|cargad/i.test(t)).pop() || '(sin aviso)');
   const guard2 = (await api('GET', '/api/cronicos', A)).json.find(x => x.dni === '96700002');
+  const trasRechazo = await page.evaluate(() => ({ enMemoria: window.app.patientMap.has('96700002'), cuadriculaAbierta: document.getElementById('modal-padron-grid').classList.contains('active'),
+    filas: document.querySelectorAll('#padron-grid-tbody tr').length, estado: (document.getElementById('padron-status-msg') || {}).textContent || '' }));
+  log(`Tras el rechazo del lote: el paciente quedó en la memoria de la aplicación = ${trasRechazo.enMemoria}; la cuadrícula sigue abierta = ${trasRechazo.cuadriculaAbierta} con ${trasRechazo.filas} fila(s) por corregir; mensaje en la cuadrícula: «${trasRechazo.estado.trim().slice(0, 150)}»`);
   const elemTras = await page.evaluate(() => [...document.querySelectorAll('[id]')].map(e => e.id).filter(i => /^xss_xl/i.test(i) || /^XSS_XL/i.test(i)).length);
   log(`El servidor rechaza el lote (no guardó = ${!guard2}); aviso en pantalla: «${aviso.slice(0, 150)}»; elementos inyectados en la página = ${elemTras}`);
   await page.evaluate(() => { document.querySelectorAll('.padron-modal-overlay.active').forEach(m => m.classList.remove('active')); window.PadronGridModal.patients = []; });
@@ -679,11 +728,11 @@ function tabla(campos, S) {
 
   log('\n=== RESUMEN A2 ===');
   log(`Ruta real (API → servidor → pantalla), 46 campos aceptados de 67 probados: elementos inyectados = ${inyectados1.length} → ${inyectados1.join('; ') || 'ninguno'}`);
-  log(`En memoria (si el servidor dejara pasar el dato): ${inyectados2.concat(var1.ids.map(x => x.replace('pac-mem-2:xss_', '') + ' → ficha (paciente fallecido)')).join('; ')}`);
+  log(`En memoria (si el servidor dejara pasar el dato): ${inyectados2.concat(var1.ids.map(x => x.replace('pac-mem-2:xss_', '') + ' → ficha (paciente fallecido)')).join('; ') || 'ningún campo llega como elemento'}`);
   log(`Autoinyección (el usuario se escribe a sí mismo): pin de búsqueda → elemento = ${pin.elem}, script ejecutado = ${pin.pwn !== 'no ejecutado'}`);
   log('Sin elemento inyectado en: lista, tooltip, popup, ficha, tablero, registro clínico, línea de tiempo, usuarios, chip, cuadrícula del padrón, CSV de HOSIX y mensajes del servidor (resto de los campos y sumideros).');
   log('\nErrores de página (excepciones no capturadas): ' + JSON.stringify(page.errores));
   log('Violaciones de CSP en la sesión principal: ' + JSON.stringify(await page.evaluate(() => window.__csp)));
   await browser.close();
-  fs.writeFileSync(path.join(__dirname, 'out_A2_sumideros_navegador.txt'), out.join('\n').replace(new RegExp(process.env.ADMIN_PASSWORD || 'x', 'g'), '***') + '\n');
-})().catch(e => { console.error('ERROR', e.stack.split('\n').slice(0, 4).join('\n')); fs.writeFileSync(path.join(__dirname, 'out_A2_sumideros_navegador.txt'), out.join('\n') + '\nERROR ' + e.message + '\n'); process.exit(1); });
+  fs.writeFileSync(path.join(__dirname, `out_A2_sumideros_navegador${SUF}.txt`), out.join('\n').replace(new RegExp(process.env.ADMIN_PASSWORD || 'x', 'g'), '***') + '\n');
+})().catch(e => { console.error('ERROR', e.stack.split('\n').slice(0, 4).join('\n')); fs.writeFileSync(path.join(__dirname, `out_A2_sumideros_navegador${SUF}.txt`), out.join('\n').replace(new RegExp(process.env.ADMIN_PASSWORD || 'x', 'g'), '***') + '\nERROR ' + e.message + '\n'); process.exit(1); });

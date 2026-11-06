@@ -1,0 +1,45 @@
+D2 — correcciones del cliente (Fase 3, agente C). Hoy en Lima = 2026-11-05. Servidor: http://127.0.0.1:3281
+Alta de 7 pacientes de prueba por la API: HTTP 200
+
+=== K3-03 — aviso de WhatsApp: la fecha es la de la próxima cita real ===
+  OK    cita real a +27 días: el aviso trae la fecha de la cita — cita 02/12/2026; mensaje: «*HOSPITAL DE APOYO HUARMEY*  Estimado(a) paciente: Le recordamos que su control periódico corresponde para la fecha *02/12/2026*. »
+  OK    la fecha del aviso NO es «hoy + 3 días» — hoy + 3 sería 08/11/2026
+  OK    varias citas (-40, -3, +15, +45): se usa la mayor que no es pasada (+45) — esperada 20/12/2026
+  OK    sin ninguna cita: no se abre WhatsApp y el aviso pide generar la pre-cita — ["El paciente no tiene próxima cita programada: genere primero la pre-cita."]
+  OK    solo una cita pasada: no se abre WhatsApp y se avisa — ["El paciente no tiene próxima cita programada: genere primero la pre-cita."]
+  OK    fallecido (estado «Fallecido»): no se abre WhatsApp y se avisa — estado_paciente=Fallecido, fallecido=true; avisos ["El paciente figura como fallecido: no se le envían avisos por WhatsApp."]
+
+=== K3-06 / K3-04 — ficha: textos e intervalo de control ===
+  OK    paciente en verde: «Próximo control dentro del plazo» y no «en meta terapéutica»
+  OK    no controlado sin frecuencia guardada: «Cada 30 días» (regla de ReglasClinicas) — Periodicidad HEARTS 
+  OK    cita a +65 días con último control hace 5: aviso «La cita queda a 70 días; el máximo para este paciente es 30» — La cita queda a 70 días; el máximo para este paciente es 30.
+  OK    cita a +20 días (dentro del intervalo): no hay aviso
+
+=== C3-01 — botones con data-accion armados a mano: solo actúan los ids de la lista cerrada ===
+  OK    clicEn «btn-logout», quitarElemento «login-overlay»/«map» y cerrarModal «login-overlay» no hacen nada — {"sesion":true,"loginEnDom":true,"mapaEnDom":true,"loginVisible":false,"fichaCerradaConIdDeLaLista":true}
+  OK    control positivo: cerrarModal «modal-patient-detail» (id de la lista) sí cierra la ficha
+
+=== P3-05 — recargarPacientes(): un paciente creado después del inicio de sesión ===
+  OK    devuelve true, aparece el paciente nuevo y la sesión sigue abierta — pacientes 27 → 28
+  OK    la vista del mapa no se movió y no hubo avisos — centro (-10.0155, -78.1536) zoom 12; avisos []
+  OK    sin red devuelve false y deja la lista como estaba
+
+=== C3-06 / T3-05 — cuadrícula del padrón: lote rechazado y motores ausentes ===
+  OK    el servidor rechazó el lote y no guardó nada
+  OK    el paciente NO entró a la memoria de la aplicación
+  OK    la cuadrícula sigue abierta con la fila por corregir y el botón «Cargar» disponible — filas 1
+  OK    el aviso muestra el motivo del servidor y no dice «cargados» — ["No se guardó ningún paciente: Fila 1: apellidos_nombres contiene caracteres no permitidos (< o >). Las filas siguen en la cuadrícula para corregirlas."]
+  OK    el mensaje de la propia cuadrícula también lo dice — No se guardó ningún paciente: Fila 1: apellidos_nombres contiene caracteres no permitidos (< o >). Las filas siguen en la cuadrícula para co
+  OK    control positivo: corregida la fila, el servidor la guarda, entra a la memoria y la cuadrícula se cierra
+  OK    sin geocodificador: mensaje «recargue la página», ninguna petición de guardado, nada en memoria — ["No se pudo cargar el geocodificador; recargue la página. No se guardó nada."]
+  OK    sin motor clínico: mensaje «recargue la página», ninguna petición de guardado, nada en memoria — ["No se pudo cargar el motor clínico; recargue la página. No se guardó nada."]
+
+=== HOSIX — CSV con una fila sin documento válido ===
+  avisos: ["¡Ingesta exitosa! Se procesaron y georreferenciaron 1 pacientes.","1 fila no se cargó (Sin número de documento). Fila: 2. Corrija el archivo y vuelva a subirlo."]
+  OK    la fila con documento entra y el aviso dice cuántas filas no se cargaron y por qué — 1 fila no se cargó (Sin número de documento). Fila: 2. Corrija el archivo y vuelva a subirlo.
+
+=== C3-05 — mosaicos del mapa sin Referer ===
+  OK    se pidieron mosaicos a terceros y el Referer solo lleva el ORIGEN (sin ruta ni datos de pacientes) — 18 peticiones a mt*.google.com; Referer distintos: http://127.0.0.1:3281/; Referrer-Policy: strict-origin-when-cross-origin
+  OK    sin excepciones de página durante la sesión — []
+
+Resultado D2: 26 correctas, 0 con falla

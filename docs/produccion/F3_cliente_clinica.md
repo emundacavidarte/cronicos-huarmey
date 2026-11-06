@@ -2,6 +2,8 @@
 
 **Fecha:** 05/11/2026 · **Rama:** `claude/pensive-cray-3lwodm` · **Base:** `0115413` · **Entorno:** Node 22.23.4, Chromium con Playwright · **Datos:** inventados (DNI `96…`) y la semilla de 20 pacientes simulados; el servidor de prueba usó una carpeta temporal y nunca `server/db/`.
 
+> **Actualización 06/11/2026:** este informe es el **«antes»**. Por la instrucción «corrige todo», los hallazgos se corrigieron en la Fase 4b: ver `F4b_correcciones.md` (qué se corrigió, qué quedó abierto y las decisiones clínicas por defecto). La sección 10 de este archivo (la ventana de correcciones) ya se ejecutó. Las 19 preguntas de la sección 7 siguen vigentes: las responde la licenciada y abren la Fase 4c.
+
 **Alcance** (reducido por la sección 8 de `F4_correcciones.md`):
 1. Revisar contra la norma el semáforo, el motor HEARTS, los indicadores del convenio y `padronCalculadora.js`.
 2. Preparar las preguntas para la licenciada de crónicos.

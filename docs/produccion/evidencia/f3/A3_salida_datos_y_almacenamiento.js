@@ -10,6 +10,7 @@ const RAIZ = path.resolve(__dirname, '../../../..');
 const BASE = process.env.BASE || 'http://127.0.0.1:3261';
 const ORIGEN = new URL(BASE).host;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const SUF = process.env.SALIDA_SUFIJO || ''; // p. ej. «_despues»: así la corrida nueva no pisa la salida «antes»
 const out = [];
 const log = (s = '') => { out.push(s); console.log(s); };
 const XLSX = require(path.join(RAIZ, 'client/libs/xlsx.full.min.js'));
@@ -324,11 +325,12 @@ function contiene(t, lat, lon) { return lon >= lonDe(t.x, t.z) && lon < lonDe(t.
   log(`  Pantalla de acceso visible = ${tras.login}; sessionStorage de sesión = ${tras.session === null ? 'borrado' : 'PRESENTE'}; localStorage: ${v2.localStorage.length ? 'con datos' : 'vacío'}; IndexedDB: ${JSON.stringify(v2.indexedDB)}`);
   log(`  El token anterior después de salir: GET /api/cronicos → HTTP ${rev.status} (revocado en el servidor = ${rev.status === 401})`);
   log(`  Se borran de la memoria y la pantalla: pacientes=${tras.pacientes}, mapa de pacientes=${tras.patientMap}, pre-citas=${tras.precitas}, tarjetas de la lista=${tras.lista}, ficha en el DOM=${tras.fichaDom}, tarjeta de referencia=${tras.tarjeta}, marcadores en el mapa=${tras.marcadores}, KPI total=${JSON.stringify(tras.kpiTotal)}, tablero=${JSON.stringify(tras.dashTotal)}`);
-  log(`  NO se borran: filas de la cuadrícula del padrón en memoria (PadronGridModal.patients) = ${tras.gridFilas}; filas con DNI/nombres de pacientes en el DOM de la cuadrícula = ${tras.gridDniEnDom || tras.gridNombresEnDom}; cuadrícula con clase «active» = ${tras.gridActiva}; formulario de registro clínico con clase active = ${tras.regActiva} y ${tras.regValores} campos de texto rellenos; elemento que recibe un clic en el centro de la pantalla = ${tras.centroEs}`);
+  log(`  Cuadrícula y registro tras salir: filas de la cuadrícula del padrón en memoria (PadronGridModal.patients) = ${tras.gridFilas}; filas con DNI/nombres de pacientes en el DOM de la cuadrícula = ${tras.gridDniEnDom || tras.gridNombresEnDom}; cuadrícula con clase «active» = ${tras.gridActiva}; formulario de registro clínico con clase active = ${tras.regActiva} y ${tras.regValores} campos de texto rellenos; elemento que recibe un clic en el centro de la pantalla = ${tras.centroEs}`);
 
-  await page.screenshot({ path: path.join(__dirname, 'out_A3_tras_cerrar_sesion.png') });
+  await page.screenshot({ path: path.join(__dirname, `out_A3_tras_cerrar_sesion${SUF}.png`) });
   const intento = await page.evaluate(() => { const b = document.getElementById('login-submit').getBoundingClientRect(); const e = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2); return e ? (e.id || e.className || e.tagName) : null; });
-  log(`  Elemento que recibe el clic sobre el botón «Ingresar» de la pantalla de acceso: ${intento} (la cuadrícula del padrón tiene z-index 99999 y la pantalla de acceso 3000)`);
+  const zs = await page.evaluate(() => { const z = id => { const e = document.getElementById(id); return e ? getComputedStyle(e).zIndex : 'n/d'; }; return { cuadricula: z('modal-padron-grid'), acceso: z('login-overlay'), registro: z('modal-registro-clinico'), avisos: z('toast-container') }; });
+  log(`  Elemento que recibe el clic sobre el botón «Ingresar» de la pantalla de acceso: ${intento} (z-index leídos de la página: cuadrícula del padrón ${zs.cuadricula}, registro clínico ${zs.registro}, avisos ${zs.avisos}, pantalla de acceso ${zs.acceso})`);
   // Quien entre después en el mismo navegador (sin recargar), de otra red: primero cierra la cuadrícula con Esc
   await page.keyboard.press('Escape');
   await page.fill('#login-username', 'c3.otra.red');
@@ -374,5 +376,5 @@ function contiene(t, lat, lon) { return lon >= lonDe(t.x, t.z) && lon < lonDe(t.
 
   await ctx.close();
   await browser.close();
-  fs.writeFileSync(path.join(__dirname, 'out_A3_salida_datos_y_almacenamiento.txt'), mask(out.join('\n')) + '\n');
-})().catch(e => { console.error('ERROR', mask(e.stack.split('\n').slice(0, 5).join('\n'))); fs.writeFileSync(path.join(__dirname, 'out_A3_salida_datos_y_almacenamiento.txt'), mask(out.join('\n')) + '\nERROR ' + mask(e.message) + '\n'); process.exit(1); });
+  fs.writeFileSync(path.join(__dirname, `out_A3_salida_datos_y_almacenamiento${SUF}.txt`), mask(out.join('\n')) + '\n');
+})().catch(e => { console.error('ERROR', mask(e.stack.split('\n').slice(0, 5).join('\n'))); fs.writeFileSync(path.join(__dirname, `out_A3_salida_datos_y_almacenamiento${SUF}.txt`), mask(out.join('\n')) + '\nERROR ' + mask(e.message) + '\n'); process.exit(1); });

@@ -1,0 +1,19 @@
+hoy (Lima) = 2026-11-05; hoy+30 = 2026-12-05
+
+[Caso 1] DM2 con HbA1c 11 % y SIN presión arterial
+  pantalla (en vivo): {"paEnMeta":"—","hba1cEnMeta":"HbA1c en meta: No","controladoEstable":"Controlado y estable: No","metaPresion":"Meta: < 130/90 mmHg (por DM/ERC/ECV)"}
+  diálogos: ["✅ ¡Atención de PACIENTE INVENTADO 96000021 guardada con éxito en el Padrón Estandarizado!"]
+  guardado  → observations[0].estado_control = No Controlado · estado_control = No Controlado · frecuencia_hearts = 30
+  /api/patients/geo → frecuencia_hearts = 30 · estado_control = No Controlado (guía §2: no controlado = 30 días)
+  próxima cita que propone el formulario = 2026-12-05 (hoy+30 = 2026-12-05) · guardada en appointments[0] = 2026-12-05
+
+[Caso 2] DM2 + HTA con PA 135/85 y HbA1c 6,5 %
+  pantalla (en vivo): {"paEnMeta":"⚠️ FUERA DE META","hba1cEnMeta":"HbA1c en meta: Sí","controladoEstable":"Controlado y estable: No","metaPresion":"Meta: < 130/90 mmHg (por DM/ERC/ECV)"}
+  guardado  → observations[0].estado_control = No Controlado
+
+[Caso 3] DM2 + HTA controlado (120/70, HbA1c 6,0) y con consentimiento de WhatsApp
+  pantalla (en vivo): {"paEnMeta":"✓ EN META","hba1cEnMeta":"HbA1c en meta: Sí","controladoEstable":"Controlado y estable: Sí (Parcial)","metaPresion":"Meta: < 130/90 mmHg (por DM/ERC/ECV)"}
+  guardado  → estado_control = Controlado · próxima cita guardada = 2026-12-05 (propuesta por defecto = 2026-12-05)
+  días entre hoy y la próxima cita propuesta = 30 (guía §2: controlado → 90 días)
+
+[WhatsApp] aviso para el paciente 96000023 → fecha que dice el mensaje = 05/12/2026 · su próxima cita real = 2026-12-05 · hoy+3 (Lima) = 2026-11-08

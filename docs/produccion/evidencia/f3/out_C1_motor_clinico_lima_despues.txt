@@ -1,0 +1,134 @@
+Zona horaria del proceso: America/Lima  ·  hoy local=2026-11-05  ·  v22.23.4
+
+=== A. Fechas: «AAAA-MM-DD» leída como UTC corre un día en Lima (semaforo.js lo hace bien; otros módulos no) ===
+OK       A1  padronCalculadora.evaluarCita: cita HOY debe ser amarilla («Cita hoy»)
+           esperado="amarillo"  observado="amarillo"  [base: semaforo.js: día 0 = amarillo]
+OK       A2  padronCalculadora.evaluarCita: cita a +8 días debe ser verde (> 7)
+           esperado="verde"  observado="verde"  [base: guía §3: verde si faltan > 7 días]
+OK       A3  padronCalculadora.evaluarCita: cita de ayer = 1 día de atraso
+           esperado=1  observado=1  [base: guía §3: rojo ≥ 1 día de vencimiento]
+OK       A4  semaforo.js (control): cita a +8 días = 8 días restantes, verde
+           esperado=[8,"green"]  observado=[8,"green"]  [base: guía §3]
+OK       A5  heartsEngine: cita a +8 días = 8 días restantes y verde
+           esperado=[8,"green"]  observado=[8,"green"]  [base: guía §3 y semaforo.js]
+OK       A6  heartsEngine: fecha_limite devuelta = la fecha de la cita
+           esperado="2026-11-13"  observado="2026-11-13"  [base: misma fecha que se le dio]
+OK       A7  medicación hasta: último control 2026-09-01 + 3 meses (90 días)
+           esperado="2026-11-30"  observado="2026-11-30"  [base: GUIA §2: receta trimestral = 90 días]
+
+=== B. Semáforo (semaforo.js) frente a la guía §3 ===
+OK       B1  fallecido marcado solo como estado_paciente="Fallecido" → negro
+           esperado="black"  observado="black"  [base: padronCalculadora.js:342 e indicadoresConvenio.js:137 sí lo reconocen]
+PREGUNTA B2  paciente que ASISTIÓ en la fecha de su cita (control registrado ese día) y aún no tiene otra cita
+           observado={"semaforo":"gray","dias_vencido":0}
+           → ¿«Rojo» debe significar «pasó la fecha de la cita» o «no vino»? El semáforo no mira los controles registrados: un paciente que sí vino aparece como desertor hasta que alguien programe otra cita.
+PREGUNTA B3  NO controlado (170/100) con la próxima cita a 200 días
+           observado={"semaforo":"green","dias_restantes":200}
+           → La guía §2 manda cita a 30 días al no controlado. El sistema no compara la fecha de la cita con 30/90 días: queda verde. ¿Se debe avisar cuando la cita excede el intervalo?
+PREGUNTA B4  cita exactamente HOY
+           observado="yellow"
+           → La guía §3 define amarillo = «entre 1 y 7 días»; el día 0 no está definido (el código lo pone amarillo). ¿Se confirma?
+
+=== C. Motor HEARTS (heartsEngine.js) frente a la guía §2 ===
+OK       C1  etiqueta guardada «Controlado» con PA 190/110: ¿gana la etiqueta o la cifra?
+           esperado="No Controlado"  observado="No Controlado"  [base: guía §2: controlado = PA < 140/90]
+PREGUNTA C2  DM2 con HbA1c exactamente 7,0 % y PA 120/70
+           observado="No Controlado"
+           → La guía interna del repo (§2) dice «HbA1c ≤ 7,0 %»; la vía HEARTS dice < 7 % (skill de dominio, ref. 02, corte 12-oct-2026); el código usa < 7,0 como la vía. La guía interna es la que no coincide: hay que corregirla o confirmar con la licenciada.
+PREGUNTA C3  DM2 con HbA1c 6,5 % y glucosa 140 mg/dL
+           observado="No Controlado"
+           → La guía §2 y el PP 0018 2026 (ref. 02) dicen HbA1c < 7 % «o» dos glucemias de 70 a 130; el código exige AMBAS cuando hay las dos (más estricto), y no distingue glucosa en ayunas de al azar.
+PREGUNTA C4  DM2 con HbA1c 6,0 % y glucosa 65 mg/dL
+           observado="No Controlado"
+           → El 70–130 coincide con la definición del PP 0018 2026 (ref. 02) y no está en la guía interna. Pero ahí es «dos glucemias de 70 a 130 O HbA1c < 7 %»: con HbA1c 6,0 % el diabético cumple. ¿Una sola glucosa baja debe volver «No controlado» a quien tiene HbA1c en meta?
+OK       C5  HTA reconocida para I10, I11.9, I12.9, I13.0, I15.1 (el padrón admite I10–I15)
+           esperado=[true,true,true,true,true]  observado=[true,true,true,true,true]  [base: padronSchema.js:96 y indicadoresConvenio.js esHta()]
+OK       C6  DM reconocida para E11.9, E10.9, E13, E14 (el padrón admite E10–E14)
+           esperado=[true,true,true,true]  observado=[true,true,true,true]  [base: padronSchema.js:97 e indicadoresConvenio.js esDm()]
+PREGUNTA C6b  texto «Diabetes mellitus tipo 1» sin código
+           observado=true
+           → El motor busca la palabra «diabet» y lo cuenta como DM2. ¿El programa de crónicos incluye DM1?
+OK       C7  evaluatePatient no debe reordenar la lista de observaciones del paciente
+           esperado=["2026-01-01","2026-06-01"]  observado=["2026-01-01","2026-06-01"]  [base: efecto secundario: sort() in situ (hallazgo F20 de HALLAZGOS_AUDITORIA_PADRON.md)]
+OK       C8  una cita con fecha inválida no debe lanzar excepción
+           esperado=false  observado=false  [base: F20: toISOString() de una fecha inválida lanza RangeError]
+PREGUNTA C9  hipertenso con UNA sola medición en meta
+           observado={"estado":"Controlado","frecuencia_hearts":30}
+           → La guía §2 exige «3 o más controles estables»; el manual HIS 2025 dice «mensual hasta llegar a la meta y trimestral con tres controles en meta» (ref. 02, línea 85). El motor lo da por controlado con una sola medición y le asigna 90 días.
+
+=== D. Misma persona, tres módulos, tres criterios de meta de PA ===
+PREGUNTA D1  DM2 + HTA con 135/85 y HbA1c 6,5 %
+           observado={"padronCalculadora_pa_en_meta":"No (< 130/80 mmHg (por DM/ERC/ECV))","heartsEngine":"No Controlado","indicadoresConvenio_hta_en_meta":"1 de 1"}
+           → Una misma lectura es «NO en meta» (ficha del paciente, 130/80 por DM), «controlado» (motor HEARTS, 140/90) y «en meta» (tablero, 140/90). ¿Qué meta rige para el paciente y cuál para el indicador del convenio?
+OK       D2  riesgo CV 25 % (muy alto) sin DM/ERC/ECV: meta de PA
+           esperado=130  observado=130  [base: guía §2 (<130/80 en alto riesgo) y vía HEARTS (sistólica <130 si ECV, DM, ERC o riesgo ≥10 %, ref. 02): el código solo mira DM/ERC/ECV, no el riesgo ≥10 %]
+
+=== E. Valores por defecto y derivados en la ficha (padronCalculadora.js) ===
+OK       E1  TFGe sin fecha de nacimiento: debe ser «Sin dato» (no se conoce la edad)
+           esperado=null  observado=null  [base: edad || 50 en calcularPadron (línea 312)]
+           (con edad supuesta 50 → TFGe null «Sin dato»; la misma creatinina a los 80 años daría 38 «G3b (Disminución moderada a grave, 30–44)»)
+OK       E2  medicación hasta sin «meses de medicación»: no debe suponer 1 mes
+           esperado="Sin fecha de entrega"  observado="Sin fecha de entrega"  [base: parseInt(mesesMed) || 1 (línea 273)]
+OK       E3  carné de extranjería válido (9 dígitos) no debe alertar «DNI no tiene 8 dígitos»
+           esperado="Dato conforme"  observado="Dato conforme"  [base: decisión de Edward 05/11/2026: CE y pasaporte son documentos válidos]
+OK       E4  pasaporte válido (AB123456) no debe alertar «DNI no tiene 8 dígitos»
+           esperado="Dato conforme"  observado="Dato conforme"  [base: ídem]
+DISCREPA E5  HbA1c y examen de pies de HACE MÁS DE 4 AÑOS: ¿«al día»?
+           esperado=true  observado=false  [base: la HbA1c es «anual» (la lógica solo mira si hay valor, no su fecha); el tablero del convenio sí mira fechas]
+           (observado «Qué le falta»: HbA1c vencida · Examen de pies vencido · Creatinina / TFGe sin fecha · Tamizaje Albuminuria (RAC) sin fecha · Perfil lipídico sin fecha)
+DISCREPA E6  cie10_dm="-" no debe contarse como diabetes
+           esperado="Bajo (< 5%)"  observado="Sin dato"  [base: tieneDm = !!p.cie10_dm (cualquier texto cuenta)]
+DISCREPA E6  cie10_dm="No" no debe contarse como diabetes
+           esperado="Bajo (< 5%)"  observado="Sin dato"  [base: tieneDm = !!p.cie10_dm (cualquier texto cuenta)]
+DISCREPA E6  cie10_dm="Ninguno" no debe contarse como diabetes
+           esperado="Bajo (< 5%)"  observado="Sin dato"  [base: tieneDm = !!p.cie10_dm (cualquier texto cuenta)]
+PREGUNTA E7  una sola PA registrada y en meta
+           observado="Sí (Parcial)"
+           → Se muestra «Sí (Parcial)». ¿Debe mostrarse «Controlado y estable» con menos de 3 controles?
+PREGUNTA E8  riesgo CV: 12 % → «Alto», alto riesgo = Sí → meta de LDL < 70
+           observado={"nivel":"Alto (10–19%)","ldl_en_meta":"No"}
+           → Cortes <5 / 5–9 / 10–19 / ≥20 y metas de LDL 70 y 100: la guía HEARTS del repo no los trae. ¿Qué tabla de riesgo usa el programa y quién la aprobó?
+PREGUNTA E10  DM2 de 75 años con HbA1c 7,5 %
+           observado="No"
+           → El código usa < 7,0 % para todos. La vía HEARTS fija < 8 % en adultos mayores o con comorbilidad grave y la GPC del IETSI 2025, 7,5–8,5 % desde los 65 (ref. 02 y 04). ¿Desde qué edad y con qué meta se individualiza?
+PREGUNTA E9  IMC en adulto mayor (80 años, IMC 27)
+           observado="Sobrepeso (25.0 – 29.9)"
+           → Se clasifica con los cortes de adulto joven (sobrepeso 25–29,9). ¿La valoración nutricional del adulto mayor usa otros cortes? [PENDIENTE: norma de valoración nutricional del adulto mayor]
+
+=== F. Indicadores del convenio (indicadoresConvenio.js) ===
+PREGUNTA F1  hipertenso con SOLO un examen en el periodo (sin ningún control): ¿entra al denominador de IP04?
+           observado={"ip04_denominador":1}
+           → La cabecera del módulo dice «Atendido = al menos un control en el periodo», pero el código también cuenta un examen (HbA1c, creatinina o albuminuria) como atención. ¿Cuál es la definición de «atendido» del convenio? [PENDIENTE: ficha IP04 del convenio; corpus no conectado]
+PREGUNTA F2  paciente que «Cambió de residencia» (o «Abandono») sigue en el padrón de HTA
+           observado={"hta_padron":2,"hta_con_medicion":2}
+           → Solo el fallecido sale de los denominadores. ¿Los que se mudaron o abandonaron deben salir del denominador de control?
+PREGUNTA F3  I15.0 (hipertensión renovascular) y el límite de periodo
+           observado={"esHta_I150":false,"esHta_I151":true}
+           → El módulo deja fuera I15.0 «según el Anexo 04 del convenio»; el padrón admite I10–I15. [PENDIENTE: contrastar la lista de CIE-10 con el Anexo 04 del convenio; el corpus no está conectado a esta sesión]
+
+=== G. Recordatorio por WhatsApp (whatsappNotifier.js) ===
+OK       G1  paciente fallecido (fallecido:true) con consentimiento previo: no debe generar enlace
+           esperado=null  observado=null  [base: ética y guía §3: negro = excluir de la programación]
+OK       G2  paciente con estado_paciente="Fallecido": no debe generar enlace
+           esperado=null  observado=null  [base: ídem]
+
+=== H. Parser de CSV de HOSIX (hosixParser.js, usado en main.js:2250) ===
+OK       H1  fila sin diagnóstico: no debe inventar «I10 / Hipertensión Arterial»
+           esperado=[]  observado=[]  [base: documento y diagnóstico no inventados (decisión «documento obligatorio»)]
+OK       H2  fila sin documento: no debe inventar un «DNI-n» (ya no entra al arreglo; sale en observados)
+           esperado=[0,[{"fila":1,"motivo":"Sin número de documento"}]]  observado=[0,[{"fila":1,"motivo":"Sin número de documento"}]]  [base: ídem]
+OK       H3  código N18.3 (ERC) no debe rotularse «Diabetes Mellitus Tipo 2»
+           esperado=false  observado=false  [base: el rótulo debe corresponder al código (hosixParser.js:114: todo código que no empiece con I se rotula DM2)]
+OK       H4  DM2 con HbA1c 11 % y sin PA: no debe quedar «Controlado»
+           esperado="No Controlado"  observado="No Controlado"  [base: guía §2: HbA1c ≤ 7 → controlado]
+
+=== I. Expresión de estado_control del Registro Clínico (registroClinicoModal.js:1117), copiada tal cual ===
+DISCREPA I1  solo HbA1c 11 % (sin PA): estado que se guarda
+           esperado="No Controlado"  observado="Controlado"  [base: guía §2: HbA1c ≤ 7 → controlado]
+OK       I2  el motor, con esa etiqueta, asigna 90 días al diabético con HbA1c 11 %
+           esperado=30  observado=30  [base: guía §2: no controlado = 30 días]
+PREGUNTA I3  misma expresión: PA 135/85 en un diabético
+           observado={"se_guarda_como":"Controlado","la_ficha_dice_pa_en_meta":"No"}
+           → La atención usa 140/90 para todos; la ficha del mismo formulario usa 130/80 si hay DM/ERC/ECV. Es la misma pregunta D1: ¿qué meta rige?
+
+Resumen: 25 OK · 5 DISCREPA · 17 PREGUNTA (zona horaria America/Lima)

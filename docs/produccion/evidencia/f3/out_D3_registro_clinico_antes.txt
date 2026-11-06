@@ -1,0 +1,408 @@
+# ANTES — el mismo script D3 contra el árbol del commit base 2d7f98f (git archive HEAD, sin ninguna corrección de esta ventana). Lo que sigue es la salida tal cual.
+# D3 — Registro Clínico y precarga por documento: comprobaciones contra el servidor real (Fase 3, agente R2)
+Servidor http://127.0.0.1:3275 (carpeta temporal) · reloj del navegador fijado en 2026-11-06T04:30:00Z (23:30 del 5-nov-2026 en Lima) · Chromium chromium
+
+==================================================================================================
+CORRIDA: navegador en UTC
+==================================================================================================
+  [INFO ] hoy (Lima) según el navegador = 2026-11-05 · hoy+30 = 2026-12-05 · hoy+90 = 2027-02-03 · zona del navegador: UTC
+
+### P3-01 · el control anterior NO se copia como la medición de hoy (semilla 10000001: último control 120/75 del 15-oct)
+  [FALLA] P3-01.a PAS, PAD, HbA1c y glucosa de hoy empiezan vacíos — PAS/PAD=«120/75» HbA1c=«» glucosa=«»
+  [FALLA] P3-01.b el último control se muestra como pista (no en el campo) — pista=«null»
+  [FALLA] P3-01.c guardar sin tocar no agrega ninguna observación — controles 2026-10-15:120/75 Controlado → 2026-11-05:120/75 Controlado,2026-10-15:120/75 Controlado
+  [OK   ] P3-01.d el servidor conserva la PA raíz (120/75) y la fecha del último control — PA raíz 120/75 → 120/75
+  [FALLA] P3-01.e el cuerpo enviado no trae lista de observaciones — claves enviadas: 88
+
+### P3-01 · paciente con DOS controles guardados en orden cronológico (1-jun 150/95 y 1-oct 118/74): se guarda sin tocar
+  [FALLA] P3-01.f la pista muestra el control MÁS RECIENTE por fecha (118/74), no el primero de la lista — pista=«null»
+  [FALLA] P3-01.g PAS/PAD de hoy vacías — PAS/PAD=«150/95»
+  [FALLA] P3-01.h el indicador HEARTS del convenio no cambia al guardar sin tocar — HEARTS 14/28 → 13/28
+  [FALLA] P3-01.i las observaciones del paciente no cambian — 2026-11-05:150/95 No Controlado | 2026-06-01:150/95 No Controlado | 2026-10-01:118/74 Controlado
+
+### P3-01 · cuando la persona SÍ anota un valor, se agrega UNA observación con la fecha de hoy (10000011, PA 111/71)
+  [OK   ] P3-01.j se guardó una observación nueva de hoy con 111/71 — controles 2026-11-05:111/71 Controlado | 2026-10-20:122/76 Controlado
+  [FALLA] P3-01.k el estado guardado en la observación es el mismo que mostraba la pantalla — pantalla=«null» · guardado=«Controlado»
+  [FALLA] P3-01.l no se enviaron cadenas vacías ni nulos — vacíos: sexo, cie10_dm, cie10_dislipidemia, cie10_erc, tratamiento_dm, riesgo_cv_porcentaje, perimetro_abdominal, observaciones, hba1c, fecha_hba1c, glucosa, fecha_glucosa, creatinina, fecha_creatinina, albuminuria, colesterol_total, colesterol_ldl, fecha_evaluacion_pie, tfge, observations[0].hba1c, observations[0].glucosa
+
+### P3-02 · el estado «Fallecido» se precarga y no vuelve a «Activo» (semilla 10000006)
+  [FALLA] P3-02.a el selector de estado muestra «Fallecido» — estado=«Activo»
+  [FALLA] P3-02.b no se propone cita a un fallecido — próxima cita=«2026-12-06» deshabilitada=false
+  [FALLA] P3-02.c tras guardar sigue «Fallecido» (estado y bandera) y en negro — estado=«Activo» fallecido=true semáforo=green
+  [FALLA] P3-02.d no se le programó ninguna cita ni control — citas 0→1 · controles 1→2
+  [FALLA] P3-02.e se envió estado_paciente «Fallecido» (y fallecido true) — enviado: estado=«Activo» fallecido=undefined
+
+### P3-02 · un paciente NUEVO empieza «Activo»
+  [OK   ] P3-02.f el estado del paciente nuevo es «Activo» — estado=«Activo»
+
+### P3-03 / K3-09 · lo que falta NO se guarda como dato
+  [FALLA] P3-03.a paciente NUEVO: sexo, seguro, sector, EESS, dx confirmado, ECV, estatina, AAS y meses comienzan en blanco — con valor por omisión: sexo=«Femenino», seguro=«SIS», sector=«Sector I – Centro», ads=«Hospital de Apoyo Huarme», ctrl=«Hospital de Apoyo Huarme», dxc=«Sí», ecv=«No», estatina=«No», aas=«No indicado», meses=«1»
+  [FALLA] P3-03.b paciente EXISTENTE incompleto (96400001): se precargan solo los datos guardados — con valor inventado: sexo=«Femenino», seguro=«SIS», ads=«Hospital de Apoyo Huarme», dxc=«Sí», ecv=«No», estatina=«No», aas=«No indicado», meses=«1»
+  [FALLA] P3-03.c guardar sin tocar al incompleto NO escribe sexo, seguro, dx, ECV, estatina, AAS, meses, riesgo ni «medicación hasta» — escribió: sexo=«Femenino», seguro_salud=«SIS», dx_confirmado=«Sí», enfermedad_cardiovascular=«No», estatina=«No», aspirina_aas=«No indicado», meses_medicacion=«1», establecimiento_adscripcion=«Hospital de Apoyo Huarmey », nivel_riesgo_cv=«Bajo (< 5%)», alto_riesgo_cv=«No», medicacion_hasta=«2026-12-05»
+  [FALLA] P3-03.d el cuerpo enviado no lleva esos campos ni cadenas vacías — claves por omisión enviadas: sexo, seguro_salud, dx_confirmado, enfermedad_cardiovascular, estatina, aspirina_aas, meses_medicacion, establecimiento_adscripcion, nivel_riesgo_cv, alto_riesgo_cv, medicacion_hasta · vacíos: telefono, sector, cie10_hta, cie10_dm, cie10_dislipidemia, cie10_erc, tratamiento_hta, tratamiento_dm, riesgo_cv_porcentaje, peso, talla, perimetro_abdominal, observaciones, hba1c, fecha_hba1c, glucosa, fecha_glucosa, creatinina, fecha_creatinina, albuminuria, colesterol_total, colesterol_ldl, fecha_evaluacion_pie, pas_nov, pad_nov, imc, ultima_pas, ultima_pad, mes_ultima_pa, tfge, sector_sanitario, latitud, longitud
+  [FALLA] P3-03.e infarto previo (I25.2) sin el campo guardado: «Enfermedad cardiovascular» queda en blanco, no «No» — ECV=«No»
+  [FALLA] P3-03.f guardar sin tocar no escribe «No» como enfermedad cardiovascular ni riesgo «Bajo» — ECV=«No» nivel de riesgo=«Bajo (< 5%)»
+
+### P3-03 · paciente NUEVO con lo mínimo: el cuerpo enviado solo tiene campos con valor
+  [FALLA] P3-03.g no se envía ningún valor por omisión — enviados: sexo, seguro_salud, dx_confirmado, enfermedad_cardiovascular, estatina, aspirina_aas, meses_medicacion, establecimiento_control, establecimiento_adscripcion, sector, nivel_riesgo_cv, alto_riesgo_cv, medicacion_hasta
+  [FALLA] P3-03.h no se envían cadenas vacías ni nulos — vacíos: historia_clinica, telefono, cie10_hta, cie10_dm, cie10_dislipidemia, cie10_erc, tratamiento_hta, tratamiento_dm, riesgo_cv_porcentaje, peso, talla, perimetro_abdominal, observaciones, hba1c, fecha_hba1c, glucosa, fecha_glucosa, creatinina, fecha_creatinina, albuminuria, colesterol_total, colesterol_ldl, fecha_evaluacion_pie, pas_nov, pad_nov, imc, ultima_pas, ultima_pad, mes_ultima_pa, tfge, latitud, longitud
+  [INFO ] lo que el SERVIDOR completa por su cuenta en un paciente nuevo sin esos datos: puerta_entrada_id=«00001741» sector_sanitario=«Sector I – Centro» sexo=«Femenino» seguro=«SIS» (el servidor NO exige ninguno de los campos que el formulario deja en blanco)
+  [OK   ] P3-03.i el paciente nuevo quedó guardado como «Activo», sin observaciones — estado=«Activo» controles=0
+
+### P3-04 / K3-01 · el estado de control que se guarda sale de las mediciones y de la meta del paciente
+  [FALLA] P3-04.a diabético con HbA1c 11 % y sin presión: se guarda «No Controlado» — guardado=«Controlado» · esperado por ReglasClinicas=«No Controlado»
+  [FALLA] P3-04.b la pantalla dice lo mismo que lo guardado — pantalla=«null»
+  [FALLA] P3-04.c la raíz del paciente tampoco queda «Controlado» — estado_control raíz=«Controlado»
+  [OK   ] P3-04.d sin ninguna medición no se guarda observación ni etiqueta «Controlado» — controles=0 estado_control raíz=«»
+  [FALLA] P3-04.e la pantalla no muestra «Controlado» sin mediciones — pantalla=«null»
+  [FALLA] P3-04.f DM + HTA con 135/85: se guarda «No Controlado» (meta de diabético 130/80) — guardado=«Controlado» · esperado=«No Controlado»
+  [OK   ] P3-04.g la pantalla usa la misma meta (ReglasClinicas.metaPA) y dice «fuera de meta» — meta en pantalla=«Meta: < 130/80 mmHg (por DM/ERC/ECV)» · esperada=«< 130/80 mmHg (por DM/ERC/ECV)» · PA=«⚠️ FUERA DE META»
+  [FALLA] P3-04.h DM + HTA con 120/70 y HbA1c 6,0: se guarda «Controlado» — guardado=«Controlado» · pantalla=«null»
+
+### P3-05 · lista desactualizada: otro usuario creó al paciente después del inicio de sesión
+  [INFO ] window.app.recargarPacientes NO existe todavía en main.js (agente C): se prueba el contrato del modal con un SUSTITUTO declarado (recarga /api/cronicos y llama setPatients).
+  [OK   ] P3-05.0 (preparación) el colega creó el paciente por otra vía — código 200
+  [FALLA] P3-05.a el formulario encuentra al paciente creado por otro (recarga la lista antes de decir «Nuevo») — pantalla=«🆕 Paciente Nuevo: No registra atenciones previas con el DNI 96400006.»
+  [FALLA] P3-05.b se precargan sus datos guardados (sexo, seguro, estatina, AAS, meses, ECV) — sexo=«Femenino» seguro=«SIS» estatina=«No» AAS=«No indicado» meses=«1» ECV=«No»
+  [OK   ] P3-05.c guardar NO sobrescribe lo que había registrado el colega — los 10 campos siguen igual
+  [OK   ] P3-05.d si recargarPacientes falla, el documento inexistente sigue saliendo «Paciente Nuevo» sin errores — pantalla=«🆕 Paciente Nuevo: No registra atenciones previas » errores de página=0
+
+### P3-07 · el sexo guardado como M/F se reconoce y la TFGe se calcula con el sexo correcto
+  [FALLA] P3-07.a «F» guardado → el selector muestra «Femenino» — guardado=«F» selector=«»
+  [FALLA] P3-07.b la TFGe mostrada es la de una mujer (no la de un hombre) — mostrada=«84 ml/min» · mujer=63 · hombre=84 (edad 64)
+  [FALLA] P3-07.c «M» guardado → el selector muestra «Masculino» — selector=«Femenino»
+  [FALLA] P3-07.e paciente nuevo sin sexo: la TFGe no se calcula suponiendo hombre — TFGe en pantalla=«62 ml/min»
+
+### T3-05 · el respaldo del geocodificador no pone al paciente en el hospital con «matched»
+  [FALLA] T3-05.a sin geocodificador, no se envían las coordenadas del hospital — latitud enviada=-10.0478 longitud=-78.1548
+  [FALLA] T3-05.b el paciente queda «sin ubicar» (sin coordenadas) en el servidor — latitud=-10.0478 longitud=-78.1548
+  [FALLA] T3-05.c el aviso al guardar no dice «georreferenciada» y avisa que quedó sin ubicar — mensaje=«✅ ¡Atención de PACIENTE INVENTADO 96600005 guardada con éxito en el Padrón Estandarizado!»
+  [FALLA] T3-05.d con el geocodificador real y una dirección que no ubica: sin coordenadas y con aviso — latitud=null · mensaje=«✅ ¡Atención de PACIENTE INVENTADO 96600006 guardada con éxito en el Padrón Estandarizado!»
+
+### P3-08 / K3-04 / T3-04 · próxima cita: precarga, propuesta por intervalo, aviso y duplicados
+  [FALLA] P3-08.a la cita futura guardada (2026-11-25) se precarga — próxima cita=«2026-12-06»
+  [OK   ] P3-08.b guardar sin cambiar la fecha NO agrega otra cita — citas 2026-12-06,2026-11-25 → 2026-12-06,2026-11-25
+  [OK   ] P3-08.c una fecha distinta sí agrega UNA cita nueva (2026-12-02) — citas 2026-12-02,2026-12-06,2026-11-25
+  [FALLA] P3-08.d paciente sin cita: se propone hoy+30 con la fecha de Lima (T3-04) — propuesta=«2026-12-06» · hoy+30 (Lima)=«2026-12-05»
+  [FALLA] P3-08.e la propuesta se explica en un texto visible — texto=«null»
+  [FALLA] P3-08.f controlado y estable (3 controles en meta + hoy en meta): se propone hoy+90 — propuesta=«2026-12-06» · hoy+90=«2027-02-03» · panel=«null»
+  [FALLA] P3-08.g si hoy NO está en meta, la propuesta se recalcula a hoy+30 (la persona no tocó la fecha) — propuesta=«2026-12-06» · hoy+30=«2026-12-05»
+  [FALLA] P3-08.h con la cita en hoy+60 y no controlado, aparece el aviso «La cita queda a 60 días; el máximo … es 30» — aviso=«»
+  [OK   ] P3-08.i con la cita en hoy+20 no hay aviso — aviso=«»
+  [OK   ] P3-08.j después de editar la fecha a mano, la propuesta ya no la pisa — fecha=«2026-12-20» (editada: hoy+45=«2026-12-20»)
+  [FALLA] P3-08.k paciente nuevo: propone hoy+30 con la fecha de Lima, no la de UTC — propuesta=«2026-12-06» · hoy+30 (Lima)=«2026-12-05» · UTC sería «2026-12-06»
+
+### T3-04 · fecha y mes de la atención con la fecha de Lima (reloj en el borde del mes: 23:30 del 30-nov en Lima = 04:30 UTC del 1-dic)
+  [OK   ] T3-04.a la fecha de la atención es la de Lima (2026-11-30) — fecha=«2026-11-30» (Lima=«2026-11-30»)
+  [FALLA] T3-04.b el «mes a registrar» es el de la fecha de Lima (nov), no el del reloj del navegador — mes=«dic»
+
+### P3-10 · el sector y el establecimiento guardados no se pisan si la persona no los cambió
+  [FALLA] P3-10.a coordinador del «Sector 62»: guardar sin tocar conserva sector_sanitario («Sector 62») — sector_sanitario Sector I – Centro → Sector I – Centro
+  [FALLA] P3-10.b el paciente sigue a la vista del coordinador con sector — visible antes=false después=false · mensaje=«Por favor ingrese los apellidos y nombres del paciente.»
+  [OK   ] P3-10.c el sexo guardado como «M» no se reescribe al guardar sin tocar — sexo Femenino → Femenino
+  [OK   ] P3-10.d el establecimiento de control y la puerta de entrada no cambian — puerta 00001741→00001741 · control «Hospital de Apoyo Huarmey (0000174»
+  [OK   ] P3-10.e si la persona cambia el sector en el formulario, el cambio sí se guarda — sector=«Puerto Huarmey» sector_sanitario=«Puerto Huarmey»
+  [FALLA] P3-10.f paciente nuevo sin sector elegido: el sector sale del geocodificador y no de un valor por omisión — geocodificador: matched=true sector=«Sector 67» · enviado sector_sanitario=«Sector I – Centro» sector=«Sector I – Centro»
+
+### P3-14 / P3-11 · selector de establecimientos con TODO el catálogo y sin «Falta EESS» falso
+  [FALLA] P3-14.a el selector de «EESS que lo controla» ofrece los 13 establecimientos del catálogo — opciones con código=4 (catálogo=13)
+  [FALLA] P3-14.b el selector de «EESS de adscripción» también — opciones con código=4
+  [FALLA] P3-14.c un paciente de Culebras (00001743) muestra ese establecimiento en ambos selectores — control=«» adscripción=«»
+  [FALLA] P3-14.d guardar sin tocar no dispara «Falta EESS» ni cambia el establecimiento — alerta=«Falta EESS» puerta=00001743
+  [INFO ] P3-11 BLOQUEADO por dato: el coordinador de PACIFICO NORTE ve 4 establecimientos en el selector, todos de la red Pacífico Sur (el catálogo del cliente solo trae esa red). No se resuelve con código: falta el catálogo de las otras redes.
+
+### Lo que la persona SÍ cambia se guarda (sexo, establecimiento, estado) y las validaciones de la presión
+  [INFO ] el selector «EESS que lo controla» no ofrece Culebras (I-2)
+  [OK   ] P3-07.f si la persona cambia el sexo, el cambio se guarda («Femenino») — sexo=«Femenino»
+  [FALLA] P3-10.g si la persona cambia el establecimiento de control, el cambio se guarda (Culebras 00001743) — puerta=00001741 control=«Hospital de Apoyo Huarmey (00001741, II-»
+  [FALLA] P3-02.g al marcar «Fallecido» la próxima cita se vacía y se deshabilita — cita=«2026-12-06» deshabilitada=false
+  [FALLA] P3-02.h guardado como «Fallecido»: bandera, negro y sin cita nueva — estado=«Fallecido» fallecido=false semáforo=green citas 1→2
+  [FALLA] P3-02.i al reabrirlo se ve «Fallecido» — estado=«Activo»
+  [OK   ] P3-02.j al volver a «Activo» la cita se propone de nuevo — cita=«2026-12-06»
+  [OK   ] P3-02.k corregido a «Activo»: la bandera se limpia (fallecido=false) y deja de estar en negro — estado=«Activo» fallecido=false semáforo=green
+  [FALLA] P3-01.m solo la sistólica (sin diastólica): no se guarda y se avisa — mensaje=«✅ ¡Atención de BENITES CASTILLO GLORIA AMPARO guardada con éxito en el Padrón Estandarizad» observaciones 2→3
+  [OK   ] DOC.a carné de extranjería registrado: se encuentra y el tipo es «Carné de extranjería» — tipo=«Carné de extranjería» pantalla=«🎉 Paciente Encontrado: PACIENTE INVENTA»
+  [OK   ] DOC.b se guarda sin tocar (documento no DNI) — mensaje=«✅ ¡Atención de PACIENTE INVENTADO SUR CARNE guardada con éxito en el Padrón Estandarizado!»
+
+### Servidor · ¿exige algún campo que el formulario ahora deja en blanco? (coordinador solo de La Victoria crea un paciente nuevo sin elegir establecimiento)
+  [INFO ] respuesta del servidor/formulario: «Error al guardar la atención: La atención no se guardó: No puede registrar pacientes de otro establecimiento. (código 403).»
+  [FALLA] S.a el mensaje del servidor llega a la persona y le indica qué elegir (EESS que lo controla) — mensaje=«Error al guardar la atención: La atención no se guardó: No puede registrar pacientes de otro establecimiento. (código 403).»
+  [OK   ] S.b eligiendo «C. S. La Victoria» el mismo coordinador sí lo registra — puerta=00001744
+
+### C3-02 · reiniciar(): cierra el modal, vacía el formulario y deja currentPatient = null
+  [FALLA] C3-02.a el objeto del modal expone reiniciar() — no existe
+
+### Etiqueta · «Estadio ERC» pasa a «Categoría de TFGe»
+  [FALLA] ETQ.a el panel en vivo dice «Categoría de TFGe» — texto=«Sin dato»
+
+Resumen de la corrida «navegador en UTC»: 23 OK · 62 FALLA
+
+==================================================================================================
+CORRIDA: navegador con timezoneId 'America/Lima'
+==================================================================================================
+  [INFO ] hoy (Lima) según el navegador = 2026-11-05 · hoy+30 = 2026-12-05 · hoy+90 = 2027-02-03 · zona del navegador: America/Lima
+
+### P3-01 · el control anterior NO se copia como la medición de hoy (semilla 10000001: último control 120/75 del 15-oct)
+  [FALLA] P3-01.a PAS, PAD, HbA1c y glucosa de hoy empiezan vacíos — PAS/PAD=«120/75» HbA1c=«» glucosa=«»
+  [FALLA] P3-01.b el último control se muestra como pista (no en el campo) — pista=«null»
+  [FALLA] P3-01.c guardar sin tocar no agrega ninguna observación — controles 2026-10-15:120/75 Controlado → 2026-11-05:120/75 Controlado,2026-10-15:120/75 Controlado
+  [OK   ] P3-01.d el servidor conserva la PA raíz (120/75) y la fecha del último control — PA raíz 120/75 → 120/75
+  [FALLA] P3-01.e el cuerpo enviado no trae lista de observaciones — claves enviadas: 88
+
+### P3-01 · paciente con DOS controles guardados en orden cronológico (1-jun 150/95 y 1-oct 118/74): se guarda sin tocar
+  [FALLA] P3-01.f la pista muestra el control MÁS RECIENTE por fecha (118/74), no el primero de la lista — pista=«null»
+  [FALLA] P3-01.g PAS/PAD de hoy vacías — PAS/PAD=«150/95»
+  [FALLA] P3-01.h el indicador HEARTS del convenio no cambia al guardar sin tocar — HEARTS 14/28 → 13/28
+  [FALLA] P3-01.i las observaciones del paciente no cambian — 2026-11-05:150/95 No Controlado | 2026-06-01:150/95 No Controlado | 2026-10-01:118/74 Controlado
+
+### P3-01 · cuando la persona SÍ anota un valor, se agrega UNA observación con la fecha de hoy (10000011, PA 111/71)
+  [OK   ] P3-01.j se guardó una observación nueva de hoy con 111/71 — controles 2026-11-05:111/71 Controlado | 2026-10-20:122/76 Controlado
+  [FALLA] P3-01.k el estado guardado en la observación es el mismo que mostraba la pantalla — pantalla=«null» · guardado=«Controlado»
+  [FALLA] P3-01.l no se enviaron cadenas vacías ni nulos — vacíos: sexo, cie10_dm, cie10_dislipidemia, cie10_erc, tratamiento_dm, riesgo_cv_porcentaje, perimetro_abdominal, observaciones, hba1c, fecha_hba1c, glucosa, fecha_glucosa, creatinina, fecha_creatinina, albuminuria, colesterol_total, colesterol_ldl, fecha_evaluacion_pie, tfge, observations[0].hba1c, observations[0].glucosa
+
+### P3-02 · el estado «Fallecido» se precarga y no vuelve a «Activo» (semilla 10000006)
+  [FALLA] P3-02.a el selector de estado muestra «Fallecido» — estado=«Activo»
+  [FALLA] P3-02.b no se propone cita a un fallecido — próxima cita=«2026-12-06» deshabilitada=false
+  [FALLA] P3-02.c tras guardar sigue «Fallecido» (estado y bandera) y en negro — estado=«Activo» fallecido=true semáforo=green
+  [FALLA] P3-02.d no se le programó ninguna cita ni control — citas 0→1 · controles 1→2
+  [FALLA] P3-02.e se envió estado_paciente «Fallecido» (y fallecido true) — enviado: estado=«Activo» fallecido=undefined
+
+### P3-02 · un paciente NUEVO empieza «Activo»
+  [OK   ] P3-02.f el estado del paciente nuevo es «Activo» — estado=«Activo»
+
+### P3-03 / K3-09 · lo que falta NO se guarda como dato
+  [FALLA] P3-03.a paciente NUEVO: sexo, seguro, sector, EESS, dx confirmado, ECV, estatina, AAS y meses comienzan en blanco — con valor por omisión: sexo=«Femenino», seguro=«SIS», sector=«Sector I – Centro», ads=«Hospital de Apoyo Huarme», ctrl=«Hospital de Apoyo Huarme», dxc=«Sí», ecv=«No», estatina=«No», aas=«No indicado», meses=«1»
+  [FALLA] P3-03.b paciente EXISTENTE incompleto (96400001): se precargan solo los datos guardados — con valor inventado: sexo=«Femenino», seguro=«SIS», ads=«Hospital de Apoyo Huarme», dxc=«Sí», ecv=«No», estatina=«No», aas=«No indicado», meses=«1»
+  [FALLA] P3-03.c guardar sin tocar al incompleto NO escribe sexo, seguro, dx, ECV, estatina, AAS, meses, riesgo ni «medicación hasta» — escribió: sexo=«Femenino», seguro_salud=«SIS», dx_confirmado=«Sí», enfermedad_cardiovascular=«No», estatina=«No», aspirina_aas=«No indicado», meses_medicacion=«1», establecimiento_adscripcion=«Hospital de Apoyo Huarmey », nivel_riesgo_cv=«Bajo (< 5%)», alto_riesgo_cv=«No», medicacion_hasta=«2026-12-05»
+  [FALLA] P3-03.d el cuerpo enviado no lleva esos campos ni cadenas vacías — claves por omisión enviadas: sexo, seguro_salud, dx_confirmado, enfermedad_cardiovascular, estatina, aspirina_aas, meses_medicacion, establecimiento_adscripcion, nivel_riesgo_cv, alto_riesgo_cv, medicacion_hasta · vacíos: telefono, sector, cie10_hta, cie10_dm, cie10_dislipidemia, cie10_erc, tratamiento_hta, tratamiento_dm, riesgo_cv_porcentaje, peso, talla, perimetro_abdominal, observaciones, hba1c, fecha_hba1c, glucosa, fecha_glucosa, creatinina, fecha_creatinina, albuminuria, colesterol_total, colesterol_ldl, fecha_evaluacion_pie, pas_nov, pad_nov, imc, ultima_pas, ultima_pad, mes_ultima_pa, tfge, sector_sanitario, latitud, longitud
+  [FALLA] P3-03.e infarto previo (I25.2) sin el campo guardado: «Enfermedad cardiovascular» queda en blanco, no «No» — ECV=«No»
+  [FALLA] P3-03.f guardar sin tocar no escribe «No» como enfermedad cardiovascular ni riesgo «Bajo» — ECV=«No» nivel de riesgo=«Bajo (< 5%)»
+
+### P3-03 · paciente NUEVO con lo mínimo: el cuerpo enviado solo tiene campos con valor
+  [FALLA] P3-03.g no se envía ningún valor por omisión — enviados: sexo, seguro_salud, dx_confirmado, enfermedad_cardiovascular, estatina, aspirina_aas, meses_medicacion, establecimiento_control, establecimiento_adscripcion, sector, nivel_riesgo_cv, alto_riesgo_cv, medicacion_hasta
+  [FALLA] P3-03.h no se envían cadenas vacías ni nulos — vacíos: historia_clinica, telefono, cie10_hta, cie10_dm, cie10_dislipidemia, cie10_erc, tratamiento_hta, tratamiento_dm, riesgo_cv_porcentaje, peso, talla, perimetro_abdominal, observaciones, hba1c, fecha_hba1c, glucosa, fecha_glucosa, creatinina, fecha_creatinina, albuminuria, colesterol_total, colesterol_ldl, fecha_evaluacion_pie, pas_nov, pad_nov, imc, ultima_pas, ultima_pad, mes_ultima_pa, tfge, latitud, longitud
+  [INFO ] lo que el SERVIDOR completa por su cuenta en un paciente nuevo sin esos datos: puerta_entrada_id=«00001741» sector_sanitario=«Sector I – Centro» sexo=«Femenino» seguro=«SIS» (el servidor NO exige ninguno de los campos que el formulario deja en blanco)
+  [OK   ] P3-03.i el paciente nuevo quedó guardado como «Activo», sin observaciones — estado=«Activo» controles=0
+
+### P3-04 / K3-01 · el estado de control que se guarda sale de las mediciones y de la meta del paciente
+  [FALLA] P3-04.a diabético con HbA1c 11 % y sin presión: se guarda «No Controlado» — guardado=«Controlado» · esperado por ReglasClinicas=«No Controlado»
+  [FALLA] P3-04.b la pantalla dice lo mismo que lo guardado — pantalla=«null»
+  [FALLA] P3-04.c la raíz del paciente tampoco queda «Controlado» — estado_control raíz=«Controlado»
+  [OK   ] P3-04.d sin ninguna medición no se guarda observación ni etiqueta «Controlado» — controles=0 estado_control raíz=«»
+  [FALLA] P3-04.e la pantalla no muestra «Controlado» sin mediciones — pantalla=«null»
+  [FALLA] P3-04.f DM + HTA con 135/85: se guarda «No Controlado» (meta de diabético 130/80) — guardado=«Controlado» · esperado=«No Controlado»
+  [OK   ] P3-04.g la pantalla usa la misma meta (ReglasClinicas.metaPA) y dice «fuera de meta» — meta en pantalla=«Meta: < 130/80 mmHg (por DM/ERC/ECV)» · esperada=«< 130/80 mmHg (por DM/ERC/ECV)» · PA=«⚠️ FUERA DE META»
+  [FALLA] P3-04.h DM + HTA con 120/70 y HbA1c 6,0: se guarda «Controlado» — guardado=«Controlado» · pantalla=«null»
+
+### P3-05 · lista desactualizada: otro usuario creó al paciente después del inicio de sesión
+  [INFO ] window.app.recargarPacientes NO existe todavía en main.js (agente C): se prueba el contrato del modal con un SUSTITUTO declarado (recarga /api/cronicos y llama setPatients).
+  [OK   ] P3-05.0 (preparación) el colega creó el paciente por otra vía — código 200
+  [FALLA] P3-05.a el formulario encuentra al paciente creado por otro (recarga la lista antes de decir «Nuevo») — pantalla=«🆕 Paciente Nuevo: No registra atenciones previas con el DNI 96400006.»
+  [FALLA] P3-05.b se precargan sus datos guardados (sexo, seguro, estatina, AAS, meses, ECV) — sexo=«Femenino» seguro=«SIS» estatina=«No» AAS=«No indicado» meses=«1» ECV=«No»
+  [OK   ] P3-05.c guardar NO sobrescribe lo que había registrado el colega — los 10 campos siguen igual
+  [OK   ] P3-05.d si recargarPacientes falla, el documento inexistente sigue saliendo «Paciente Nuevo» sin errores — pantalla=«🆕 Paciente Nuevo: No registra atenciones previas » errores de página=0
+
+### P3-07 · el sexo guardado como M/F se reconoce y la TFGe se calcula con el sexo correcto
+  [FALLA] P3-07.a «F» guardado → el selector muestra «Femenino» — guardado=«F» selector=«»
+  [FALLA] P3-07.b la TFGe mostrada es la de una mujer (no la de un hombre) — mostrada=«84 ml/min» · mujer=63 · hombre=84 (edad 64)
+  [FALLA] P3-07.c «M» guardado → el selector muestra «Masculino» — selector=«Femenino»
+  [FALLA] P3-07.e paciente nuevo sin sexo: la TFGe no se calcula suponiendo hombre — TFGe en pantalla=«62 ml/min»
+
+### T3-05 · el respaldo del geocodificador no pone al paciente en el hospital con «matched»
+  [FALLA] T3-05.a sin geocodificador, no se envían las coordenadas del hospital — latitud enviada=-10.0478 longitud=-78.1548
+  [FALLA] T3-05.b el paciente queda «sin ubicar» (sin coordenadas) en el servidor — latitud=-10.0478 longitud=-78.1548
+  [FALLA] T3-05.c el aviso al guardar no dice «georreferenciada» y avisa que quedó sin ubicar — mensaje=«✅ ¡Atención de PACIENTE INVENTADO 96600005 guardada con éxito en el Padrón Estandarizado!»
+  [FALLA] T3-05.d con el geocodificador real y una dirección que no ubica: sin coordenadas y con aviso — latitud=null · mensaje=«✅ ¡Atención de PACIENTE INVENTADO 96600006 guardada con éxito en el Padrón Estandarizado!»
+
+### P3-08 / K3-04 / T3-04 · próxima cita: precarga, propuesta por intervalo, aviso y duplicados
+  [FALLA] P3-08.a la cita futura guardada (2026-11-25) se precarga — próxima cita=«2026-12-06»
+  [OK   ] P3-08.b guardar sin cambiar la fecha NO agrega otra cita — citas 2026-12-06,2026-11-25 → 2026-12-06,2026-11-25
+  [OK   ] P3-08.c una fecha distinta sí agrega UNA cita nueva (2026-12-02) — citas 2026-12-02,2026-12-06,2026-11-25
+  [FALLA] P3-08.d paciente sin cita: se propone hoy+30 con la fecha de Lima (T3-04) — propuesta=«2026-12-06» · hoy+30 (Lima)=«2026-12-05»
+  [FALLA] P3-08.e la propuesta se explica en un texto visible — texto=«null»
+  [FALLA] P3-08.f controlado y estable (3 controles en meta + hoy en meta): se propone hoy+90 — propuesta=«2026-12-06» · hoy+90=«2027-02-03» · panel=«null»
+  [FALLA] P3-08.g si hoy NO está en meta, la propuesta se recalcula a hoy+30 (la persona no tocó la fecha) — propuesta=«2026-12-06» · hoy+30=«2026-12-05»
+  [FALLA] P3-08.h con la cita en hoy+60 y no controlado, aparece el aviso «La cita queda a 60 días; el máximo … es 30» — aviso=«»
+  [OK   ] P3-08.i con la cita en hoy+20 no hay aviso — aviso=«»
+  [OK   ] P3-08.j después de editar la fecha a mano, la propuesta ya no la pisa — fecha=«2026-12-20» (editada: hoy+45=«2026-12-20»)
+  [FALLA] P3-08.k paciente nuevo: propone hoy+30 con la fecha de Lima, no la de UTC — propuesta=«2026-12-06» · hoy+30 (Lima)=«2026-12-05» · UTC sería «2026-12-06»
+
+### T3-04 · fecha y mes de la atención con la fecha de Lima (reloj en el borde del mes: 23:30 del 30-nov en Lima = 04:30 UTC del 1-dic)
+  [OK   ] T3-04.a la fecha de la atención es la de Lima (2026-11-30) — fecha=«2026-11-30» (Lima=«2026-11-30»)
+  [OK   ] T3-04.b el «mes a registrar» es el de la fecha de Lima (nov), no el del reloj del navegador — mes=«nov»
+
+### T3-01 (panel en vivo, navegador en hora de Lima; depende de padronCalculadora.js del agente R1) · la cita de HOY no sale vencida
+  [FALLA] T3-01.a cita HOY → «Cita hoy» y amarillo — «Vencida hace 1 día(s)» ROJO
+  [FALLA] T3-01.b cita a +8 días → verde — «En 7 día(s)» AMARILLO
+  [FALLA] T3-01.c cita de AYER → «Vencida hace 1 día» y rojo — «Vencida hace 2 día(s)» ROJO
+
+### P3-10 · el sector y el establecimiento guardados no se pisan si la persona no los cambió
+  [FALLA] P3-10.a coordinador del «Sector 62»: guardar sin tocar conserva sector_sanitario («Sector 62») — sector_sanitario Sector I – Centro → Sector I – Centro
+  [FALLA] P3-10.b el paciente sigue a la vista del coordinador con sector — visible antes=false después=false · mensaje=«Por favor ingrese los apellidos y nombres del paciente.»
+  [OK   ] P3-10.c el sexo guardado como «M» no se reescribe al guardar sin tocar — sexo Femenino → Femenino
+  [OK   ] P3-10.d el establecimiento de control y la puerta de entrada no cambian — puerta 00001741→00001741 · control «Hospital de Apoyo Huarmey (0000174»
+  [OK   ] P3-10.e si la persona cambia el sector en el formulario, el cambio sí se guarda — sector=«Puerto Huarmey» sector_sanitario=«Puerto Huarmey»
+  [FALLA] P3-10.f paciente nuevo sin sector elegido: el sector sale del geocodificador y no de un valor por omisión — geocodificador: matched=true sector=«Sector 67» · enviado sector_sanitario=«Sector I – Centro» sector=«Sector I – Centro»
+
+### P3-14 / P3-11 · selector de establecimientos con TODO el catálogo y sin «Falta EESS» falso
+  [FALLA] P3-14.a el selector de «EESS que lo controla» ofrece los 13 establecimientos del catálogo — opciones con código=4 (catálogo=13)
+  [FALLA] P3-14.b el selector de «EESS de adscripción» también — opciones con código=4
+  [FALLA] P3-14.c un paciente de Culebras (00001743) muestra ese establecimiento en ambos selectores — control=«» adscripción=«»
+  [FALLA] P3-14.d guardar sin tocar no dispara «Falta EESS» ni cambia el establecimiento — alerta=«Falta EESS» puerta=00001743
+  [INFO ] P3-11 BLOQUEADO por dato: el coordinador de PACIFICO NORTE ve 4 establecimientos en el selector, todos de la red Pacífico Sur (el catálogo del cliente solo trae esa red). No se resuelve con código: falta el catálogo de las otras redes.
+
+### Lo que la persona SÍ cambia se guarda (sexo, establecimiento, estado) y las validaciones de la presión
+  [INFO ] el selector «EESS que lo controla» no ofrece Culebras (I-2)
+  [OK   ] P3-07.f si la persona cambia el sexo, el cambio se guarda («Femenino») — sexo=«Femenino»
+  [FALLA] P3-10.g si la persona cambia el establecimiento de control, el cambio se guarda (Culebras 00001743) — puerta=00001741 control=«Hospital de Apoyo Huarmey (00001741, II-»
+  [FALLA] P3-02.g al marcar «Fallecido» la próxima cita se vacía y se deshabilita — cita=«2026-12-06» deshabilitada=false
+  [FALLA] P3-02.h guardado como «Fallecido»: bandera, negro y sin cita nueva — estado=«Fallecido» fallecido=false semáforo=green citas 1→2
+  [FALLA] P3-02.i al reabrirlo se ve «Fallecido» — estado=«Activo»
+  [OK   ] P3-02.j al volver a «Activo» la cita se propone de nuevo — cita=«2026-12-06»
+  [OK   ] P3-02.k corregido a «Activo»: la bandera se limpia (fallecido=false) y deja de estar en negro — estado=«Activo» fallecido=false semáforo=green
+  [FALLA] P3-01.m solo la sistólica (sin diastólica): no se guarda y se avisa — mensaje=«✅ ¡Atención de BENITES CASTILLO GLORIA AMPARO guardada con éxito en el Padrón Estandarizad» observaciones 2→3
+  [OK   ] DOC.a carné de extranjería registrado: se encuentra y el tipo es «Carné de extranjería» — tipo=«Carné de extranjería» pantalla=«🎉 Paciente Encontrado: PACIENTE INVENTA»
+  [OK   ] DOC.b se guarda sin tocar (documento no DNI) — mensaje=«✅ ¡Atención de PACIENTE INVENTADO SUR CARNE guardada con éxito en el Padrón Estandarizado!»
+
+### Servidor · ¿exige algún campo que el formulario ahora deja en blanco? (coordinador solo de La Victoria crea un paciente nuevo sin elegir establecimiento)
+  [INFO ] respuesta del servidor/formulario: «Error al guardar la atención: La atención no se guardó: No puede registrar pacientes de otro establecimiento. (código 403).»
+  [FALLA] S.a el mensaje del servidor llega a la persona y le indica qué elegir (EESS que lo controla) — mensaje=«Error al guardar la atención: La atención no se guardó: No puede registrar pacientes de otro establecimiento. (código 403).»
+  [OK   ] S.b eligiendo «C. S. La Victoria» el mismo coordinador sí lo registra — puerta=00001744
+
+### C3-02 · reiniciar(): cierra el modal, vacía el formulario y deja currentPatient = null
+  [FALLA] C3-02.a el objeto del modal expone reiniciar() — no existe
+
+### Etiqueta · «Estadio ERC» pasa a «Categoría de TFGe»
+  [FALLA] ETQ.a el panel en vivo dice «Categoría de TFGe» — texto=«Sin dato»
+
+Resumen de la corrida «navegador con timezoneId 'America/Lima'»: 24 OK · 64 FALLA
+
+==================================================================================================
+RESUMEN TOTAL: 47 comprobaciones OK · 126 FALLA · 173 en total
+Con FALLA:
+  - navegador en UTC · P3-01.a PAS, PAD, HbA1c y glucosa de hoy empiezan vacíos
+  - navegador en UTC · P3-01.b el último control se muestra como pista (no en el campo)
+  - navegador en UTC · P3-01.c guardar sin tocar no agrega ninguna observación
+  - navegador en UTC · P3-01.e el cuerpo enviado no trae lista de observaciones
+  - navegador en UTC · P3-01.f la pista muestra el control MÁS RECIENTE por fecha (118/74), no el primero de la lista
+  - navegador en UTC · P3-01.g PAS/PAD de hoy vacías
+  - navegador en UTC · P3-01.h el indicador HEARTS del convenio no cambia al guardar sin tocar
+  - navegador en UTC · P3-01.i las observaciones del paciente no cambian
+  - navegador en UTC · P3-01.k el estado guardado en la observación es el mismo que mostraba la pantalla
+  - navegador en UTC · P3-01.l no se enviaron cadenas vacías ni nulos
+  - navegador en UTC · P3-02.a el selector de estado muestra «Fallecido»
+  - navegador en UTC · P3-02.b no se propone cita a un fallecido
+  - navegador en UTC · P3-02.c tras guardar sigue «Fallecido» (estado y bandera) y en negro
+  - navegador en UTC · P3-02.d no se le programó ninguna cita ni control
+  - navegador en UTC · P3-02.e se envió estado_paciente «Fallecido» (y fallecido true)
+  - navegador en UTC · P3-03.a paciente NUEVO: sexo, seguro, sector, EESS, dx confirmado, ECV, estatina, AAS y meses comienzan en blanco
+  - navegador en UTC · P3-03.b paciente EXISTENTE incompleto (96400001): se precargan solo los datos guardados
+  - navegador en UTC · P3-03.c guardar sin tocar al incompleto NO escribe sexo, seguro, dx, ECV, estatina, AAS, meses, riesgo ni «medicación hasta»
+  - navegador en UTC · P3-03.d el cuerpo enviado no lleva esos campos ni cadenas vacías
+  - navegador en UTC · P3-03.e infarto previo (I25.2) sin el campo guardado: «Enfermedad cardiovascular» queda en blanco, no «No»
+  - navegador en UTC · P3-03.f guardar sin tocar no escribe «No» como enfermedad cardiovascular ni riesgo «Bajo»
+  - navegador en UTC · P3-03.g no se envía ningún valor por omisión
+  - navegador en UTC · P3-03.h no se envían cadenas vacías ni nulos
+  - navegador en UTC · P3-04.a diabético con HbA1c 11 % y sin presión: se guarda «No Controlado»
+  - navegador en UTC · P3-04.b la pantalla dice lo mismo que lo guardado
+  - navegador en UTC · P3-04.c la raíz del paciente tampoco queda «Controlado»
+  - navegador en UTC · P3-04.e la pantalla no muestra «Controlado» sin mediciones
+  - navegador en UTC · P3-04.f DM + HTA con 135/85: se guarda «No Controlado» (meta de diabético 130/80)
+  - navegador en UTC · P3-04.h DM + HTA con 120/70 y HbA1c 6,0: se guarda «Controlado»
+  - navegador en UTC · P3-05.a el formulario encuentra al paciente creado por otro (recarga la lista antes de decir «Nuevo»)
+  - navegador en UTC · P3-05.b se precargan sus datos guardados (sexo, seguro, estatina, AAS, meses, ECV)
+  - navegador en UTC · P3-07.a «F» guardado → el selector muestra «Femenino»
+  - navegador en UTC · P3-07.b la TFGe mostrada es la de una mujer (no la de un hombre)
+  - navegador en UTC · P3-07.c «M» guardado → el selector muestra «Masculino»
+  - navegador en UTC · P3-07.e paciente nuevo sin sexo: la TFGe no se calcula suponiendo hombre
+  - navegador en UTC · T3-05.a sin geocodificador, no se envían las coordenadas del hospital
+  - navegador en UTC · T3-05.b el paciente queda «sin ubicar» (sin coordenadas) en el servidor
+  - navegador en UTC · T3-05.c el aviso al guardar no dice «georreferenciada» y avisa que quedó sin ubicar
+  - navegador en UTC · T3-05.d con el geocodificador real y una dirección que no ubica: sin coordenadas y con aviso
+  - navegador en UTC · P3-08.a la cita futura guardada (2026-11-25) se precarga
+  - navegador en UTC · P3-08.d paciente sin cita: se propone hoy+30 con la fecha de Lima (T3-04)
+  - navegador en UTC · P3-08.e la propuesta se explica en un texto visible
+  - navegador en UTC · P3-08.f controlado y estable (3 controles en meta + hoy en meta): se propone hoy+90
+  - navegador en UTC · P3-08.g si hoy NO está en meta, la propuesta se recalcula a hoy+30 (la persona no tocó la fecha)
+  - navegador en UTC · P3-08.h con la cita en hoy+60 y no controlado, aparece el aviso «La cita queda a 60 días; el máximo … es 30»
+  - navegador en UTC · P3-08.k paciente nuevo: propone hoy+30 con la fecha de Lima, no la de UTC
+  - navegador en UTC · T3-04.b el «mes a registrar» es el de la fecha de Lima (nov), no el del reloj del navegador
+  - navegador en UTC · P3-10.a coordinador del «Sector 62»: guardar sin tocar conserva sector_sanitario («Sector 62»)
+  - navegador en UTC · P3-10.b el paciente sigue a la vista del coordinador con sector
+  - navegador en UTC · P3-10.f paciente nuevo sin sector elegido: el sector sale del geocodificador y no de un valor por omisión
+  - navegador en UTC · P3-14.a el selector de «EESS que lo controla» ofrece los 13 establecimientos del catálogo
+  - navegador en UTC · P3-14.b el selector de «EESS de adscripción» también
+  - navegador en UTC · P3-14.c un paciente de Culebras (00001743) muestra ese establecimiento en ambos selectores
+  - navegador en UTC · P3-14.d guardar sin tocar no dispara «Falta EESS» ni cambia el establecimiento
+  - navegador en UTC · P3-10.g si la persona cambia el establecimiento de control, el cambio se guarda (Culebras 00001743)
+  - navegador en UTC · P3-02.g al marcar «Fallecido» la próxima cita se vacía y se deshabilita
+  - navegador en UTC · P3-02.h guardado como «Fallecido»: bandera, negro y sin cita nueva
+  - navegador en UTC · P3-02.i al reabrirlo se ve «Fallecido»
+  - navegador en UTC · P3-01.m solo la sistólica (sin diastólica): no se guarda y se avisa
+  - navegador en UTC · S.a el mensaje del servidor llega a la persona y le indica qué elegir (EESS que lo controla)
+  - navegador en UTC · C3-02.a el objeto del modal expone reiniciar()
+  - navegador en UTC · ETQ.a el panel en vivo dice «Categoría de TFGe»
+  - navegador con timezoneId 'America/Lima' · P3-01.a PAS, PAD, HbA1c y glucosa de hoy empiezan vacíos
+  - navegador con timezoneId 'America/Lima' · P3-01.b el último control se muestra como pista (no en el campo)
+  - navegador con timezoneId 'America/Lima' · P3-01.c guardar sin tocar no agrega ninguna observación
+  - navegador con timezoneId 'America/Lima' · P3-01.e el cuerpo enviado no trae lista de observaciones
+  - navegador con timezoneId 'America/Lima' · P3-01.f la pista muestra el control MÁS RECIENTE por fecha (118/74), no el primero de la lista
+  - navegador con timezoneId 'America/Lima' · P3-01.g PAS/PAD de hoy vacías
+  - navegador con timezoneId 'America/Lima' · P3-01.h el indicador HEARTS del convenio no cambia al guardar sin tocar
+  - navegador con timezoneId 'America/Lima' · P3-01.i las observaciones del paciente no cambian
+  - navegador con timezoneId 'America/Lima' · P3-01.k el estado guardado en la observación es el mismo que mostraba la pantalla
+  - navegador con timezoneId 'America/Lima' · P3-01.l no se enviaron cadenas vacías ni nulos
+  - navegador con timezoneId 'America/Lima' · P3-02.a el selector de estado muestra «Fallecido»
+  - navegador con timezoneId 'America/Lima' · P3-02.b no se propone cita a un fallecido
+  - navegador con timezoneId 'America/Lima' · P3-02.c tras guardar sigue «Fallecido» (estado y bandera) y en negro
+  - navegador con timezoneId 'America/Lima' · P3-02.d no se le programó ninguna cita ni control
+  - navegador con timezoneId 'America/Lima' · P3-02.e se envió estado_paciente «Fallecido» (y fallecido true)
+  - navegador con timezoneId 'America/Lima' · P3-03.a paciente NUEVO: sexo, seguro, sector, EESS, dx confirmado, ECV, estatina, AAS y meses comienzan en blanco
+  - navegador con timezoneId 'America/Lima' · P3-03.b paciente EXISTENTE incompleto (96400001): se precargan solo los datos guardados
+  - navegador con timezoneId 'America/Lima' · P3-03.c guardar sin tocar al incompleto NO escribe sexo, seguro, dx, ECV, estatina, AAS, meses, riesgo ni «medicación hasta»
+  - navegador con timezoneId 'America/Lima' · P3-03.d el cuerpo enviado no lleva esos campos ni cadenas vacías
+  - navegador con timezoneId 'America/Lima' · P3-03.e infarto previo (I25.2) sin el campo guardado: «Enfermedad cardiovascular» queda en blanco, no «No»
+  - navegador con timezoneId 'America/Lima' · P3-03.f guardar sin tocar no escribe «No» como enfermedad cardiovascular ni riesgo «Bajo»
+  - navegador con timezoneId 'America/Lima' · P3-03.g no se envía ningún valor por omisión
+  - navegador con timezoneId 'America/Lima' · P3-03.h no se envían cadenas vacías ni nulos
+  - navegador con timezoneId 'America/Lima' · P3-04.a diabético con HbA1c 11 % y sin presión: se guarda «No Controlado»
+  - navegador con timezoneId 'America/Lima' · P3-04.b la pantalla dice lo mismo que lo guardado
+  - navegador con timezoneId 'America/Lima' · P3-04.c la raíz del paciente tampoco queda «Controlado»
+  - navegador con timezoneId 'America/Lima' · P3-04.e la pantalla no muestra «Controlado» sin mediciones
+  - navegador con timezoneId 'America/Lima' · P3-04.f DM + HTA con 135/85: se guarda «No Controlado» (meta de diabético 130/80)
+  - navegador con timezoneId 'America/Lima' · P3-04.h DM + HTA con 120/70 y HbA1c 6,0: se guarda «Controlado»
+  - navegador con timezoneId 'America/Lima' · P3-05.a el formulario encuentra al paciente creado por otro (recarga la lista antes de decir «Nuevo»)
+  - navegador con timezoneId 'America/Lima' · P3-05.b se precargan sus datos guardados (sexo, seguro, estatina, AAS, meses, ECV)
+  - navegador con timezoneId 'America/Lima' · P3-07.a «F» guardado → el selector muestra «Femenino»
+  - navegador con timezoneId 'America/Lima' · P3-07.b la TFGe mostrada es la de una mujer (no la de un hombre)
+  - navegador con timezoneId 'America/Lima' · P3-07.c «M» guardado → el selector muestra «Masculino»
+  - navegador con timezoneId 'America/Lima' · P3-07.e paciente nuevo sin sexo: la TFGe no se calcula suponiendo hombre
+  - navegador con timezoneId 'America/Lima' · T3-05.a sin geocodificador, no se envían las coordenadas del hospital
+  - navegador con timezoneId 'America/Lima' · T3-05.b el paciente queda «sin ubicar» (sin coordenadas) en el servidor
+  - navegador con timezoneId 'America/Lima' · T3-05.c el aviso al guardar no dice «georreferenciada» y avisa que quedó sin ubicar
+  - navegador con timezoneId 'America/Lima' · T3-05.d con el geocodificador real y una dirección que no ubica: sin coordenadas y con aviso
+  - navegador con timezoneId 'America/Lima' · P3-08.a la cita futura guardada (2026-11-25) se precarga
+  - navegador con timezoneId 'America/Lima' · P3-08.d paciente sin cita: se propone hoy+30 con la fecha de Lima (T3-04)
+  - navegador con timezoneId 'America/Lima' · P3-08.e la propuesta se explica en un texto visible
+  - navegador con timezoneId 'America/Lima' · P3-08.f controlado y estable (3 controles en meta + hoy en meta): se propone hoy+90
+  - navegador con timezoneId 'America/Lima' · P3-08.g si hoy NO está en meta, la propuesta se recalcula a hoy+30 (la persona no tocó la fecha)
+  - navegador con timezoneId 'America/Lima' · P3-08.h con la cita en hoy+60 y no controlado, aparece el aviso «La cita queda a 60 días; el máximo … es 30»
+  - navegador con timezoneId 'America/Lima' · P3-08.k paciente nuevo: propone hoy+30 con la fecha de Lima, no la de UTC
+  - navegador con timezoneId 'America/Lima' · T3-01.a cita HOY → «Cita hoy» y amarillo
+  - navegador con timezoneId 'America/Lima' · T3-01.b cita a +8 días → verde
+  - navegador con timezoneId 'America/Lima' · T3-01.c cita de AYER → «Vencida hace 1 día» y rojo
+  - navegador con timezoneId 'America/Lima' · P3-10.a coordinador del «Sector 62»: guardar sin tocar conserva sector_sanitario («Sector 62»)
+  - navegador con timezoneId 'America/Lima' · P3-10.b el paciente sigue a la vista del coordinador con sector
+  - navegador con timezoneId 'America/Lima' · P3-10.f paciente nuevo sin sector elegido: el sector sale del geocodificador y no de un valor por omisión
+  - navegador con timezoneId 'America/Lima' · P3-14.a el selector de «EESS que lo controla» ofrece los 13 establecimientos del catálogo
+  - navegador con timezoneId 'America/Lima' · P3-14.b el selector de «EESS de adscripción» también
+  - navegador con timezoneId 'America/Lima' · P3-14.c un paciente de Culebras (00001743) muestra ese establecimiento en ambos selectores
+  - navegador con timezoneId 'America/Lima' · P3-14.d guardar sin tocar no dispara «Falta EESS» ni cambia el establecimiento
+  - navegador con timezoneId 'America/Lima' · P3-10.g si la persona cambia el establecimiento de control, el cambio se guarda (Culebras 00001743)
+  - navegador con timezoneId 'America/Lima' · P3-02.g al marcar «Fallecido» la próxima cita se vacía y se deshabilita
+  - navegador con timezoneId 'America/Lima' · P3-02.h guardado como «Fallecido»: bandera, negro y sin cita nueva
+  - navegador con timezoneId 'America/Lima' · P3-02.i al reabrirlo se ve «Fallecido»
+  - navegador con timezoneId 'America/Lima' · P3-01.m solo la sistólica (sin diastólica): no se guarda y se avisa
+  - navegador con timezoneId 'America/Lima' · S.a el mensaje del servidor llega a la persona y le indica qué elegir (EESS que lo controla)
+  - navegador con timezoneId 'America/Lima' · C3-02.a el objeto del modal expone reiniciar()
+  - navegador con timezoneId 'America/Lima' · ETQ.a el panel en vivo dice «Categoría de TFGe»

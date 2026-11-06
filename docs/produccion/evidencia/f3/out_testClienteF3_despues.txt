@@ -1,0 +1,55 @@
+Cliente de la Fase 3: seguridad, sesión y textos de la ficha
+
+  OK    C3-01 la nota de trazabilidad (nota_duplicado_padron) se pinta como texto, no como HTML
+  OK    C3-01/03 ficha: ningún campo del paciente (edad, fecha_*, frecuencia, presiones…) llega como elemento, en las cuatro variantes
+  OK    C3-03 tarjeta de la lista: ningún campo llega como elemento (edad se escapa)
+  OK    C3-03 popup y tooltip del mapa: ningún campo llega como elemento (frecuencia_hearts y edad se escapan)
+  OK    C3-04 el pin de búsqueda del mapa no interpreta como HTML lo que escribe el usuario
+  OK    C3-03 línea de tiempo de eventos: ningún campo llega como elemento
+  OK    C3-01 acciones.js expone la lista cerrada de ids de clicEn, quitarElemento y cerrarModal
+  OK    C3-01 TODO id que usan index.html y las plantillas en esas tres acciones está en la lista (y ninguno es dinámico)
+  OK    C3-01 la lista no tiene ids huérfanos: cada id se usa y existe en el marcado
+  OK    C3-01 un botón inyectado con un id fuera de la lista no actúa (clicEn, quitarElemento, cerrarModal)
+  OK    C3-01 los ids de la lista siguen funcionando (btn-usuarios, reference-inspector-card, modal-precita, modal-patient-detail)
+  OK    C3-01 las acciones y cambios que usan la página y las plantillas son exactamente los de las listas de acciones.js
+  OK    C3-02 PadronGridModal.reiniciar() cierra la cuadrícula, vacía las filas y limpia el DOM
+  OK    C3-02 reiniciar() sin haber abierto nunca la cuadrícula no falla
+  OK    C3-02 un archivo que aún se está leyendo no reabre la cuadrícula si la sesión se cerró mientras tanto
+  OK    C3-02 limpiarSesion() reinicia la cuadrícula del padrón y el Registro Clínico (cierre, vencimiento e inactividad pasan por aquí)
+  OK    C3-02 limpiarSesion() no falla si el Registro Clínico aún no tiene reiniciar() ni la cuadrícula está cargada
+  OK    C3-02 todas las rutas que vuelven al acceso pasan por limpiarSesion (salir, vencer, inactividad, sesión no verificada)
+  OK    C3-02 la pantalla de acceso queda por encima de cualquier modal y los avisos por encima de la cuadrícula
+  OK    C3-06 si el servidor rechaza el lote: no se agregan pacientes a la memoria, no se dice «cargados», se muestra el motivo y las filas quedan
+  OK    C3-06 si el servidor no responde (error de red): tampoco se agrega nada a la memoria ni se dice «cargados»
+  OK    C3-06 control positivo: si el servidor guarda, los pacientes entran a la memoria y se cierra la cuadrícula
+  OK    T3-05 sin geocodificador la carga se detiene con un mensaje visible y no se guarda nada
+  OK    T3-05 sin motor clínico (HeartsEngine) la carga se detiene con un mensaje visible y no se guarda nada
+  OK    K3-01 (cuadrícula) una HbA1c de 11 % con presión normal no se guarda como «Controlado» en la atención del lote
+  OK    K3-03 el aviso lleva la fecha de la PRÓXIMA CITA real (dd/mm/aaaa), no «hoy + 3 días»
+  OK    K3-03 con varias citas se usa la mayor fecha que sea de hoy en adelante (las vencidas no cuentan)
+  OK    K3-03 una cita de HOY (en hora de Lima) todavía es la próxima cita
+  OK    K3-03 sin appointments se usa proxima_cita del padrón
+  OK    K3-03 sin próxima cita (solo citas pasadas): aviso al usuario, no se arma el enlace y no se abre WhatsApp
+  OK    K3-03 sin ninguna cita registrada: el mismo aviso y ningún enlace
+  OK    K3-03 un paciente fallecido (solo con estado_paciente «Fallecido») no recibe aviso
+  OK    K3-03 la fecha del aviso no sale de toLocaleDateString ni de new Date() del navegador
+  OK    K3-03 sin consentimiento el aviso sigue pidiendo el consentimiento (no se rompió el orden)
+  OK    K3-06 un paciente en verde ya no dice «en meta terapéutica»: dice «Próximo control dentro del plazo»
+  OK    K3-04 el intervalo por omisión sale de ReglasClinicas.frecuenciaDias: 30 días no controlado, 90 solo controlado y estable
+  OK    K3-04 el popup del mapa usa el mismo intervalo que la ficha (guardado o el de la regla) y no muestra ninguno sin estado de control
+  OK    K3-04 si el paciente ya trae frecuencia_hearts, la ficha muestra esa y no la de por omisión
+  OK    K3-04 el código no deja números fijos de intervalo (|| 90, «Cada 30 días») en la ficha ni en el popup
+  OK    K3-04 la ficha avisa «La cita queda a N días; el máximo para este paciente es M» si la cita excede el intervalo
+  OK    K3-04 sin exceso (o sin fecha del último control) no se muestra el aviso
+  OK    K3-04 la fecha del último control puede salir de la última observación cuando el padrón no la trae
+  OK    HOSIX las filas observadas (sin documento válido) se avisan: cuántas no se cargaron y por qué
+  OK    HOSIX con una sola fila observada el aviso concuerda en singular
+  OK    HOSIX si todas las filas quedan observadas se dice que no se cargó ninguna (no un éxito)
+  OK    HOSIX sin la propiedad observados (parser anterior) no falla y sigue cargando
+  OK    P3-05 recargarPacientes() vuelve a pedir /api/cronicos, actualiza la lista y devuelve true sin mover la vista ni limpiar la sesión
+  OK    P3-05 recargarPacientes() devuelve false si el servidor falla (500 o sin red) y deja la lista como estaba
+  OK    P3-05 recargarPacientes() no pisa la lista si la sesión cambió o se cerró mientras se esperaba la respuesta
+  OK    P3-05 recargarPacientes() no pide nada si el rol no ve pacientes (Director) o no hay sesión
+  OK    C3-05 las capas de mosaicos piden las imágenes sin Referer (referrerPolicy: no-referrer, Leaflet 1.9.4 lo admite)
+
+Resultado Cliente F3: 51 correctas, 0 con falla

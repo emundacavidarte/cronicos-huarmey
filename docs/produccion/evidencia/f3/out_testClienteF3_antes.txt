@@ -1,0 +1,221 @@
+# testClienteF3.js ejecutado contra el cliente SIN corregir (base 2d7f98f): 49 casos, 10 correctos (controles de no regresión), 39 con falla
+# Después se agregaron 2 casos (intervalo en el popup y concordancia en singular del aviso HOSIX): ver out_testClienteF3_despues.txt
+Cliente de la Fase 3: seguridad, sesión y textos de la ficha
+
+  FALLA C3-01 la nota de trazabilidad (nota_duplicado_padron) se pinta como texto, no como HTML
+        la nota llegó como elemento en la ficha
+  FALLA C3-01/03 ficha: ningún campo del paciente (edad, fecha_*, frecuencia, presiones…) llega como elemento, en las cuatro variantes
+        campos que llegan sin escape a la ficha
+        + actual - expected
+        
+        + [
+        +   'nota_duplicado_padron [verde (cita lejana)]',
+        +   'fecha_examenes [verde (cita lejana)]',
+        +   'fecha_limite [verde (cita lejana)]',
+        +   'nota_duplicado_padron [amarillo (cita próxima)]',
+        +   'fecha_examenes [amarillo (cita próxima)]',
+        +   'fecha_limite [amarillo (cita próxima)]',
+        +   'nota_duplicado_padron [rojo (cita vencida)]',
+        +   'fecha_examenes [rojo (cita vencida)]',
+        +   'fecha_limite [rojo (cita vencida)]',
+        +   'nota_duplicado_padron [fallecido]',
+        +   'fecha_examenes [fallecido]',
+        +   'fecha_estado [fallecido]',
+        +   'fecha_limite [fallecido]'
+        + ]
+        - []
+        
+  FALLA C3-03 tarjeta de la lista: ningún campo llega como elemento (edad se escapa)
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + [
+        +   'edad'
+        + ]
+        - []
+        
+  FALLA C3-03 popup y tooltip del mapa: ningún campo llega como elemento (frecuencia_hearts y edad se escapan)
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + [
+        +   'frecuencia_hearts'
+        + ]
+        - []
+        
+  FALLA C3-04 el pin de búsqueda del mapa no interpreta como HTML lo que escribe el usuario
+        el texto buscado llegó como elemento
+  OK    C3-03 línea de tiempo de eventos: ningún campo llega como elemento
+  FALLA C3-01 acciones.js expone la lista cerrada de ids de clicEn, quitarElemento y cerrarModal
+        AccionesUi.ids no existe
+  FALLA C3-01 TODO id que usan index.html y las plantillas en esas tres acciones está en la lista (y ninguno es dinámico)
+        Cannot read properties of undefined (reading 'clicEn')
+  FALLA C3-01 la lista no tiene ids huérfanos: cada id se usa y existe en el marcado
+        Cannot convert undefined or null to object
+  FALLA C3-01 un botón inyectado con un id fuera de la lista no actúa (clicEn, quitarElemento, cerrarModal)
+        clicEn hizo clic en #btn-logout
+        
+        1 !== 0
+        
+  OK    C3-01 los ids de la lista siguen funcionando (btn-usuarios, reference-inspector-card, modal-precita, modal-patient-detail)
+  OK    C3-01 las acciones y cambios que usan la página y las plantillas son exactamente los de las listas de acciones.js
+  FALLA C3-02 PadronGridModal.reiniciar() cierra la cuadrícula, vacía las filas y limpia el DOM
+        reiniciar() no existe
+        + actual - expected
+        
+        + 'undefined'
+        - 'function'
+        
+  FALLA C3-02 reiniciar() sin haber abierto nunca la cuadrícula no falla
+        Got unwanted exception.
+        Actual message: "m.reiniciar is not a function"
+  FALLA C3-02 un archivo que aún se está leyendo no reabre la cuadrícula si la sesión se cerró mientras tanto
+        reiniciar() no existe
+        + actual - expected
+        
+        + 'undefined'
+        - 'function'
+        
+  FALLA C3-02 limpiarSesion() reinicia la cuadrícula del padrón y el Registro Clínico (cierre, vencimiento e inactividad pasan por aquí)
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + []
+        - [
+        -   'padron',
+        -   'registro'
+        - ]
+        
+  OK    C3-02 limpiarSesion() no falla si el Registro Clínico aún no tiene reiniciar() ni la cuadrícula está cargada
+  OK    C3-02 todas las rutas que vuelven al acceso pasan por limpiarSesion (salir, vencer, inactividad, sesión no verificada)
+  FALLA C3-02 la pantalla de acceso queda por encima de cualquier modal y los avisos por encima de la cuadrícula
+        el acceso (3000) no supera a cuadrícula del padrón (99999)
+  FALLA C3-06 si el servidor rechaza el lote: no se agregan pacientes a la memoria, no se dice «cargados», se muestra el motivo y las filas quedan
+        se agregaron pacientes a la memoria sin que el servidor los guardara
+        
+        1 !== 0
+        
+No se pudo persistir en backend REST, usando memoria local: Error: Failed to fetch
+    at /home/user/cronicos-huarmey/server/tests/testClienteF3.js:580:58
+    at Object.authFetch (/home/user/cronicos-huarmey/server/tests/testClienteF3.js:263:125)
+    at PadronGridModal.commitUpload (/home/user/cronicos-huarmey/client/js/ui/padronGridModal.js:1655:51)
+    at /home/user/cronicos-huarmey/server/tests/testClienteF3.js:585:34
+    at conWindow (/home/user/cronicos-huarmey/server/tests/testClienteF3.js:281:22)
+    at /home/user/cronicos-huarmey/server/tests/testClienteF3.js:585:11
+    at step (/home/user/cronicos-huarmey/server/tests/testClienteF3.js:28:11)
+    at main (/home/user/cronicos-huarmey/server/tests/testClienteF3.js:579:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+  FALLA C3-06 si el servidor no responde (error de red): tampoco se agrega nada a la memoria ni se dice «cargados»
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+  OK    C3-06 control positivo: si el servidor guarda, los pacientes entran a la memoria y se cierra la cuadrícula
+  FALLA T3-05 sin geocodificador la carga se detiene con un mensaje visible y no se guarda nada
+        se intentó guardar con coordenadas inventadas
+        
+        1 !== 0
+        
+  FALLA T3-05 sin motor clínico (HeartsEngine) la carga se detiene con un mensaje visible y no se guarda nada
+        se intentó guardar con «verde / Controlado» por omisión
+        
+        1 !== 0
+        
+  FALLA K3-01 (cuadrícula) una HbA1c de 11 % con presión normal no se guarda como «Controlado» en la atención del lote
+        HbA1c 11 % guardada como Controlado
+  FALLA K3-03 el aviso lleva la fecha de la PRÓXIMA CITA real (dd/mm/aaaa), no «hoy + 3 días»
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+          [
+        +   '9/11/2026'
+        -   '02/12/2026'
+          ]
+        
+  FALLA K3-03 con varias citas se usa la mayor fecha que sea de hoy en adelante (las vencidas no cuentan)
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+          [
+        +   '9/11/2026'
+        -   '20/12/2026'
+          ]
+        
+  FALLA K3-03 una cita de HOY (en hora de Lima) todavía es la próxima cita
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+          [
+        +   '9/11/2026'
+        -   '05/11/2026'
+          ]
+        
+  FALLA K3-03 sin appointments se usa proxima_cita del padrón
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+          [
+        +   '9/11/2026'
+        -   '17/11/2026'
+          ]
+        
+  FALLA K3-03 sin próxima cita (solo citas pasadas): aviso al usuario, no se arma el enlace y no se abre WhatsApp
+        se abrió WhatsApp sin cita
+        
+        1 !== 0
+        
+  FALLA K3-03 sin ninguna cita registrada: el mismo aviso y ningún enlace
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+  FALLA K3-03 un paciente fallecido (solo con estado_paciente «Fallecido») no recibe aviso
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+  FALLA K3-03 la fecha del aviso no sale de toLocaleDateString ni de new Date() del navegador
+        enviarWhatsApp todavía arma la fecha con el reloj del navegador
+  OK    K3-03 sin consentimiento el aviso sigue pidiendo el consentimiento (no se rompió el orden)
+  FALLA K3-06 un paciente en verde ya no dice «en meta terapéutica»: dice «Próximo control dentro del plazo»
+        sigue diciendo «en meta terapéutica»
+  FALLA K3-04 el intervalo por omisión sale de ReglasClinicas.frecuenciaDias: 30 días no controlado, 90 solo controlado y estable
+        no controlado muestra 90
+  OK    K3-04 si el paciente ya trae frecuencia_hearts, la ficha muestra esa y no la de por omisión
+  FALLA K3-04 el código no deja números fijos de intervalo (|| 90, «Cada 30 días») en la ficha ni en el popup
+        queda «frecuencia_hearts || 90»
+  FALLA K3-04 la ficha avisa «La cita queda a N días; el máximo para este paciente es M» si la cita excede el intervalo
+        no aparece el aviso con 70 y 30
+  OK    K3-04 sin exceso (o sin fecha del último control) no se muestra el aviso
+  FALLA K3-04 la fecha del último control puede salir de la última observación cuando el padrón no la trae
+        The expression evaluated to a falsy value:
+        
+          assert.ok(/La cita queda a 54 días; el máximo para este paciente es 30/.test(html))
+        
+  FALLA HOSIX las filas observadas (sin documento válido) se avisan: cuántas no se cargaron y por qué
+        no hay aviso de las filas observadas: [{"m":"¡Ingesta exitosa! Se procesaron y georreferenciaron 1 pacientes.","t":"success"}]
+  FALLA HOSIX si todas las filas quedan observadas se dice que no se cargó ninguna (no un éxito)
+        se anunció una ingesta exitosa con 0 pacientes: [{"m":"¡Ingesta exitosa! Se procesaron y georreferenciaron 0 pacientes.","t":"success"}]
+  OK    HOSIX sin la propiedad observados (parser anterior) no falla y sigue cargando
+  FALLA P3-05 recargarPacientes() vuelve a pedir /api/cronicos, actualiza la lista y devuelve true sin mover la vista ni limpiar la sesión
+        recargarPacientes() no existe
+        + actual - expected
+        
+        + 'undefined'
+        - 'function'
+        
+  FALLA P3-05 recargarPacientes() devuelve false si el servidor falla (500 o sin red) y deja la lista como estaba
+        a.recargarPacientes is not a function
+  FALLA P3-05 recargarPacientes() no pisa la lista si la sesión cambió o se cerró mientras se esperaba la respuesta
+        app.recargarPacientes is not a function
+  FALLA P3-05 recargarPacientes() no pide nada si el rol no ve pacientes (Director) o no hay sesión
+        recargarPacientes() no existe
+        + actual - expected
+        
+        + 'undefined'
+        - 'function'
+        
+  FALLA C3-05 las capas de mosaicos piden las imágenes sin Referer (referrerPolicy: no-referrer, Leaflet 1.9.4 lo admite)
+        tilePerfOpts no fija referrerPolicy
+
+Resultado Cliente F3: 10 correctas, 39 con falla
