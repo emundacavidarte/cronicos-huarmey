@@ -37,7 +37,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-8.850, -78.400],
     zoom: 9,
     hospital_principal: "HOSPITAL LA CALETA (II-2)",
-    cod_hospital_principal: "00001650"
+    cod_hospital_principal: "00001652"
   },
   101: {
     id: "RIS_101",
@@ -50,7 +50,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.530, -77.530],
     zoom: 9,
     hospital_principal: "HOSPITAL 'VICTOR RAMOS GUARDIA' - HUARAZ (II-2)",
-    cod_hospital_principal: "00001850"
+    cod_hospital_principal: "00001543"
   },
   104: {
     id: "RIS_104",
@@ -63,7 +63,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.850, -77.400],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO RECUAY (II-1)",
-    cod_hospital_principal: "00001880"
+    cod_hospital_principal: "00001472"
   },
   69: {
     id: "RIS_69",
@@ -76,7 +76,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.050, -77.800],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO CARAZ (II-1)",
-    cod_hospital_principal: "00001820"
+    cod_hospital_principal: "00001587"
   },
   111: {
     id: "RIS_111",
@@ -89,7 +89,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-8.650, -77.550],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO SIHUAS (II-1)",
-    cod_hospital_principal: "00001800"
+    cod_hospital_principal: "00001795"
   },
   87: {
     id: "RIS_87",
@@ -102,7 +102,7 @@ const GEORIS_RIS_CONFIG = {
     center: [-9.350, -77.150],
     zoom: 9,
     hospital_principal: "HOSPITAL DE APOYO HUARI (II-1)",
-    cod_hospital_principal: "00001840"
+    cod_hospital_principal: "00001813"
   }
 };
 
@@ -124,7 +124,7 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return Math.round(R * c * 10) / 10;
 }
 
-// Estimación de tiempo por carretera/trocha (minutos)
+// Estimación de tiempo (minutos): NO es una ruta. Distancia en línea recta × 1,35 (factor de curvas) a 45 km/h fijos.
 function estimateTravelTimeMinutes(km, factorCurvas = 1.35, velPromedioKmh = 45) {
   const distRealKm = km * factorCurvas;
   const horas = distRealKm / velPromedioKmh;
@@ -314,7 +314,8 @@ const GeorisTerritory = {
       camas: 55,
       consultorios: 18,
       especialidades: "Medicina Interna, Cardiología, Emergencia 24h, Centro Quirúrgico, Laboratorio Clínico II, Farmacia, Teleconsulta HEARTS",
-      // Terreno oficial de 11,325 m2 detrás de Hotel La Siesta
+      // Contorno REFERENCIAL dibujado a mano alrededor del punto (≈19 500 m²): NO es el lindero oficial
+      // del terreno (11,325.98 m²). Reemplazar por el plano perimétrico de PRONIS cuando se tenga.
       polygonCoords: [
         [-10.04720, -78.15570],
         [-10.04735, -78.15420],
@@ -345,7 +346,9 @@ const GeorisTerritory = {
           distrito: e.distrito,
           provincia: e.provincia,
           is_enclave: !!e.is_enclave,
-          red_origen: e.red_origen || undefined
+          red_origen: e.red_origen || undefined,
+          rol_georis: e.rol_georis,
+          puerta_entrada_georis: e.puerta_entrada_georis || null
         }))
       : [
           { cod_renipress: "00001742", nombre: "PUESTO DE SALUD PUERTO HUARMEY", categoria: "I-2", lat: -10.098216, lng: -78.161813, distrito: "Huarmey", provincia: "Huarmey" },

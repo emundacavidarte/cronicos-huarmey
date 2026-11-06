@@ -780,11 +780,11 @@ class App {
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; background:var(--slate-50); padding:8px; border-radius:6px; border:1px solid var(--border-subtle);">
           <div>
-            <span style="font-size:var(--font-xs); color:var(--text-muted); display:block;">Distancia Vial:</span>
+            <span style="font-size:var(--font-xs); color:var(--text-muted); display:block;" title="No es una ruta: distancia en línea recta; el tiempo usa línea recta × 1,35 a 45 km/h">Distancia en línea recta:</span>
             <span style="font-size:var(--font-md); font-weight:800; color:var(--text-main);">${distKm} km</span>
           </div>
           <div>
-            <span style="font-size:var(--font-xs); color:var(--text-muted); display:block;">Tiempo Traslado:</span>
+            <span style="font-size:var(--font-xs); color:var(--text-muted); display:block;">Tiempo estimado:</span>
             <span style="font-size:var(--font-md); font-weight:800; color:#0284c7;">~${tiempoTxt}</span>
           </div>
         </div>
@@ -865,9 +865,10 @@ class App {
     if (geocoder) {
       const geo = geocoder.geocode(clean);
       if (geo && geo.matched) {
-        this.mapManager.flyTo(geo.lat, geo.lng, 17);
+        this.mapManager.flyTo(geo.lat, geo.lng, geo.precision_geo === 'localidad' ? 14 : 17);
         this.mapManager.mostrarPinBusqueda(geo.lat, geo.lng, `${clean.toUpperCase()}`);
-        this.showToast(`Dirección catastral ubicada: ${clean}`, "info");
+        const prec = { cuadra: 'aproximada a la cuadra', calle: 'aproximada: sobre la calle', sector: 'aproximada: centro del sector', localidad: 'aproximada: centro de la localidad' }[geo.precision_geo] || 'aproximada';
+        this.showToast(`Ubicación ${prec} para «${clean}»${geo.toponym ? ` (${geo.toponym})` : ''}${geo.detalle_geo ? `: ${geo.detalle_geo}` : ''}`, "info", 6000);
         return;
       }
     }

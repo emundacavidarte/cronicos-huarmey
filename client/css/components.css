@@ -1612,3 +1612,18 @@
 #modal-consentimiento {
   z-index: 1600;
 }
+
+/* Vista previa de la ubicación en el registro (auditoría de geolocalización 06/11/2026) */
+.reg-geo-preview { margin-top: 6px; font-size: var(--font-xs, 12px); line-height: 1.4; border-radius: 6px; }
+.reg-geo-preview:empty { display: none; }
+.reg-geo-preview.geo-ok, .reg-geo-preview.geo-aprox, .reg-geo-preview.geo-sin { padding: 6px 8px; border: 1px solid; }
+.reg-geo-preview.geo-ok { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+.reg-geo-preview.geo-aprox { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+.reg-geo-preview.geo-sin { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+.reg-geo-preview .geo-detalle { opacity: .85; }
+
+/* Pines de pacientes con ubicación aproximada (por dirección): borde discontinuo */
+.pin-aprox .pin-patient-avatar { outline: 2px dashed #ffffff; outline-offset: 1px; opacity: .85; }
+.geo-resumen-control { background: rgba(15, 23, 42, .88); color: #f8fafc; padding: 6px 10px; border-radius: 8px; font-size: 12px; line-height: 1.45; box-shadow: 0 2px 8px rgba(0,0,0,.3); max-width: 260px; }
+.geo-resumen-control b { color: #ffffff; }
+.geo-resumen-control .geo-sin-ubicar { color: #fca5a5; font-weight: 700; }

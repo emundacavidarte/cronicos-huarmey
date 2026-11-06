@@ -67,7 +67,9 @@ class HosixParser {
    * Convierte registros de tabla a objetos de paciente enriquecidos con HL7 FHIR y geocodificación
    */
   processRecords(records) {
-    const geocoder = (typeof window !== 'undefined' && window.AncashGeocoder) || (typeof global !== 'undefined' && global.AncashGeocoder) || { geocode: (addr) => ({ lat: -10.0689, lng: -78.1524, sector: "Sector 01 - Centro", matched: false }) };
+    // Sin geocodificador no se inventa un punto (antes: Plaza de Armas para todos). El servidor geocodifica (G-03).
+    const geocoder = (typeof window !== 'undefined' && window.AncashGeocoder) || (typeof global !== 'undefined' && global.AncashGeocoder) || null;
+    const EstRef = (typeof window !== 'undefined' && window.EstablecimientosHuarmey) || null;
     const hearts = (typeof window !== 'undefined' && window.HeartsEngine) || (typeof global !== 'undefined' && global.HeartsEngine) || { evaluatePatient: () => ({ semaforo: "green", estado_control: "Controlado" }) };
 
     return records.map((r, index) => {
@@ -78,7 +80,8 @@ class HosixParser {
       // Nombres
       const nombre = r.APELLIDOS_NOMBRES || r.PACIENTE || r.Nombres || r.paciente_apellidos_nombres || r.nombre_completo || 'PACIENTE REGISTRADO';
       // Dirección
-      const direccion = r.DIRECCION || r.REF_DIRECCION || r.Domicilio || r.direccion_actual || 'Huarmey';
+      const direccion = r.DIRECCION || r.REF_DIRECCION || r.Domicilio || r.direccion_actual || '';
+      const sectorCsv = r.SECTOR || r.Sector || r.sector || r.CENTRO_POBLADO || '';
       // Teléfono
       const telefono = r.TELEFONO || r.CELULAR || r.Movil || r.telefono_celular || '';
       // CIE-10
@@ -93,7 +96,13 @@ class HosixParser {
       const estadoControlRaw = r.ESTADO_CONTROL || r.CondicionControl || null;
 
       // Geocodificación inteligente de la dirección en Huarmey
-      const geo = geocoder.geocode(direccion);
+      const geo = geocoder
+        ? geocoder.resolverUbicacion({ latitud: r.LATITUD || r.latitud, longitud: r.LONGITUD || r.longitud, direccion, sector: sectorCsv, fuente: 'csv' })
+        : { lat: null, lng: null, sector: null, precision_geo: null, geo_fuente: null, matched: false };
+      // Establecimiento: el que informa el archivo (código RENIPRESS) o, si no, el hospital (origen HOSIX).
+      // Ya no se deduce de la dirección ni se escribe «Zona <topónimo>» como si fuera un establecimiento (G5).
+      const codEst = String(r.COD_RENIPRESS || r.RENIPRESS || r.cod_renipress || r.COD_EESS || '').replace(/\D/g, '');
+      const est = codEst && EstRef ? EstRef.getByCode(codEst) : null;
 
       const patientObj = {
         id: `pac-00001741-${dni}`,
@@ -105,9 +114,11 @@ class HosixParser {
         distrito: r.DISTRITO || r.distrito || 'Huarmey',
         latitud: geo.lat,
         longitud: geo.lng,
-        sector_sanitario: geo.sector,
-        puerta_entrada_id: geo.es_puerta_id || '00001741',
-        puerta_entrada: geo.toponym ? `Zona ${geo.toponym}` : 'Hospital de Apoyo Huarmey II-1',
+        precision_geo: geo.precision_geo || undefined,
+        geo_fuente: geo.geo_fuente || undefined,
+        sector_sanitario: sectorCsv || geo.sector || null,
+        puerta_entrada_id: est ? est.cod_renipress : '00001741',
+        puerta_entrada: est ? est.nombre : 'NUEVO HOSPITAL DE APOYO HUARMEY',
         conditions: [
           {
             cie10_cod: cie10,

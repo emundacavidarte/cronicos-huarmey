@@ -4,7 +4,7 @@
  * MÁXIME Salud Digital - Puesta en Marcha de Hospitales (v20: acceso con usuario y clave, T-03b)
  */
 
-const CACHE_NAME = 'maxime-cronicos-huarmey-v20261030-a8f';
+const CACHE_NAME = 'maxime-cronicos-huarmey-v20261106-geo';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -13,7 +13,7 @@ const ASSETS_TO_CACHE = [
   './assets/images/favicon.png',
   './css/georis-theme.css?v=20261026_premium',
   './css/layout.css?v=20261030_r12',
-  './css/components.css?v=20261029_a8f',
+  './css/components.css?v=20261106_geo',
   './css/padron-grid.css?v=20261027_v4',
   './css/registro-clinico.css?v=20261027_v4',
   './libs/leaflet.js',
@@ -25,25 +25,26 @@ const ASSETS_TO_CACHE = [
   './js/utils/fechaLima.js?v=20261029_a8f',
   './js/auth/session.js?v=20261022_v20',
   './js/auth/authUi.js?v=20261022_v20',
-  './js/main.js?v=20261029_a8f',
-  './js/map/mapManager.js?v=20261021_v18',
-  './js/map/establecimientos.js?v=20261026_v21',
-  './js/map/georisAncashLayers.js?v=20261026_v21',
-  './js/map/ancashGeocoder.js?v=20261026_v21',
+  './js/main.js?v=20261106_geo',
+  './js/map/mapManager.js?v=20261106_geo',
+  './js/map/establecimientos.js?v=20261106_geo',
+  './js/map/georisAncashLayers.js?v=20261106_geo',
+  './js/map/huarmeyCallesIndex.js?v=20261106_geo',
+  './js/map/ancashGeocoder.js?v=20261106_geo',
   './js/clinical/semaforo.js?v=20261021_v18',
   './js/clinical/heartsEngine.js?v=20261021_v18',
   './js/clinical/alertsManager.js?v=20261021_v18',
   './js/clinical/whatsappNotifier.js?v=20261029_a8f',
   './js/clinical/indicadoresConvenio.js?v=20261029_a8f',
-  './js/data/hosixParser.js?v=20261021_v18',
+  './js/data/hosixParser.js?v=20261106_geo',
   './js/data/padronSchema.js?v=20261029_a8f',
-  './js/data/padronExcelParser.js?v=20261029_a8f',
+  './js/data/padronExcelParser.js?v=20261106_geo',
   './js/data/padronPlantillaV4.js?v=20261029_a8f',
   './js/data/padronExportV4.js?v=20261029_a8f',
   './js/clinical/padronCalculadora.js?v=20261027_v4',
   './js/ui/icons.js?v=20261027_v6',
-  './js/ui/padronGridModal.js?v=20261029_a8f',
-  './js/ui/registroClinicoModal.js?v=20261029_a8f'
+  './js/ui/padronGridModal.js?v=20261106_geo',
+  './js/ui/registroClinicoModal.js?v=20261106_geo'
 ];
 
 self.addEventListener('install', (e) => {

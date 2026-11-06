@@ -31,7 +31,13 @@
       distrito: "Huarmey",
       direccion: "AA.HH. Santo Domingo Ampliación Mz. P´ Lte. 1 / Miramar (detrás de Hotel La Siesta)",
       latitud: -10.04780,
-      longitud: -78.15480
+      longitud: -78.15480,
+      // Coordenada del NUEVO hospital fijada a mano (decisión G-01, 26/10/2026). NO es la de GeoRIS:
+      // GeoRIS/RENIPRESS siguen publicando para 00001741 el local antiguo (este/norte del bundle).
+      // Es coherente con la prensa (traslado a ~2 km del local anterior, inaugurado el 30/04/2026),
+      // pero no hay fuente oficial con coordenadas: queda «por verificar» en campo o con PRONIS.
+      fuente_coordenadas: "MANUAL - Nuevo Hospital (por verificar)",
+      coordenadas_georis_oficial: { latitud: -10.06808931, longitud: -78.15571838, nota: "Local antiguo (Panamericana s/n) según GeoRIS/RENIPRESS" }
     },
     {
       cod_renipress: "00001744",
@@ -52,7 +58,8 @@
       cod_renipress: "00001742",
       nombre: "PUESTO DE SALUD PUERTO HUARMEY",
       categoria: "I-2",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado (GeoRIS P_VIN)",
+      puerta_entrada_georis: "00001744", // CENTRO DE SALUD LA VICTORIA
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -82,7 +89,8 @@
       cod_renipress: "00001745",
       nombre: "PUESTO DE SALUD MOLINO",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado (GeoRIS P_VIN)",
+      puerta_entrada_georis: "00001743", // PUESTO DE SALUD CULEBRAS
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -97,7 +105,8 @@
       cod_renipress: "00001746",
       nombre: "PUESTO DE SALUD QUIAN",
       categoria: "I-2",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado (GeoRIS P_VIN)",
+      puerta_entrada_georis: "00001744", // CENTRO DE SALUD LA VICTORIA
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -142,7 +151,8 @@
       cod_renipress: "00001753",
       nombre: "PUESTO DE SALUD MALVAS",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado (GeoRIS P_VIN)",
+      puerta_entrada_georis: "00001751", // PUESTO DE SALUD HUAMBA
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -157,7 +167,8 @@
       cod_renipress: "00001801",
       nombre: "PUESTO DE SALUD SAN MIGUEL",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado (GeoRIS P_VIN)",
+      puerta_entrada_georis: "00001751", // PUESTO DE SALUD HUAMBA
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -172,7 +183,8 @@
       cod_renipress: "00001747",
       nombre: "PUESTO DE SALUD RAYPA",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado (GeoRIS P_VIN)",
+      puerta_entrada_georis: "00001744", // CENTRO DE SALUD LA VICTORIA
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -202,7 +214,8 @@
       cod_renipress: "00001749",
       nombre: "PUESTO DE SALUD COCHAPETI",
       categoria: "I-1",
-      rol_georis: "Puerta de Entrada",
+      rol_georis: "Establecimiento Vinculado (GeoRIS P_VIN)",
+      puerta_entrada_georis: "00001751", // PUESTO DE SALUD HUAMBA
       red_salud: "PACIFICO SUR",
       id_ris: 156,
       id_zona: 6,
@@ -212,8 +225,10 @@
       direccion: "Plaza Principal Cochapetí s/n",
       latitud: -9.985718,
       longitud: -77.645025,
+      // OJO: GeoRIS (bundle del repositorio) lo ubica en RIS 156, Zona 6, vinculado a P.S. Huamba.
+      // La condición de «enclave» de la Red Huaylas Sur no tiene respaldo en los datos del repositorio.
       is_enclave: true,
-      red_origen: "Red Huaylas Sur (Microrred Cátac)"
+      red_origen: "Red Huaylas Sur (Microrred Cátac) - por verificar"
     }
   ];
 
@@ -246,6 +261,19 @@
       longitud: -78.519410
     },
     {
+      cod_renipress: "00001652",
+      nombre: "HOSPITAL LA CALETA",
+      categoria: "II-2",
+      rol_georis: "Hospital de Referencia RIS Pacífico Norte (distrito de Chimbote)",
+      red_salud: "PACIFICO NORTE",
+      id_ris: 157,
+      id_zona: 6,
+      distrito: "Chimbote",
+      provincia: "Santa",
+      latitud: -9.07512328,
+      longitud: -78.60192017
+    },
+    {
       cod_renipress: "00001543",
       nombre: "HOSPITAL VICTOR RAMOS GUARDIA - HUARAZ",
       categoria: "II-2",
@@ -259,6 +287,12 @@
       longitud: -77.529310
     }
   ];
+
+  // Todos los demás establecimientos: coordenada idéntica a la geometría GeoRIS y a sus campos este/norte
+  // (verificado por server/tests/testGeolocalizacion.js).
+  for (const e of ESTABLECIMIENTOS_MICRORRED_HUARMEY.concat(ESTABLECIMIENTOS_REFERENCIA_EXTERNA)) {
+    if (!e.fuente_coordenadas) e.fuente_coordenadas = "GeoRIS MINSA";
+  }
 
   const mapByCode = new Map();
   for (const e of ESTABLECIMIENTOS_MICRORRED_HUARMEY) {

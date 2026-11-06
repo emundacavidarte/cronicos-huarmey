@@ -138,10 +138,12 @@ test('Paciente NUEVO sin datos recibe los valores por defecto', () => {
   }));
   const p = db.getPatientByDni('90000002');
   assert.strictEqual(p.direccion, 'Sin dirección consignada');
-  assert.strictEqual(p.sector_sanitario, 'Sector 01 - Centro Urbano');
+  // G4: sin dirección no se inventa sector ni ubicación; queda marcado «sin ubicación»
+  assert.strictEqual(p.sector_sanitario, null);
   assert.strictEqual(p.telefono, '');
   assert.strictEqual(p.latitud, null);
   assert.strictEqual(p.longitud, null);
+  assert.strictEqual(p.precision_geo, 'sin_ubicacion');
   assert.strictEqual(p.historia_clinica, 'S/N');
   assert.strictEqual(p.apellidos_nombres, 'PACIENTE SIN NOMBRE');
   assert.strictEqual(p.puerta_entrada_id, '00001741');

@@ -24,6 +24,24 @@ const GEORIS_POPUP_CONFIG = {
   className: 'georis-popup-custom'
 };
 
+/** Texto de la precisión de ubicación de un paciente (G-04) */
+function textoPrecisionGeo(prec) {
+  return ({
+    exacta: 'Exacta (punto tomado en campo)',
+    origen: 'Coordenadas del sistema de origen',
+    cuadra: 'Aproximada a la cuadra (±50 m, por dirección)',
+    calle: 'Aproximada: sobre la calle (sin número de puerta)',
+    sector: 'Aproximada: centro del sector',
+    localidad: 'Aproximada: centro de la localidad',
+    sin_ubicacion: 'Sin ubicar'
+  })[prec] || 'Coordenadas del sistema de origen';
+}
+
+/** ¿El pin es aproximado (puesto a partir de la dirección)? */
+function esAproximada(p) {
+  return ['cuadra', 'calle', 'sector', 'localidad'].includes(p && p.precision_geo);
+}
+
 class MapManager {
   constructor(containerId = 'map') {
     this.containerId = containerId;
@@ -547,7 +565,7 @@ class MapManager {
             dashArray: '4, 4'
           });
 
-          terrenoPolygon.bindTooltip('<b>Complejo Hospitalario Huarmey II-1</b><br>11,325.98 m² | PRONIS - Antamina OxI', {
+          terrenoPolygon.bindTooltip('<b>Complejo Hospitalario Huarmey II-1</b><br>Contorno REFERENCIAL dibujado a mano (no es el lindero oficial; terreno oficial 11,325.98 m²)', {
             permanent: false,
             direction: 'center',
             className: 'georis-tooltip'
@@ -674,7 +692,7 @@ class MapManager {
         <div style="font-weight:700; font-size:var(--font-sm); color:#ffffff; display:flex; align-items:center; gap:6px;">${window.AppIcons ? window.AppIcons.door(14, '#ffffff') : ''} ${pe.nombre}</div>
         <div style="font-size:var(--font-xs); color:#bae6fd;">Categoría ${pe.categoria} • Puerta de Entrada (${pe.distrito || 'Huarmey'})</div>
         ${enclaveBadge}
-        <div style="font-size:var(--font-xs); color:#e2e8f0;">Distancia Hosp. II-1: <b>${pe.distancia_hospital_km} km</b> (~${pe.tiempo_traslado_txt})</div>
+        <div style="font-size:var(--font-xs); color:#e2e8f0;">Distancia en línea recta al Hosp. II-1: <b>${pe.distancia_hospital_km} km</b> (tiempo estimado ~${pe.tiempo_traslado_txt})</div>
       `, {
         direction: 'top',
         offset: [0, -12],
@@ -689,13 +707,13 @@ class MapManager {
           </div>
           <div class="georis-popup-body">
             <div class="georis-popup-row"><span class="georis-popup-label">Categoría:</span><span class="georis-popup-val" style="font-weight:700;">${pe.categoria}</span></div>
-            <div class="georis-popup-row"><span class="georis-popup-label">Rol GeoRIS:</span><span class="georis-popup-val">Establecimiento Puerta de Entrada</span></div>
+            <div class="georis-popup-row"><span class="georis-popup-label">Rol GeoRIS:</span><span class="georis-popup-val">${escapeHtml(pe.rol_georis || 'Puerta de Entrada')}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Cód. RENIPRESS:</span><span class="georis-popup-val">${pe.cod_renipress}</span></div>
             <div class="georis-popup-row"><span class="georis-popup-label">Ubicación:</span><span class="georis-popup-val">${pe.distrito} (${pe.provincia})</span></div>
             ${pe.is_enclave ? `<div class="georis-popup-row" style="background:#fef3c7; padding:4px 6px; border-radius:4px;"><span class="georis-popup-label" style="color:#b45309;">Enclave:</span><span class="georis-popup-val" style="color:#b45309; font-weight:700;">${pe.red_origen}</span></div>` : ''}
-            <div class="georis-popup-row"><span class="georis-popup-label">Distancia al Hosp. II-1:</span><span class="georis-popup-val" style="color:#dc2626; font-weight:800;">${pe.distancia_hospital_km} km</span></div>
-            <div class="georis-popup-row"><span class="georis-popup-label">Tiempo Estimado:</span><span class="georis-popup-val" style="color:#0369a1; font-weight:700;">${pe.tiempo_traslado_txt}</span></div>
-            <div class="georis-popup-row"><span class="georis-popup-label">Estándar GeoRIS:</span><span class="georis-popup-val" style="color:#15803d; font-weight:700;">✅ &lt; 4h Techo Resolutivo</span></div>
+            <div class="georis-popup-row"><span class="georis-popup-label">Distancia en línea recta al Hosp. II-1:</span><span class="georis-popup-val" style="color:#dc2626; font-weight:800;">${pe.distancia_hospital_km} km</span></div>
+            <div class="georis-popup-row"><span class="georis-popup-label">Tiempo estimado (línea recta × 1,35 a 45 km/h):</span><span class="georis-popup-val" style="color:#0369a1; font-weight:700;">${pe.tiempo_traslado_txt}</span></div>
+            <div class="georis-popup-row"><span class="georis-popup-label">Estándar GeoRIS (estimado):</span><span class="georis-popup-val" style="color:${pe.cumple_estandar_area ? '#15803d' : '#b91c1c'}; font-weight:700;">${pe.cumple_estandar_area ? '✅ &lt; 4h' : '⚠️ &gt; 4h'} al techo resolutivo</span></div>
           </div>
           <div class="georis-popup-footer">
             <button onclick="window.app.trazarReferenciaHaciaHospital('${pe.cod_renipress}')" class="btn-mini btn-precita">Trazar Referencia y Medir</button>
@@ -726,7 +744,7 @@ class MapManager {
         dashArray: "4, 6"
       });
 
-      line.bindTooltip(`<b>${pe.nombre}</b> ➔ Hosp. Huarmey (II-1)<br>Distancia: <b>${pe.distancia_hospital_km} km</b> | Tiempo: <b>${pe.tiempo_traslado_txt}</b>`, {
+      line.bindTooltip(`<b>${pe.nombre}</b> ➔ Hosp. Huarmey (II-1)<br>Distancia en línea recta: <b>${pe.distancia_hospital_km} km</b> | Tiempo estimado: <b>${pe.tiempo_traslado_txt}</b>`, {
         permanent: false,
         direction: 'center',
         className: 'georis-tooltip'
@@ -774,6 +792,40 @@ class MapManager {
 
     const bounds = L.latLngBounds([peCoords, hospCoords]);
     this.map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
+  }
+
+  /**
+   * Control del mapa con el resumen de ubicación (G-04): cuántos pacientes del filtro están en el mapa,
+   * cuántos con ubicación aproximada y cuántos SIN UBICAR (no aparecen como pin).
+   */
+  actualizarResumenGeo(patients) {
+    if (!this.map || typeof L === 'undefined') return;
+    let enMapa = 0, aprox = 0, sinUbicar = 0;
+    for (const p of patients || []) {
+      const tiene = p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined;
+      if (!tiene) { sinUbicar++; continue; }
+      enMapa++;
+      if (esAproximada(p)) aprox++;
+    }
+    if (!this._geoResumenControl) {
+      const Ctl = L.Control.extend({
+        options: { position: 'bottomleft' },
+        onAdd: () => {
+          const div = L.DomUtil.create('div', 'geo-resumen-control');
+          div.setAttribute('role', 'status');
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        }
+      });
+      this._geoResumenControl = new Ctl();
+      this._geoResumenControl.addTo(this.map);
+    }
+    const el = this._geoResumenControl.getContainer();
+    if (!el) return;
+    el.innerHTML = `📍 <b>${enMapa}</b> en el mapa` +
+      (aprox ? ` · <b>${aprox}</b> aproximados <span title="Ubicados por dirección: cuadra, calle, sector o localidad. Borde discontinuo.">(borde discontinuo)</span>` : '') +
+      `<br><span class="${sinUbicar ? 'geo-sin-ubicar' : ''}">⚠ ${sinUbicar} sin ubicar</span>` +
+      (sinUbicar ? ' <span style="opacity:.8">(dirección no reconocida: no tienen pin)</span>' : '');
   }
 
   /**
@@ -826,7 +878,9 @@ class MapManager {
           <div class="georis-popup-row"><span class="georis-popup-label">Glucosa Basal:</span><span class="georis-popup-val" style="font-weight:700;">${gluOnlyTxt}</span></div>
           <div class="georis-popup-row"><span class="georis-popup-label">Hemoglobina Glic. (HbA1c):</span><span class="georis-popup-val" style="font-weight:700;">${a1cOnlyTxt}</span></div>
           <div class="georis-popup-row"><span class="georis-popup-label">Dirección Domiciliaria:</span><span class="georis-popup-val">${safeDir}</span></div>
-          <div class="georis-popup-row"><span class="georis-popup-label">Sector Sanitario:</span><span class="georis-popup-val">${safeSec}</span></div>
+          <div class="georis-popup-row"><span class="georis-popup-label">Sector Sanitario:</span><span class="georis-popup-val">${safeSec}${p.sector_georis && p.sector_georis !== p.sector_sanitario ? ` · GeoRIS ${escapeHtml(p.sector_georis)}` : ''}</span></div>
+          <div class="georis-popup-row"><span class="georis-popup-label">Ubicación en el mapa:</span><span class="georis-popup-val" style="font-weight:700; color:${esAproximada(p) ? '#b45309' : '#047857'};">${escapeHtml(textoPrecisionGeo(p.precision_geo))}</span></div>
+          ${p.geo_detalle ? `<div class="georis-popup-row"><span class="georis-popup-label">Detalle:</span><span class="georis-popup-val">${escapeHtml(p.geo_detalle)}</span></div>` : ''}
           <div class="georis-popup-row"><span class="georis-popup-label">IPRESS Adscrita:</span><span class="georis-popup-val" style="font-weight:700; color:#0369a1;">${safePuerta}</span></div>
           <div class="georis-popup-row"><span class="georis-popup-label">Meta Vía Clínica HEARTS:</span><span class="georis-popup-val" style="color:${color}; font-weight:bold;">${safeCtrl}${p.frecuencia_hearts ? ` (Cada ${p.frecuencia_hearts}d)` : ''}</span></div>
         </div>
@@ -844,6 +898,7 @@ class MapManager {
    */
   renderPatients(patients) {
     this.layers.pacientes.clearLayers();
+    this.actualizarResumenGeo(patients);
     const useHighDensityCanvas = patients.length > ((window.APP_CONFIG && window.APP_CONFIG.MAP_PERFORMANCE && window.APP_CONFIG.MAP_PERFORMANCE.CANVAS_THRESHOLD) || 1500);
 
     patients.forEach(p => {
@@ -873,6 +928,7 @@ class MapManager {
       }
 
       let marker;
+      const aprox = esAproximada(p);
       if (useHighDensityCanvas) {
         marker = L.circleMarker([p.latitud, p.longitud], {
           renderer: this.canvasRenderer,
@@ -880,13 +936,14 @@ class MapManager {
           fillColor: color,
           color: '#ffffff',
           weight: 1.5,
-          fillOpacity: 0.92
+          dashArray: aprox ? '3, 3' : null,
+          fillOpacity: aprox ? 0.75 : 0.92
         });
       } else {
         const patientIcon = L.divIcon({
           className: 'custom-map-pin',
           html: `
-            <div class="pin-patient-container ${semaforoClass}">
+            <div class="pin-patient-container ${semaforoClass}${aprox ? ' pin-aprox' : ''}">
               <div class="pin-patient-avatar" style="background:${color};">
                 <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               </div>
@@ -912,6 +969,7 @@ class MapManager {
         <div style="font-size:var(--font-xs); color:#cbd5e1;">DNI: <b>${escapeHtml(p.dni || '—')}</b> • HC: <b>${escapeHtml(p.historia_clinica || '—')}</b> • Seg: <b>${escapeHtml(p.financiador || 'SIS')}</b></div>
         <div style="font-size:var(--font-xs); color:#e2e8f0; margin-top:2px;">Diag: <b>${(p.diagnosticos || []).join(', ')}</b> | PA: <b>${paPopTxt}</b> | Glu: <b>${gluOnlyTxt}</b> | HbA1c: <b>${a1cOnlyTxt}</b></div>
         <div style="font-size:var(--font-xs); color:#38bdf8;">${escapeHtml(p.puerta_entrada || '')} (${escapeHtml(p.sector_sanitario || '')})</div>
+        <div style="font-size:var(--font-xs); color:${aprox ? '#fcd34d' : '#86efac'};">Ubicación: ${escapeHtml(textoPrecisionGeo(p.precision_geo))}</div>
       `, {
         direction: 'top',
         offset: [0, -14],
@@ -1002,9 +1060,9 @@ class MapManager {
       }
       const distKm = (totalDist / 1000).toFixed(2);
       const min = Math.round((distKm * 1.35 / 45) * 60);
-      
+
       if (window.app && window.app.showToast) {
-        window.app.showToast(`📏 Distancia: ${distKm} km | ⏱️ Tiempo estimado en ambulancia: ~${min} min`, "info", 6000);
+        window.app.showToast(`📏 Distancia en línea recta: ${distKm} km | ⏱️ Tiempo estimado (línea recta × 1,35 a 45 km/h, no es una ruta): ~${min} min`, "info", 7000);
       }
     }
   }

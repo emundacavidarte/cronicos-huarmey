@@ -12,6 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { getLatestObservation } = require('../utils/latestRecord');
 const { DEFAULT_ESTABLISHMENTS } = require('../../client/js/map/establecimientos');
+const geoPaciente = require('../geo/geoPaciente');
 
 // Carpeta de datos reales (store.json y padron_inicial.js). Por defecto, esta misma carpeta.
 // Se puede cambiar con la variable de entorno DATA_DIR (recomendado: una ruta fuera de OneDrive).
@@ -66,7 +67,8 @@ const PATIENT_DEFAULTS = {
   telefono: '',
   direccion: 'Sin dirección consignada',
   distrito: 'Huarmey',
-  sector_sanitario: 'Sector 01 - Centro Urbano',
+  // sector_sanitario ya NO tiene valor por defecto (G4): si no viene, se toma el sector GeoRIS
+  // calculado con las coordenadas, o queda vacío. Nunca «Sector 01 - Centro Urbano» inventado.
   puerta_entrada_id: '00001741'
 };
 
@@ -424,8 +426,36 @@ class Database {
       }
     }
 
+    // G-04: coordenadas guardadas antes de esta validación (store.json o semilla) se revisan al leer:
+    // si no son válidas para Áncash el paciente se muestra SIN UBICACIÓN, no en un punto falso.
+    let latitud = p.latitud === undefined ? null : p.latitud;
+    let longitud = p.longitud === undefined ? null : p.longitud;
+    let precision_geo = p.precision_geo || null;
+    let geo_alerta = p.geo_alerta || null;
+    if (geoPaciente.tieneCoordenadas(p)) {
+      const v = geoPaciente.geocoder.validarCoordenadas(p.latitud, p.longitud);
+      if (v.ok) {
+        latitud = v.lat;
+        longitud = v.lng;
+        if (!precision_geo || precision_geo === 'sin_ubicacion') precision_geo = 'origen';
+      } else {
+        latitud = null;
+        longitud = null;
+        precision_geo = 'sin_ubicacion';
+        geo_alerta = `coordenadas_rechazadas:${v.motivo}`;
+      }
+    } else {
+      latitud = null;
+      longitud = null;
+      precision_geo = 'sin_ubicacion';
+    }
+
     return {
       ...p,
+      latitud,
+      longitud,
+      precision_geo,
+      geo_alerta,
       puerta_entrada_id: renipressCode,
       conditions: resolvedConditions,
       diagnosticos,
@@ -476,6 +506,9 @@ class Database {
     clean.id = idKey;
 
     const existing = (dniKey && this.patientByDniMap.get(dniKey)) || this.patientByIdMap.get(idKey);
+    // G-04: coordenadas entrantes inválidas (fuera de Áncash, intercambiadas, no numéricas) no se guardan
+    const validacionGeo = geoPaciente.protegerExistente(clean, existing, geoPaciente.validarEntrante(clean));
+    const direccionAnterior = existing ? existing.direccion : undefined;
     if (existing) {
       // Actualiza solo los campos con valor real; conserva lo ya guardado en el resto.
       // El id NUNCA se reemplaza: las citas, atenciones, diagnósticos y medicación del paciente
@@ -486,11 +519,16 @@ class Database {
       }
       if (existing.dni) this.patientByDniMap.set(String(existing.dni), existing);
       this.patientByIdMap.set(String(existing.id), existing);
+      // G-03: ubicación honesta (no pisa coordenadas del origen; re-geocodifica si la dirección cambió)
+      geoPaciente.aplicar(existing, clean, { validacion: validacionGeo, esNuevo: false, direccionAnterior });
     } else {
       // Paciente nuevo: aplicar valores por defecto a lo que no vino informado
       for (const key of Object.keys(PATIENT_DEFAULTS)) {
         if (clean[key] === null || clean[key] === undefined) clean[key] = PATIENT_DEFAULTS[key];
       }
+      // G-03: geocodificar en el servidor si no trae coordenadas válidas; sin coincidencia queda sin ubicación
+      geoPaciente.aplicar(clean, clean, { validacion: validacionGeo, esNuevo: true });
+      if (!hasRealValue('sector_sanitario', clean.sector_sanitario)) clean.sector_sanitario = clean.sector_georis || null;
       this.data.patients.push(clean);
       if (dniKey) this.patientByDniMap.set(dniKey, clean);
       this.patientByIdMap.set(idKey, clean);

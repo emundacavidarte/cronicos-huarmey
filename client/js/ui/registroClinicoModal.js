@@ -171,7 +171,8 @@
                       <div class="reg-field">
                         <label class="reg-label">Sector Sanitario <span class="req">*</span></label>
                         <select id="reg-sector" class="reg-select">
-                          <option value="Sector I – Centro" selected>Sector I – Centro</option>
+                          <option value="" selected>— Seleccione el sector —</option>
+                          <option value="Sector I – Centro">Sector I – Centro</option>
                           <option value="Sector II – La Victoria">Sector II – La Victoria</option>
                           <option value="Sector III – Santo Domingo">Sector III – Santo Domingo</option>
                           <option value="Sector IV – Buenos Aires">Sector IV – Buenos Aires</option>
@@ -190,7 +191,8 @@
 
                       <div class="reg-field col-span-2">
                         <label class="reg-label">Dirección y Referencia <span class="req">*</span></label>
-                        <input type="text" id="reg-direccion" class="reg-input" placeholder="Jr., Calle, Av. y N.º en Huarmey (para georreferenciación)" required>
+                        <input type="text" id="reg-direccion" class="reg-input" placeholder="Ej.: Jr. Bolognesi 230 · Av. Grau 450 · Mz B Lt 4 AH La Victoria" required>
+                        <div id="reg-geo-preview" class="reg-geo-preview" aria-live="polite"></div>
                       </div>
 
                       <div class="reg-field">
@@ -566,6 +568,7 @@
         telefono: document.getElementById('reg-telefono'),
         sector: document.getElementById('reg-sector'),
         direccion: document.getElementById('reg-direccion'),
+        geoPreview: document.getElementById('reg-geo-preview'),
         eessAds: document.getElementById('reg-eess-adscripcion'),
         eessCtrl: document.getElementById('reg-eess-control'),
 
@@ -656,6 +659,14 @@
         this.resetForm();
       });
 
+      // Vista previa de la ubicación: se recalcula al escribir la dirección o cambiar el sector
+      const programarGeo = () => {
+        clearTimeout(this._geoTimer);
+        this._geoTimer = setTimeout(() => this.actualizarVistaGeo(), 250);
+      };
+      this.dom.direccion.addEventListener('input', programarGeo);
+      this.dom.sector.addEventListener('change', programarGeo);
+
       // Recalcular en vivo en cada cambio de campo
       this.dom.form.addEventListener('input', () => this.recalcularEnVivo());
       this.dom.form.addEventListener('change', () => this.recalcularEnVivo());
@@ -721,7 +732,8 @@
       this.dom.tipoDoc.value = 'DNI';
       this.dom.sexo.value = 'Femenino';
       this.dom.seguro.value = 'SIS';
-      this.dom.sector.value = 'Sector I – Centro';
+      this.dom.sector.value = '';
+      if (this.dom.geoPreview) this.dom.geoPreview.innerHTML = '';
       this.dom.eessAds.value = 'Hospital de Apoyo Huarmey (00001741, II-1)';
       this.dom.eessCtrl.value = 'Hospital de Apoyo Huarmey (00001741, II-1)';
       this.dom.dxConfirmado.value = 'Sí';
@@ -831,8 +843,10 @@
       this.dom.fechaNac.value = p.fecha_nacimiento || '';
       this.dom.seguro.value = p.seguro_salud || p.seguro || 'SIS';
       this.dom.telefono.value = p.telefono || '';
-      this.dom.sector.value = p.sector || p.sector_sanitario || 'Sector I – Centro';
-      this.dom.direccion.value = p.direccion || 'Huarmey';
+      this.dom.sector.value = p.sector || p.sector_sanitario || '';
+      if (!this.dom.sector.value) this.dom.sector.value = ''; // un sector GeoRIS («Sector 67») no está en la lista del padrón
+      this.dom.direccion.value = (p.direccion && p.direccion !== 'Sin dirección consignada') ? p.direccion : '';
+      this.actualizarVistaGeo();
       this.dom.eessAds.value = p.establecimiento_adscripcion || 'Hospital de Apoyo Huarmey (00001741, II-1)';
       this.dom.eessCtrl.value = p.establecimiento_control || p.puerta_entrada || 'Hospital de Apoyo Huarmey (00001741, II-1)';
 
@@ -1023,6 +1037,37 @@
     /**
      * Guarda la atención y sincroniza con el Padrón Estandarizado y el mapa territorial
      */
+    textoPrecision(prec) {
+      return ({
+        exacta: 'exacta', origen: 'del sistema de origen', cuadra: 'aproximada a la cuadra (±50 m)',
+        calle: 'aproximada: sobre la calle', sector: 'aproximada: centro del sector', localidad: 'aproximada: centro de la localidad'
+      })[prec] || 'sin ubicar';
+    }
+
+    /** Muestra debajo de la dirección dónde quedará el paciente y con qué precisión, antes de guardar. */
+    actualizarVistaGeo() {
+      const box = this.dom.geoPreview;
+      if (!box) return;
+      const direccion = this.dom.direccion.value.trim();
+      const sector = this.dom.sector.value;
+      const geocoder = window.AncashGeocoder;
+      if (!direccion || !geocoder) { box.innerHTML = ''; box.className = 'reg-geo-preview'; return; }
+      const g = geocoder.resolverUbicacion({ direccion, sector });
+      const esc = (t) => String(t === undefined || t === null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      if (!g.matched) {
+        box.className = 'reg-geo-preview geo-sin';
+        box.innerHTML = '📍 <b>No se reconoce esta dirección.</b> Pregunte el nombre de la calle y el número, o el asentamiento humano y una referencia cercana (colegio, mercado, posta). Si no se reconoce, el paciente quedará «sin ubicar».';
+        return;
+      }
+      const bueno = g.precision_geo === 'exacta' || g.precision_geo === 'cuadra';
+      box.className = `reg-geo-preview ${bueno ? 'geo-ok' : 'geo-aprox'}`;
+      const sugerencia = g.precision_geo === 'calle' ? ' Pida el número de puerta para ubicarlo en su cuadra.'
+        : (g.precision_geo === 'sector' || g.precision_geo === 'localidad') ? ' Pida el nombre de la calle y el número para afinar.' : '';
+      box.innerHTML = `📍 <b>Ubicación ${esc(this.textoPrecision(g.precision_geo))}</b>${g.toponym ? ` · ${esc(g.toponym)}` : ''}${g.sector ? ` · ${esc(g.sector)}` : ''}` +
+        `${g.detalle_geo ? `<br><span class="geo-detalle">${esc(g.detalle_geo)}</span>` : ''}${g.sector_incierto ? '<br><span class="geo-detalle">La calle cruza más de un sector GeoRIS: el sector es aproximado.</span>' : ''}` +
+        `${sugerencia ? `<br><span class="geo-detalle">${esc(sugerencia.trim())}</span>` : ''}`;
+    }
+
     async commitSave() {
       const dni = this.dom.inputDni.value.trim().replace(/\D/g, '');
       const nombres = this.dom.nombres.value.trim();
@@ -1046,6 +1091,11 @@
         this.dom.fechaNac.focus();
         return;
       }
+      if (!sector) {
+        alert('Seleccione el sector o centro poblado donde vive el paciente: ayuda a ubicarlo cuando la dirección no basta.');
+        this.dom.sector.focus();
+        return;
+      }
       if (!direccion) {
         alert('Por favor ingrese la dirección del paciente para su georreferenciación en Huarmey.');
         this.dom.direccion.focus();
@@ -1063,8 +1113,11 @@
       try {
         const formData = this.getFormData();
         const calc = calculadora.calcularPadron(formData);
-        const geocoder = window.AncashGeocoder || { geocode: (addr) => ({ lat: -10.04780, lng: -78.15480, sector: 'Sector I – Centro', matched: true }) };
-        const geo = geocoder.geocode(direccion);
+        // La ubicación sale de la dirección + el sector declarado; sin coincidencia queda «sin ubicar» (no se inventa)
+        const geocoder = window.AncashGeocoder || null;
+        const geo = geocoder
+          ? geocoder.resolverUbicacion({ direccion, sector })
+          : { lat: null, lng: null, precision_geo: null, geo_fuente: null, matched: false };
 
         const pas = parseInt(this.dom.pasHoy.value, 10) || null;
         const pad = parseInt(this.dom.padHoy.value, 10) || null;
@@ -1092,6 +1145,8 @@
           puerta_entrada: eess,
           latitud: geo.lat,
           longitud: geo.lng,
+          precision_geo: geo.precision_geo || undefined,
+          geo_fuente: geo.geo_fuente || undefined,
           conditions: [],
           observations: (this.currentPatient?.observations ? [...this.currentPatient.observations] : []),
           appointments: (this.currentPatient?.appointments ? [...this.currentPatient.appointments] : [])
@@ -1162,11 +1217,17 @@
             list.unshift(fullPatient);
           }
 
-          window.app.setPatients(list);
-          window.app.render();
+          // El servidor es la fuente de verdad de la ubicación: se recarga el padrón desde él
+          if (typeof window.app.loadInitialData === 'function') {
+            await window.app.loadInitialData();
+          } else {
+            window.app.setPatients(list);
+            window.app.render();
+          }
 
           if (typeof window.app.showToast === 'function') {
-            window.app.showToast(`🎉 ¡Atención de ${nombres} guardada y georreferenciada en el Padrón Estandarizado!`, 'success', 5000);
+            const txtGeo = geo.matched ? `Ubicación ${this.textoPrecision(geo.precision_geo)}.` : 'No se pudo ubicar en el mapa con esa dirección: queda en «sin ubicar».';
+            window.app.showToast(`Atención de ${nombres} guardada. ${txtGeo}`, geo.matched ? 'success' : 'warning', 6000);
           }
         }
 

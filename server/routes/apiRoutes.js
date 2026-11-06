@@ -21,6 +21,44 @@ const fechaLima = require('../../client/js/utils/fechaLima');
 const scope = require('../auth/scope');
 const { sameRed, normalizeRed } = require('../auth/redes');
 
+/** Resumen de ubicación (G-04): cuántos pacientes están en el mapa, con qué precisión y cuántos sin ubicar. */
+function resumenGeo(patients) {
+  const por_precision = { exacta: 0, origen: 0, cuadra: 0, calle: 0, sector: 0, localidad: 0, sin_ubicacion: 0 };
+  let ubicados = 0;
+  for (const p of patients) {
+    const tiene = p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined;
+    const prec = tiene ? (p.precision_geo && p.precision_geo !== 'sin_ubicacion' ? p.precision_geo : 'origen') : 'sin_ubicacion';
+    por_precision[prec] = (por_precision[prec] || 0) + 1;
+    if (tiene) ubicados++;
+  }
+  return {
+    total: patients.length,
+    ubicados,
+    sin_ubicacion: patients.length - ubicados,
+    aproximados: por_precision.cuadra + por_precision.calle + por_precision.sector + por_precision.localidad,
+    por_precision,
+    nota: 'Ubicación por dirección = aproximada: «cuadra» (±50 m a lo largo de la calle), «calle», «sector» o «localidad». El catastro no tiene numeración de puerta. «origen» = coordenadas del sistema de origen; «exacta» = punto tomado en campo.'
+  };
+}
+
+/** Extensiones FHIR de dirección: solo se emiten los datos que existen (sin coordenadas null ni sector inventado). */
+function extensionesDireccion(p) {
+  const ext = [];
+  if (p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined) {
+    ext.push({
+      url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
+      extension: [
+        { url: 'latitude', valueDecimal: p.latitud },
+        { url: 'longitude', valueDecimal: p.longitud }
+      ]
+    });
+  }
+  if (p.sector_sanitario) {
+    ext.push({ url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario', valueString: p.sector_sanitario });
+  }
+  return ext.length ? ext : undefined;
+}
+
 /**
  * Autorización (T-03a). server.js ya exige sesión (auth.authenticate) en /api y /fhir;
  * aquí cada ruta indica qué roles puede usarla y el alcance por red se aplica con auth/scope.js.
@@ -166,6 +204,8 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
           telefono: p.telefono,
           direccion: p.direccion,
           sector_sanitario: p.sector_sanitario,
+          sector_georis: p.sector_georis || null,
+          precision_geo: p.precision_geo || 'origen',
           puerta_entrada: p.puerta_entrada,
           diagnosticos: (p.conditions || []).map(c => c.cie10_cod),
           estado_control: latestObs ? latestObs.estado_control : (p.estado_control || 'No Registrado'),
@@ -179,6 +219,7 @@ router.get('/patients/geo', requireScope(ROLES_PACIENTES), (req, res) => {
 
   res.json({
     type: 'FeatureCollection',
+    resumen_geo: resumenGeo(patients),
     features
   });
 });
@@ -214,6 +255,7 @@ router.get('/alerts/summary', requireScope(ROLES_DASHBOARD), (req, res) => {
     padron_dnt: patients.length - purple,
     hosix_brecha: purple,
     fallecidos: black,
+    geo: resumenGeo(patients),
     alertas: {
       vigentes_verde: green,
       proximos_amarillo: yellow,
@@ -414,19 +456,7 @@ router.get(['/Bundle', '/fhir/Bundle'], requireScope(ROLES_PACIENTES), (req, res
           district: p.distrito || 'Huarmey',
           state: 'Áncash',
           country: 'PE',
-          extension: [
-            {
-              url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
-              extension: [
-                { url: 'latitude', valueDecimal: p.latitud },
-                { url: 'longitude', valueDecimal: p.longitud }
-              ]
-            },
-            {
-              url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario',
-              valueString: p.sector_sanitario
-            }
-          ]
+          extension: extensionesDireccion(p)
         }]
       }
     }))

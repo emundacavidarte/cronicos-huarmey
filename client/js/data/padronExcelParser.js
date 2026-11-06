@@ -16,6 +16,11 @@
   const CALCULATED_COLUMNS_REGEX = /en meta|calculad|autom[aá]tic|alerta del dato|qu[eé] le falta|d[ií]as de atraso|telemonitoreo|\(a[ñn]os\)|^imc$|valoraci[oó]n nutricional|nivel de riesgo|alto riesgo cardiovascular|meta de presi[oó]n|[uú]ltima pas|[uú]ltima pad|controlado y estable|cumple ip04|tfge|estadio de erc|distrito de residencia|controles en el a[ñn]o|medicaci[oó]n hasta|aux:/i;
 
   const HEADER_ALIASES = [
+    // Ubicación EXACTA de la vivienda (opcional, fuera de las 76 columnas oficiales): si la matriz trae estas
+    // columnas, el paciente se ubica en ese punto y no por la dirección (que solo puede ser aproximada).
+    { key: "latitud", regex: /^latitud|^lat$|^lat\.?\s*\(/i },
+    { key: "longitud", regex: /^longitud|^lon$|^lng$|^long$/i },
+    { key: "coordenadas_gps", regex: /^coordenadas|^gps$|^ubicaci[oó]n\s*(gps|exacta)|^georreferencia/i },
     { key: "fecha_captacion", regex: /^fecha.*captaci[oó]n/i },
     { key: "tipo_documento", regex: /^tipo.*doc/i },
     { key: "nro_documento", regex: /^(n[º°\.\s_]*|nro[_\s]*|numero[_\s]*)(de\s+)?doc|^dni$|documento.*(clave|dni)|^documento$|^n[º°\.\s]*identidad/i },

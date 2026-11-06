@@ -113,6 +113,7 @@ class FhirAdapter {
         const lngExt = geoExt.extension.find(e => e.url === 'longitude');
         if (latExt && latExt.valueDecimal !== undefined) lat = latExt.valueDecimal;
         if (lngExt && lngExt.valueDecimal !== undefined) lng = lngExt.valueDecimal;
+        // El rango (Áncash) y el orden lat/lng se validan al guardar (server/geo/geoPaciente.js)
       }
 
       const sectorExt = addressObj.extension.find(e => e.url?.includes('sector-sanitario'));
@@ -344,23 +345,27 @@ class FhirAdapter {
       address: [
         {
           use: 'home',
-          text: p.direccion || 'Huarmey',
+          text: p.direccion || undefined,
           district: p.distrito || 'Huarmey',
           state: 'Áncash',
           country: 'PE',
-          extension: [
-            {
-              url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
-              extension: [
-                { url: 'latitude', valueDecimal: p.latitud },
-                { url: 'longitude', valueDecimal: p.longitud }
-              ]
-            },
-            {
-              url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario',
-              valueString: p.sector_sanitario || 'Sector 01 - Centro Urbano'
+          // Solo se emite lo que existe: sin coordenadas null ni sector inventado (G-04)
+          extension: (() => {
+            const ext = [];
+            if (p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined) {
+              ext.push({
+                url: 'http://hl7.org/fhir/StructureDefinition/geolocation',
+                extension: [
+                  { url: 'latitude', valueDecimal: p.latitud },
+                  { url: 'longitude', valueDecimal: p.longitud }
+                ]
+              });
             }
-          ]
+            if (p.sector_sanitario) {
+              ext.push({ url: 'http://minsa.gob.pe/georis/StructureDefinition/sector-sanitario', valueString: p.sector_sanitario });
+            }
+            return ext.length ? ext : undefined;
+          })()
         }
       ],
       extension: patientExtensions.length > 0 ? patientExtensions : undefined,

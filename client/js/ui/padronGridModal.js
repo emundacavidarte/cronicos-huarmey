@@ -679,8 +679,8 @@
         sexo: 'Femenino',
         fecha_nacimiento: '',
         seguro_salud: 'SIS',
-        sector: 'Sector I – Centro',
-        direccion: 'Huarmey',
+        sector: '',
+        direccion: '',
         establecimiento_adscripcion: 'Hospital de Apoyo Huarmey (00001741, II-1)',
         establecimiento_control: 'Hospital de Apoyo Huarmey (00001741, II-1)',
         estado_paciente: 'Activo',
@@ -702,17 +702,26 @@
       }
 
       this.dom.btnCargar.disabled = true;
-      this.dom.btnCargar.textContent = '⏳ Geocodificando y persistiendo en el sistema...';
+      this.dom.btnCargar.textContent = '⏳ Ubicando y guardando en el sistema...';
 
       try {
-        const geocoder = window.AncashGeocoder || { geocode: (addr) => ({ lat: -10.04780, lng: -78.15480, sector: 'Sector I - Centro', matched: true }) };
+        // Sin geocodificador cargado no se inventa ningún punto: el servidor geocodifica la dirección (G-03)
+        const geocoder = window.AncashGeocoder || null;
+        const resumenGeo = { exacta: 0, aproximada: 0, sin_ubicacion: 0, rechazadas: [] };
         const hearts = window.HeartsEngine || { evaluatePatient: () => ({ semaforo: 'green', estado_control: 'Controlado' }) };
 
         // 1. Transformar filas limpias en pacientes con recursos clínicos FHIR y coordenadas
         const processedPatients = this.patients.map((r, idx) => {
           const dni = String(r.nro_documento || '').replace(/\D/g, '');
           const direccion = r.direccion || '';
-          const geo = geocoder.geocode(direccion || 'Huarmey');
+          // Ubicación EXACTA si la matriz trae Latitud/Longitud (o «Coordenadas») válidas; si no, aproximada por dirección
+          const geo = geocoder
+            ? geocoder.resolverUbicacion({ latitud: r.latitud, longitud: r.longitud, coordenadas: r.coordenadas_gps, direccion, fuente: 'matriz_excel' })
+            : { lat: null, lng: null, sector: null, precision_geo: null, geo_fuente: null, matched: false };
+          if (geo.exacta) resumenGeo.exacta++;
+          else if (geo.matched) resumenGeo.aproximada++;
+          else resumenGeo.sin_ubicacion++;
+          if (geo.coordenadas_rechazadas) resumenGeo.rechazadas.push(`fila ${r._excelRowNumber || idx + 1} (${geo.coordenadas_rechazadas})`);
 
           // Buscar última PAS y PAD registradas en el año
           let pas = null, pad = null;
@@ -740,7 +749,7 @@
             seguro: r.seguro_salud || '',
             telefono: r.telefono || '',
             direccion,
-            sector_sanitario: r.sector || geo.sector || 'Sector I – Centro',
+            sector_sanitario: r.sector || geo.sector || null,
             distrito: r.sector && r.sector.includes('Culebras') ? 'Culebras' : (r.sector && r.sector.includes('Huayán') ? 'Huayán' : 'Huarmey'),
             establecimiento_adscripcion: r.establecimiento_adscripcion || 'Hospital de Apoyo Huarmey (00001741, II-1)',
             puerta_entrada_id: codigoRenipress(r.establecimiento_control) || undefined,
@@ -748,6 +757,8 @@
             puerta_entrada: r.establecimiento_control || '',
             latitud: geo.lat,
             longitud: geo.lng,
+            precision_geo: geo.precision_geo || undefined,
+            geo_fuente: geo.geo_fuente || undefined,
             conditions: [],
             observations: (fechaUltima && (pas || pad || hba1c || glucosa)) ? [
               {
@@ -831,12 +842,16 @@
           }
           window.app.render();
 
+          const txtGeo = `Ubicación: ${resumenGeo.exacta} exacta(s), ${resumenGeo.aproximada} aproximada(s) por dirección, ${resumenGeo.sin_ubicacion} sin ubicar` +
+            (resumenGeo.rechazadas.length ? `. Coordenadas inválidas descartadas en ${resumenGeo.rechazadas.length}: ${resumenGeo.rechazadas.slice(0, 5).join(', ')}${resumenGeo.rechazadas.length > 5 ? '…' : ''}` : '');
           if (savedInBackend) {
-            window.app.showToast(`🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron ${processedPatients.length} pacientes en el servidor.`, 'success', 6000);
+            // El servidor es la fuente de verdad de la ubicación (no deja que una aproximación pise una ubicación exacta)
+            if (typeof window.app.loadInitialData === 'function') await window.app.loadInitialData();
+            window.app.showToast(`🎉 ¡Ingesta Exitosa! Se guardaron ${processedPatients.length} pacientes en el servidor. ${txtGeo}.`, 'success', 9000);
           } else if (backendErrorMsg) {
             window.app.showToast(`⚠️ Pacientes cargados en pantalla, pero el servidor reportó: ${backendErrorMsg}`, 'warning', 7000);
           } else {
-            window.app.showToast(`🎉 Se cargaron y georreferenciaron ${processedPatients.length} pacientes en memoria local.`, 'info', 5000);
+            window.app.showToast(`Se cargaron ${processedPatients.length} pacientes en memoria local. ${txtGeo}.`, 'info', 7000);
           }
         }
 

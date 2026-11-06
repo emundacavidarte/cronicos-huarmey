@@ -71,7 +71,9 @@ test('"Jr Casma 123" resuelve en calle Casma de Huarmey, mientras "Ciudad de Cas
   const rCalle = geocoder.geocode('Jr Casma 123');
   const rCiudad = geocoder.geocode('Ciudad de Casma');
   assert.strictEqual(rCalle.matched, true);
-  assert.strictEqual(rCalle.es_puerta_id, '00001741');
+  // Puerta de entrada GeoRIS del sector 67 (casco urbano) = C.S. La Victoria; el hospital es el área sanitaria
+  assert.strictEqual(rCalle.es_puerta_id, '00001744');
+  assert.ok(['Sector 67', 'Sector 69'].includes(rCalle.sector), 'Jr. Casma está entre los sectores 67 y 69');
   assert.strictEqual(rCiudad.matched, true);
   assert.strictEqual(rCiudad.es_puerta_id, '00001719');
 });
@@ -118,6 +120,24 @@ test('El Olivar y Panamericana Norte usan coordenadas ajustadas con el catastro'
   assert.strictEqual(rPana.matched, true);
   assert.ok(Math.abs(rPana.lat - (-10.05200)) < 0.005);
 });
+
+// 7. Auditoría 06/11/2026: calles homónimas de ciudades, ciudad explícita, cuadra por número de puerta
+test('"Jr Huaraz 145", "Av Casma 230", "Jr Chimbote 12" no se mandan a Huaraz, Casma ni Chimbote', () => {
+  for (const a of ['Jr Huaraz 145', 'Av Casma 230', 'Jr Chimbote 12']) assert.notStrictEqual(geocoder.geocode(a).precision_geo, 'localidad', a);
+});
+test('"Urb Buenos Aires, Chimbote" va a Chimbote (RIS Pacífico Norte), no al AH Buenos Aires de Huarmey', () => {
+  assert.strictEqual(geocoder.geocode('Urb Buenos Aires, Chimbote').es_puerta_id, '00001652');
+});
+test('"Jr. Bolognesi 330" se ubica en la cuadra 3 sobre la línea de la calle', () => {
+  const r = geocoder.geocode('Jr. Bolognesi 330');
+  assert.strictEqual(r.precision_geo, 'cuadra');
+  assert.strictEqual(r.cuadra, 3);
+  assert.strictEqual(r.fuente_geo, 'catastro_osm');
+});
+
+// Resumen de cobertura del diccionario contra el catastro (solo vías, sin pacientes)
+const conCatastro = new Set(geocoder.entries.filter(e => e.tramos).map(e => e.catastro.join('/')));
+console.log(`\nCobertura: ${conCatastro.size} vías del diccionario con línea del catastro; ${new Set(geocoder.entries.filter(e => !e.tramos && e.precision === 'calle').map(e => e._item.keywords[0])).size} calles solo con punto de referencia.`);
 
 console.log(`\nResultado: ${passed} correctas, ${failed} con falla`);
 if (failed > 0) process.exit(1);
