@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node tests/testErrorA.js && node tests/testErrorB.js && node tests/testHttp.js && node tests/testSemaforo.js && node tests/testIdempotencia.js && node tests/testAuth.js && node tests/testAuthHttp.js && node tests/testSession.js && node tests/testGeolocalizacion.js && node tests/testAuditoriaSeguridad.js && node tests/testPadronExcel.js && node tests/testExcelImportExportFix.js && node tests/testLineaTiempo.js && node tests/testConsentimiento.js && node tests/testIndicadoresConvenio.js && node tests/testIndicadoresHttp.js && node tests/testExportPadronV4.js && node tests/testRevision30oct.js && node tests/testSeguridadF2.js && node tests/testCorreccionesF4.js && node tests/testPersistenciaF4.js && node tests/testClavesF4.js"
+    "test": "node tests/testErrorA.js && node tests/testErrorB.js && node tests/testHttp.js && node tests/testSemaforo.js && node tests/testIdempotencia.js && node tests/testAuth.js && node tests/testAuthHttp.js && node tests/testSession.js && node tests/testGeolocalizacion.js && node tests/testAuditoriaSeguridad.js && node tests/testPadronExcel.js && node tests/testExcelImportExportFix.js && node tests/testLineaTiempo.js && node tests/testConsentimiento.js && node tests/testIndicadoresConvenio.js && node tests/testIndicadoresHttp.js && node tests/testExportPadronV4.js && node tests/testRevision30oct.js && node tests/testSeguridadF2.js && node tests/testCorreccionesF4.js && node tests/testPersistenciaF4.js && node tests/testClavesF4.js && node tests/testReglasClinicas.js && node tests/testClinicoF3.js && node tests/testServidorF3.js && node tests/testClienteF3.js"
   },
   "keywords": [
     "hl7",
