@@ -1103,6 +1103,18 @@
   color: #FFFFFF;
 }
 
+/* K3-04: aviso de la ficha cuando la próxima cita queda más lejos de lo que permite el intervalo de control */
+.hearts-aviso-cita {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--hearts-yellow-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--hearts-yellow-bg);
+  color: var(--hearts-yellow-text);
+  font-size: var(--font-xs);
+  font-weight: 700;
+}
+
 /* ==========================================================================
    ÍCONOS VECTORIALES SVG GLOBALES
    ========================================================================== */
@@ -1308,10 +1320,12 @@
   display: none !important;
 }
 
+/* Escala de capas (C3-02): modales de la aplicación 1500-1600 · cuadrícula del padrón 2000 · Registro Clínico 9999
+   (registro-clinico.css) · avisos (toast) 50000 · pantalla de acceso 100000, siempre encima de cualquier ventana. */
 .login-overlay {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: 100000;
   display: none;
   align-items: center;
   justify-content: center;

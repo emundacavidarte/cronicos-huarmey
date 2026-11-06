@@ -9,6 +9,10 @@
  *   <input type="checkbox" data-cambio="capa" data-capa="pacientes">
  *
  * Solo se ejecutan las acciones de las listas de abajo (nunca un nombre arbitrario de window.app).
+ * Las tres acciones que reciben un id de la página (clicEn, quitarElemento, cerrarModal) solo aceptan los ids de la
+ * lista cerrada IDS_PERMITIDOS (C3-01): un botón inyectado con data-arg="btn-logout" o "login-overlay" no hace nada.
+ * Si el marcado o una plantilla necesita otro id, se agrega ahí; testClienteF3.js comprueba que todo id usado esté en
+ * la lista y que la lista no tenga ids sin uso.
  * Los listeners van en fase de CAPTURA: Leaflet detiene la propagación de los clics dentro de sus popups.
  */
 (function () {
@@ -24,6 +28,15 @@
     el.parentElement.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
   };
+  // C3-01: lista cerrada de ids que pueden recibir esas tres acciones (derivada de index.html y de las plantillas de
+  // main.js). Cualquier otro id (btn-logout, login-overlay, los modales de otras ventanas…) se ignora.
+  const IDS_PERMITIDOS = Object.freeze({
+    clicEn: Object.freeze(['btn-usuarios']),
+    quitarElemento: Object.freeze(['reference-inspector-card']),
+    cerrarModal: Object.freeze(['modal-precita', 'modal-patient-detail'])
+  });
+  const idPermitido = (accion, id) =>
+    typeof id === 'string' && Object.prototype.hasOwnProperty.call(IDS_PERMITIDOS, accion) && IDS_PERMITIDOS[accion].indexOf(id) !== -1;
   const llamar = metodo => (el, arg) => { if (typeof app()[metodo] === 'function') app()[metodo](arg); };
   const llamarSinArg = metodo => () => { if (typeof app()[metodo] === 'function') app()[metodo](); };
 
@@ -33,7 +46,7 @@
     abrirRegistroClinico: llamarSinArg('abrirRegistroClinico'),
     switchView: llamar('switchView'),
     abrirModalPadronGrid: llamarSinArg('abrirModalPadronGrid'),
-    clicEn: (el, arg) => { const destino = document.getElementById(arg); if (destino) destino.click(); },
+    clicEn: (el, arg) => { if (!idPermitido('clicEn', arg)) return; const destino = document.getElementById(arg); if (destino) destino.click(); },
     toggleHeartsPanel: (el, arg) => app().toggleHeartsPanel(bool(arg)),
     toggleLeftSidebar: (el, arg) => app().toggleLeftSidebar(bool(arg)),
     mapaInicio: () => { if (mapa()) mapa().home(); },
@@ -52,8 +65,8 @@
       else if (arg === 'capas') app().toggleLeftSidebar(true);
       marcarNavMovil(el);
     },
-    cerrarModal: (el, arg) => quitarClase(arg, 'active'),
-    quitarElemento: (el, arg) => { const destino = document.getElementById(arg); if (destino) destino.remove(); },
+    cerrarModal: (el, arg) => { if (idPermitido('cerrarModal', arg)) quitarClase(arg, 'active'); },
+    quitarElemento: (el, arg) => { if (!idPermitido('quitarElemento', arg)) return; const destino = document.getElementById(arg); if (destino) destino.remove(); },
     verEnMapa: () => { app().switchView('mapa'); app().toggleHeartsPanel(true); },
     filtrarPorPuerta: llamar('filtrarPorPuerta'),
     openPatientDetail: llamar('openPatientDetail'),
@@ -96,6 +109,6 @@
   document.addEventListener('click', delegar(CLIC, 'data-accion'), true);
   document.addEventListener('change', delegar(CAMBIO, 'data-cambio'), true);
 
-  // Para las pruebas: lista de acciones conocidas
-  window.AccionesUi = { clic: Object.keys(CLIC), cambio: Object.keys(CAMBIO) };
+  // Para las pruebas: lista de acciones conocidas y de ids permitidos
+  window.AccionesUi = { clic: Object.keys(CLIC), cambio: Object.keys(CAMBIO), ids: IDS_PERMITIDOS };
 })();

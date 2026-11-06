@@ -30,6 +30,8 @@
       this.searchQuery = '';
       this.selectedRowIndex = null;
       this.currentFileName = 'Padron_Estandarizado.xlsx';
+      this.consentimientosPrecargados = 0;
+      this._generacion = 0; // sube con cada reiniciar(): invalida lo que haya quedado a medias (lectura de un archivo, guardado)
       this.dom = {};
       this.isInitialized = false;
     }
@@ -230,12 +232,15 @@
      */
     async openWithFile(file) {
       this.init();
+      const generacion = this._generacion;
       this.currentFileName = file.name || 'Padron_Estandarizado_Huarmey.xlsx';
       this.dom.fileInfo.textContent = `Archivo: ${this.currentFileName} (Procesando...)`;
       this.dom.modal.classList.add('active');
 
       try {
         const parsed = await parser.parseWorkbook(file);
+        // C3-02: si la sesión se cerró mientras se leía el archivo, las filas no vuelven a la pantalla
+        if (generacion !== this._generacion) return;
         this.patients = parsed.patients;
         this.precargarConsentimiento();
         this.dom.fileInfo.textContent = `Archivo: ${this.currentFileName} · Hoja: "${parsed.sheetName}" · ${this.patients.length} pacientes` +
@@ -245,6 +250,7 @@
         this.renderTableHeaders();
         this.renderTableRows();
       } catch (err) {
+        if (generacion !== this._generacion) return;
         console.error('Error al leer el archivo Excel:', err);
         alert('Error al leer el archivo Excel: ' + err.message);
         this.close();
@@ -254,6 +260,52 @@
     close() {
       if (this.dom.modal) {
         this.dom.modal.classList.remove('active');
+      }
+    }
+
+    /**
+     * C3-02: al cerrar la sesión (botón, vencimiento del token o inactividad) la cuadrícula se cierra y se VACÍA: sin
+     * filas en memoria ni en el DOM, para que el siguiente usuario del mismo equipo no vea las del anterior.
+     * Lo llama App.limpiarSesion(). Es seguro llamarlo aunque la ventana nunca se haya abierto.
+     */
+    reiniciar() {
+      this._generacion = (this._generacion || 0) + 1;
+      this.patients = [];
+      this.validationResult = null;
+      this.filterOnlyErrors = false;
+      this.searchQuery = '';
+      this.selectedRowIndex = null;
+      this.currentFileName = 'Padron_Estandarizado.xlsx';
+      this.consentimientosPrecargados = 0;
+      const d = this.dom || {};
+      if (d.modal) d.modal.classList.remove('active');
+      if (d.tbody) d.tbody.innerHTML = '';
+      if (d.thead) d.thead.innerHTML = '';
+      if (d.errorsPillsWrap) d.errorsPillsWrap.innerHTML = '';
+      if (d.errorsPanel) d.errorsPanel.style.display = 'none';
+      if (d.emptyMsg) d.emptyMsg.style.display = 'none';
+      if (d.fileInfo) d.fileInfo.textContent = 'Archivo: —';
+      if (d.statusMsg) d.statusMsg.textContent = 'Iniciando validación...';
+      if (d.scoreBadge) { d.scoreBadge.textContent = '0% Válido'; d.scoreBadge.className = 'padron-score-badge'; }
+      if (d.countAll) d.countAll.textContent = '0';
+      if (d.countErrors) d.countErrors.textContent = '0';
+      if (d.searchInput) d.searchInput.value = '';
+      if (d.btnAutofillEess) d.btnAutofillEess.style.display = 'none';
+      if (d.filterAll) d.filterAll.classList.add('active');
+      if (d.filterErrors) d.filterErrors.classList.remove('active');
+      if (d.btnCargar) {
+        d.btnCargar.disabled = true;
+        d.btnCargar.className = 'padron-btn-submit disabled';
+        d.btnCargar.textContent = '⛔ Corrija las inconsistencias para cargar';
+      }
+    }
+
+    /** Aviso visible (toast de la aplicación; si no hay aplicación, un alert). */
+    _avisar(texto, tipo, ms) {
+      if (typeof window !== 'undefined' && window.app && typeof window.app.showToast === 'function') {
+        window.app.showToast(texto, tipo || 'info', ms || 6000);
+      } else if (typeof alert === 'function') {
+        alert(texto);
       }
     }
 
@@ -697,18 +749,31 @@
      */
     async commitUpload() {
       if (this.validationResult.totalErrors > 0) {
-        alert('No se puede cargar: aún existen celdas con inconsistencias.');
+        this._avisar('No se puede cargar: aún existen celdas con inconsistencias.', 'warning', 5000);
         return;
       }
 
+      // T3-05: sin el geocodificador o el motor clínico NO se inventan valores por omisión (antes: coordenadas del hospital
+      // con «ubicado» y semáforo verde / «Controlado» para todos). Se detiene la carga y no se guarda nada.
+      const geocoder = window.AncashGeocoder;
+      const hearts = window.HeartsEngine;
+      const reglas = window.ReglasClinicas;
+      let faltante = null;
+      if (!geocoder || typeof geocoder.geocode !== 'function') faltante = 'el geocodificador';
+      else if (!hearts || typeof hearts.evaluatePatient !== 'function' || !reglas || typeof reglas.estadoControl !== 'function') faltante = 'el motor clínico';
+      if (faltante) {
+        const texto = `No se pudo cargar ${faltante}; recargue la página. No se guardó nada.`;
+        if (this.dom.statusMsg) this.dom.statusMsg.textContent = texto;
+        this._avisar(texto, 'danger', 9000);
+        return;
+      }
+
+      const generacion = this._generacion;
       const textoBotonCargar = this.dom.btnCargar.textContent;
       this.dom.btnCargar.disabled = true;
       this.dom.btnCargar.textContent = '⏳ Geocodificando y persistiendo en el sistema...';
 
       try {
-        const geocoder = window.AncashGeocoder || { geocode: (addr) => ({ lat: -10.04780, lng: -78.15480, sector: 'Sector I - Centro', matched: true }) };
-        const hearts = window.HeartsEngine || { evaluatePatient: () => ({ semaforo: 'green', estado_control: 'Controlado' }) };
-
         // 1. Transformar filas limpias en pacientes con recursos clínicos FHIR y coordenadas
         const esquema = window.PadronSchema;
         const calcEdad = window.PadronCalculadora && window.PadronCalculadora.calcularEdad;
@@ -753,16 +818,7 @@
             latitud: geo.lat,
             longitud: geo.lng,
             conditions: [],
-            observations: (fechaUltima && (pas || pad || hba1c || glucosa)) ? [
-              {
-                fecha_registro: fechaUltima,
-                pa_sistolica: pas,
-                pa_diastolica: pad,
-                hba1c: hba1c,
-                glucosa: glucosa,
-                estado_control: (pas >= 140 || pad >= 90) ? 'No Controlado' : 'Controlado'
-              }
-            ] : [],
+            observations: [],
             appointments: fechaProxima ? [{ fecha_cita: fechaProxima, estado: 'booked' }] : []
           };
 
@@ -774,6 +830,20 @@
           }
           if (r.cie10_erc) {
             pObj.conditions.push({ cie10_cod: r.cie10_erc.split('–')[0].trim(), diagnostico: 'Enfermedad Renal Crónica' });
+          }
+
+          // La atención del control: su estado sale de las MEDICIONES y del perfil clínico (ReglasClinicas), no de «presión
+          // menor a 140/90 = Controlado» (una HbA1c de 11 % o un diabético sin dato glucémico quedaban «Controlado»; K3-01).
+          if (fechaUltima && (pas || pad || hba1c || glucosa)) {
+            const perfil = reglas.perfilClinico(Object.assign({}, r, { conditions: pObj.conditions }));
+            pObj.observations.push({
+              fecha_registro: fechaUltima,
+              pa_sistolica: pas,
+              pa_diastolica: pad,
+              hba1c: hba1c,
+              glucosa: glucosa,
+              estado_control: reglas.estadoControl({ pas, pad, hba1c, glucosa }, perfil)
+            });
           }
 
           // Se conservan todas las columnas del padrón v4 que vienen en la fila (fechas de examen, presiones por mes, etc.),
@@ -820,29 +890,48 @@
         // C-07: pacientes cuya dirección no se pudo ubicar en el mapa
         const sinUbicar = processedPatients.filter(p => p.latitud === null || p.latitud === undefined || p.longitud === null || p.longitud === undefined);
 
-        // 2. Persistir en Backend a través de la API
-        let savedInBackend = false;
-        let backendErrorMsg = '';
-        if (window.app && window.app.session && window.app.session.authFetch) {
+        // 2. Persistir en el servidor. El servidor valida TODO el lote y lo escribe de una vez o no escribe nada.
+        let guardado = false;
+        let motivo = '';
+        const sesion = window.app && window.app.session;
+        if (sesion && typeof sesion.authFetch === 'function') {
           try {
-            const resp = await window.app.session.authFetch('/api/padron/importar-lote', {
+            const resp = await sesion.authFetch('/api/padron/importar-lote', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ patients: processedPatients })
             });
             if (resp && resp.ok) {
-              savedInBackend = true;
+              guardado = true;
             } else if (resp) {
               const errData = await resp.json().catch(() => ({}));
-              backendErrorMsg = (errData.issue && errData.issue[0] && errData.issue[0].diagnostics) || errData.error || `HTTP ${resp.status}`;
+              motivo = (errData.issue && errData.issue[0] && errData.issue[0].diagnostics) || errData.error || `código ${resp.status}`;
+            } else {
+              motivo = 'el servidor no respondió';
             }
           } catch (e) {
-            console.warn('No se pudo persistir en backend REST, usando memoria local:', e);
-            backendErrorMsg = e.message;
+            console.warn('No se pudo guardar el lote en el servidor:', e && e.message);
+            motivo = `sin conexión con el servidor (${e && e.message ? e.message : 'error de red'})`;
           }
+        } else {
+          motivo = 'no hay una sesión activa';
         }
 
-        // 3. Sincronizar en la Aplicación (combinando con existentes)
+        // La sesión se cerró mientras se guardaba: la cuadrícula ya se reinició y no se toca nada más
+        if (generacion !== this._generacion) return;
+
+        // C3-06: si el servidor no guardó el lote, NO se agregan pacientes a la memoria ni se dice «cargados»:
+        // se muestra el motivo y las filas se quedan en la cuadrícula para corregirlas.
+        if (!guardado) {
+          const texto = `No se guardó ningún paciente: ${String(motivo).replace(/[\s.]+$/, '')}. Las filas siguen en la cuadrícula para corregirlas.`;
+          if (this.dom.statusMsg) this.dom.statusMsg.textContent = texto;
+          this._avisar(texto, 'danger', 9000);
+          this.dom.btnCargar.disabled = false;
+          this.dom.btnCargar.textContent = textoBotonCargar;
+          return;
+        }
+
+        // 3. Ya está guardado: se refleja en la aplicación (combinando con los existentes)
         if (window.app) {
           if (typeof window.app.upsertPatients === 'function') {
             window.app.upsertPatients(processedPatients);
@@ -850,22 +939,16 @@
             window.app.setPatients(processedPatients);
           }
           window.app.render();
-
-          if (savedInBackend) {
-            window.app.showToast(`🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron ${processedPatients.length} pacientes en el servidor.`, 'success', 6000);
-            if (sinUbicar.length > 0) {
-              window.app.showToast(`⚠️ ${sinUbicar.length} paciente(s) no se pudieron ubicar en el mapa por su dirección (no aparecen como pin): ${sinUbicar.slice(0, 3).map(p => p.apellidos_nombres).join(', ')}${sinUbicar.length > 3 ? '…' : ''}. Revise la dirección en su ficha.`, 'warning', 9000);
-            }
-          } else if (backendErrorMsg) {
-            window.app.showToast(`⚠️ Pacientes cargados en pantalla, pero el servidor reportó: ${backendErrorMsg}`, 'warning', 7000);
-          } else {
-            window.app.showToast(`🎉 Se cargaron y georreferenciaron ${processedPatients.length} pacientes en memoria local.`, 'info', 5000);
+          window.app.showToast(`🎉 ¡Ingesta Exitosa! Se sincronizaron y guardaron ${processedPatients.length} pacientes en el servidor.`, 'success', 6000);
+          if (sinUbicar.length > 0) {
+            window.app.showToast(`⚠️ ${sinUbicar.length} paciente(s) no se pudieron ubicar en el mapa por su dirección (no aparecen como pin): ${sinUbicar.slice(0, 3).map(p => p.apellidos_nombres).join(', ')}${sinUbicar.length > 3 ? '…' : ''}. Revise la dirección en su ficha.`, 'warning', 9000);
           }
         }
 
         this.close();
       } catch (err) {
-        alert('Error al consolidar la carga: ' + err.message);
+        if (generacion !== this._generacion) return;
+        this._avisar('Error al consolidar la carga: ' + err.message, 'danger', 9000);
         this.dom.btnCargar.disabled = false;
         this.dom.btnCargar.textContent = 'Intentar Cargar Nuevamente';
       }

@@ -792,6 +792,13 @@ class MapManager {
     const safePuerta = escapeHtml(p.puerta_entrada || '—');
     const safeCtrl = escapeHtml(p.estado_control || '—');
     const safeId = escapeHtml(p.id);
+    // K3-04: intervalo entre controles = el que trae el paciente o, si no, el de la regla (30 días; 90 solo controlado y estable).
+    // Sin estado de control conocido no se muestra ninguno (antes: solo el guardado, sin escapar).
+    const RC = window.ReglasClinicas;
+    let frecuenciaPop = Number(p.frecuencia_hearts) > 0 ? Number(p.frecuencia_hearts) : null;
+    if (frecuenciaPop === null && RC && (p.estado_control === 'Controlado' || p.estado_control === 'No Controlado')) {
+      frecuenciaPop = RC.frecuenciaDias(p.estado_control, p.controlado_estable === 'Sí');
+    }
 
     const paPopTxt = (p.pa_sistolica != null && p.pa_diastolica != null) ? `${escapeHtml(p.pa_sistolica)}/${escapeHtml(p.pa_diastolica)} mmHg` : '—';
     const gluOnlyTxt = (p.glucosa != null && p.glucosa !== '') ? `${escapeHtml(p.glucosa)} mg/dL` : '—';
@@ -828,7 +835,7 @@ class MapManager {
           <div class="georis-popup-row"><span class="georis-popup-label">Dirección Domiciliaria:</span><span class="georis-popup-val">${safeDir}</span></div>
           <div class="georis-popup-row"><span class="georis-popup-label">Sector Sanitario:</span><span class="georis-popup-val">${safeSec}</span></div>
           <div class="georis-popup-row"><span class="georis-popup-label">IPRESS Adscrita:</span><span class="georis-popup-val" style="font-weight:700; color:#0369a1;">${safePuerta}</span></div>
-          <div class="georis-popup-row"><span class="georis-popup-label">Meta Vía Clínica HEARTS:</span><span class="georis-popup-val" style="color:${color}; font-weight:bold;">${safeCtrl}${p.frecuencia_hearts ? ` (Cada ${p.frecuencia_hearts}d)` : ''}</span></div>
+          <div class="georis-popup-row"><span class="georis-popup-label">Meta Vía Clínica HEARTS:</span><span class="georis-popup-val" style="color:${color}; font-weight:bold;">${safeCtrl}${frecuenciaPop ? ` (Cada ${escapeHtml(frecuenciaPop)}d)` : ''}</span></div>
         </div>
         <div class="georis-popup-footer">
           <button data-patient-action="detail" data-patient-id="${safeId}" class="btn-mini btn-precita">${iconPopFicha} Ficha HEARTS</button>
@@ -1093,7 +1100,7 @@ class MapManager {
       className: 'custom-map-pin',
       html: `
         <div style="background:#FFFFFF; color:#0F172A; padding:6px 14px; border-radius:14px; font-size:var(--font-xs); font-weight:800; box-shadow:0 3px 12px rgba(15,23,42,0.15); border:2px solid #BAE6FD; display:flex; align-items:center; gap:6px; white-space:nowrap;">
-          <span>📍</span> <span>${label}</span>
+          <span>📍</span> <span>${escapeHtml(label)}</span>
         </div>
       `,
       iconSize: [160, 32],

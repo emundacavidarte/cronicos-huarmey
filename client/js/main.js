@@ -253,7 +253,7 @@ class App {
     const total = list.length;
     
     // Contadores de semáforo
-    let green = 0, yellow = 0, red = 0, purple = 0, black = 0;
+    let green = 0, yellow = 0, red = 0, purple = 0, black = 0, gray = 0;
     // Control de presión arterial: definición HEARTS = la última medición < 140/90, sobre quienes tienen una medición
     let controlled = 0;
     let conPa = 0;
@@ -265,19 +265,20 @@ class App {
     const ipressMap = new Map();
 
     for (const p of list) {
-      if (p.fallecido || p.semaforo === 'black') black++;
+      const fallecidoP = window.ReglasClinicas.esFallecido(p);
+      if (fallecidoP || p.semaforo === 'black') black++;
       else if (p.semaforo === 'green') green++;
       else if (p.semaforo === 'yellow') yellow++;
       else if (p.semaforo === 'red') red++;
       else if (p.semaforo === 'purple' || p.fuente === 'HOSIX') purple++;
-      else green++;
+      else gray++; // sin próxima cita (o cita cumplida): NO es «vigente» (antes se contaba como verde)
 
       const obs = (Array.isArray(p.observations) && p.observations.length > 0) ? p.observations[0] : null;
       const pas = Number(p.pa_sistolica != null ? p.pa_sistolica : (obs ? obs.pa_sistolica : null));
       const pad = Number(p.pa_diastolica != null ? p.pa_diastolica : (obs ? obs.pa_diastolica : null));
       const hasValidBp = !isNaN(pas) && !isNaN(pad) && pas > 0 && pad > 0;
       const isControlled = hasValidBp && pas < 140 && pad < 90;
-      const cuenta = !p.fallecido && p.semaforo !== 'black';
+      const cuenta = !fallecidoP && p.semaforo !== 'black';
       if (hasValidBp && cuenta) conPa++;
       if (isControlled && cuenta) {
         controlled++;
@@ -484,6 +485,17 @@ class App {
    * y antes de cargar los datos de otro usuario), para que nadie vea datos de la sesión anterior.
    */
   limpiarSesion() {
+    // C3-02: la cuadrícula del padrón y el Registro Clínico son ventanas propias (cuelgan de <body>): también se cierran y
+    // se vacían, o el siguiente usuario del equipo vería las filas y los campos del anterior. Se llama a cada una por
+    // separado y sin que un fallo impida cerrar la sesión.
+    try {
+      if (window.PadronGridModal && typeof window.PadronGridModal.reiniciar === 'function') window.PadronGridModal.reiniciar();
+    } catch (e) { console.warn('No se pudo reiniciar la cuadrícula del padrón:', e && e.message); }
+    try {
+      const registro = window.RegistroClinicoModal;
+      if (registro && typeof registro.reiniciar === 'function') registro.reiniciar();
+    } catch (e) { console.warn('No se pudo reiniciar el Registro Clínico:', e && e.message); }
+
     this._heroDelServidor = false;
     this._resumenRed = null;
     this._limpiarTablero();
@@ -944,27 +956,56 @@ class App {
   async loadInitialData() {
     // El padrón solo viaja por la API REST (T-02) y con el token de la sesión (T-03b): el servidor
     // entrega únicamente los pacientes de la red del usuario (el Administrador ve todas).
-    const token = this.session.getToken();
-    const apiUrl = this.apiEndpoints().API_CRONICOS || '/api/cronicos';
     try {
-      const response = await this.session.authFetch(apiUrl);
-      if (this.session.getToken() !== token) return; // la sesión cambió o se cerró mientras se esperaba
-      if (response.ok) {
-        const data = await response.json();
-        if (this.session.getToken() !== token) return;
-        const list = Array.isArray(data) ? data : (data.data || []);
+      const r = await this._pedirPacientes();
+      if (r === null) return; // la sesión cambió o se cerró mientras se esperaba
+      if (r.lista) {
+        const list = r.lista;
         this.setPatients(list);
         this.render();
         this.ajustarVistaAPacientes(list);
         if (list.length === 0) this.showToast('No hay pacientes registrados para su red.', 'info', 4000);
-      } else if (response.status === 403) {
+      } else if (r.status === 403) {
         this.showToast('Su rol no tiene permiso para ver el padrón nominal.', 'warning', 5000);
-      } else if (response.status !== 401) {
-        this.showToast(`No se pudo cargar el padrón (código ${response.status}).`, 'danger', 5000);
+      } else if (r.status !== 401) {
+        this.showToast(`No se pudo cargar el padrón (código ${r.status}).`, 'danger', 5000);
       }
     } catch (e) {
       console.log('API REST no disponible: no hay padrón local sin conexión. Inicie el servidor (INICIAR_PROTOTIPO.bat).');
       this.showToast('No se pudo conectar con el servidor para cargar el padrón.', 'warning', 5000);
+    }
+  }
+
+  /**
+   * Pide /api/cronicos con la sesión. Devuelve { status, lista } (lista solo si el servidor respondió bien) o null si la
+   * sesión cambió o se cerró mientras se esperaba (la respuesta es de otro usuario o de nadie: se descarta).
+   */
+  async _pedirPacientes() {
+    const token = this.session.getToken();
+    const response = await this.session.authFetch(this.apiEndpoints().API_CRONICOS || '/api/cronicos');
+    if (this.session.getToken() !== token) return null;
+    if (!response.ok) return { status: response.status, lista: null };
+    const data = await response.json();
+    if (this.session.getToken() !== token) return null;
+    return { status: response.status, lista: Array.isArray(data) ? data : (data.data || []) };
+  }
+
+  /**
+   * P3-05: vuelve a pedir el padrón al servidor y actualiza la lista y el mapa SIN limpiar la sesión, sin mover la vista
+   * del mapa ni mostrar avisos (el Registro Clínico lo llama antes de declarar «Paciente Nuevo», por si un colega creó
+   * al paciente después de iniciar la sesión). Devuelve true si recargó y false si no pudo (sin sesión, rol sin acceso a
+   * pacientes, error del servidor o sin red); en ese caso la lista queda como estaba.
+   */
+  async recargarPacientes() {
+    if (!this.session || !this.session.isLoggedIn() || !this.permisos().verPacientes) return false;
+    try {
+      const r = await this._pedirPacientes();
+      if (r === null || !r.lista) return false;
+      this.setPatients(r.lista);
+      this.render();
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -1003,7 +1044,7 @@ class App {
 
     for (let i = 0; i < total; i++) {
       const p = this.patients[i];
-      if (p.fallecido) continue; // los fallecidos no cuentan como desertores ni como pendientes
+      if (window.ReglasClinicas.esFallecido(p)) continue; // los fallecidos no cuentan como desertores ni como pendientes
       if (p.semaforo === 'purple' || p.fuente === 'HOSIX') purple++;
       else if (p.semaforo === 'green') green++;
       else if (p.semaforo === 'yellow') yellow++;
@@ -1057,7 +1098,7 @@ class App {
       card.className = `patient-card border-${p.semaforo || 'gray'}`;
 
       let badgeHtml = '';
-      if (p.fallecido) badgeHtml = `<span class="badge-semaforo" style="background:#1e293b; color:#fff;"><span class="semaforo-dot" style="background:#94a3b8;"></span> Fallecido</span>`;
+      if (window.ReglasClinicas.esFallecido(p)) badgeHtml = `<span class="badge-semaforo" style="background:#1e293b; color:#fff;"><span class="semaforo-dot" style="background:#94a3b8;"></span> Fallecido</span>`;
       else if (p.semaforo === 'green') badgeHtml = `<span class="badge-semaforo badge-green"><span class="semaforo-dot" style="background:#1e8e3e;"></span> ${escapeHtml(p.dias_restantes)}d</span>`;
       else if (p.semaforo === 'yellow') badgeHtml = `<span class="badge-semaforo badge-yellow"><span class="semaforo-dot" style="background:#f29900;"></span> ${escapeHtml(p.dias_restantes)}d</span>`;
       else if (p.semaforo === 'red') badgeHtml = `<span class="badge-semaforo badge-red"><span class="semaforo-dot" style="background:#d93025;"></span> +${escapeHtml(p.dias_vencido)}d</span>`;
@@ -1097,7 +1138,7 @@ class App {
           </div>
           <div class="pcard-demo-cell">
             <span class="pcard-cell-lbl">Edad</span>
-            <span class="pcard-cell-val">${p.edad != null ? p.edad + ' años' : '—'}</span>
+            <span class="pcard-cell-val">${p.edad != null ? escapeHtml(p.edad) + ' años' : '—'}</span>
           </div>
           <div class="pcard-demo-cell">
             <span class="pcard-cell-lbl">PA (mmHg)</span>
@@ -1161,6 +1202,20 @@ class App {
     }
 
     const isHosix = (p.semaforo === 'purple' || p.fuente === 'HOSIX');
+    const RC = window.ReglasClinicas;
+    const fallecido = RC.esFallecido(p); // por la bandera o por el estado «Fallecido» (K3-02)
+
+    // K3-04: el intervalo entre controles es el que trae el paciente; si no trae, el de la regla (30 días; 90 solo si está
+    // controlado Y estable). Antes cada sitio de la ficha suponía un número distinto (90 en dos, 30 en otro).
+    const frecuencia = Number(p.frecuencia_hearts) > 0
+      ? Number(p.frecuencia_hearts)
+      : RC.frecuenciaDias(p.estado_control, p.controlado_estable === 'Sí');
+    // K3-04: ¿la próxima cita queda más lejos de lo que permite el intervalo? (null si no se puede saber)
+    const exceso = (!fallecido && !isHosix) ? RC.citaExcedeIntervalo(this._fechaUltimoControl(p), p.fecha_limite, frecuencia) : null;
+    const citaExcede = !!(exceso && exceso.excede);
+    const avisoCita = citaExcede
+      ? `<div class="hearts-aviso-cita" role="alert">${escapeHtml(`La cita queda a ${exceso.dias} días; el máximo para este paciente es ${exceso.maximo}.`)}</div>`
+      : '';
 
     // Formateadores limpios según estándar clínico peruano (MINSA)
     const formatDatePE = (str) => {
@@ -1172,6 +1227,8 @@ class App {
       }
       return s;
     };
+    // C3-03: formatDatePE devuelve tal cual lo que no es AAAA-MM-DD; en el HTML siempre va escapado
+    const fechaPE = (str) => escapeHtml(formatDatePE(str));
 
     const formatSexoTxt = (sx) => {
       if (!sx) return 'Sin registro';
@@ -1220,7 +1277,7 @@ class App {
 
     // 1. Etiquetas de Estatus Territorial y Clínico (Concisas y con puntos vectoriales nítidos)
     let semaforoBadgeHtml = '';
-    if (p.fallecido) {
+    if (fallecido) {
       semaforoBadgeHtml = `<span class="badge-semaforo" style="background:#1e293b; color:#fff;"><span class="semaforo-dot" style="background:#94a3b8;"></span> Baja por Fallecimiento</span>`;
     } else if (isHosix) {
       semaforoBadgeHtml = `<span class="badge-semaforo badge-purple"><span class="semaforo-dot" style="background:#9334e6;"></span> Brecha HOSIX (No Empadronado)</span>`;
@@ -1234,7 +1291,7 @@ class App {
 
     const isControlado = (p.estado_control === 'Controlado');
     let clinicoBadgeHtml = '';
-    if (p.fallecido) {
+    if (fallecido) {
       clinicoBadgeHtml = `<span class="badge-semaforo badge-gray"><span class="semaforo-dot" style="background:#64748b;"></span> Óbito Registrado</span>`;
     } else if (isHosix) {
       clinicoBadgeHtml = `<span class="badge-semaforo badge-purple"><span class="semaforo-dot" style="background:#9334e6;"></span> Pendiente Empadronamiento DNT</span>`;
@@ -1299,7 +1356,7 @@ class App {
       return `
         <div class="hearts-quarter-card ${cardCls}">
           <span class="quarter-name">${qName}</span>
-          <span class="quarter-val">${pas}/${pad} <small style="font-size:10px; font-weight:500; color:var(--text-secondary);">mmHg</small></span>
+          <span class="quarter-val">${escapeHtml(pas)}/${escapeHtml(pad)} <small style="font-size:10px; font-weight:500; color:var(--text-secondary);">mmHg</small></span>
           <span class="quarter-badge ${badgeCls}">${badgeTxt}</span>
         </div>
       `;
@@ -1331,7 +1388,7 @@ class App {
     let timelineItemsHtml = '';
 
     // Nodo A: Próxima Cita / Estado de Agenda
-    if (p.fallecido) {
+    if (fallecido) {
       timelineItemsHtml += `
         <div class="timeline-item">
           <div class="timeline-dot dot-blue">
@@ -1340,7 +1397,7 @@ class App {
           <div class="timeline-card">
             <div class="timeline-card-header">
               <span class="timeline-card-title">Baja Definitiva del Padrón</span>
-              <span class="timeline-card-date">${formatDatePE(p.fecha_estado || p.fecha_limite)}</span>
+              <span class="timeline-card-date">${fechaPE(p.fecha_estado || p.fecha_limite)}</span>
             </div>
             <div class="timeline-card-body">
               Paciente retirado del cronograma activo de citas por óbito verificado en RIS Pacífico Sur.
@@ -1357,7 +1414,7 @@ class App {
           <div class="timeline-card" style="border-left:3px solid var(--hearts-red);">
             <div class="timeline-card-header">
               <span class="timeline-card-title" style="color:var(--hearts-red);">Cita Vencida (+${escapeHtml(p.dias_vencido)} días)</span>
-              <span class="timeline-card-date">Límite: ${formatDatePE(p.fecha_limite)}</span>
+              <span class="timeline-card-date">Límite: ${fechaPE(p.fecha_limite)}</span>
             </div>
             <div class="timeline-card-body">
               <strong>Establecimiento:</strong> ${escapeHtml(p.puerta_entrada || 'Hospital II-1 Huarmey')}<br>
@@ -1375,7 +1432,7 @@ class App {
           <div class="timeline-card" style="border-left:3px solid var(--hearts-yellow);">
             <div class="timeline-card-header">
               <span class="timeline-card-title" style="color:#b45309;">Próximo Control en ${escapeHtml(p.dias_restantes)} días</span>
-              <span class="timeline-card-date">${formatDatePE(p.fecha_limite)}</span>
+              <span class="timeline-card-date">${fechaPE(p.fecha_limite)}</span>
             </div>
             <div class="timeline-card-body">
               <strong>Establecimiento:</strong> ${escapeHtml(p.puerta_entrada || 'Hospital II-1 Huarmey')} • <strong>Agenda DNT</strong><br>
@@ -1393,11 +1450,11 @@ class App {
           <div class="timeline-card" style="border-left:3px solid var(--hearts-green);">
             <div class="timeline-card-header">
               <span class="timeline-card-title" style="color:var(--hearts-green-text);">Próximo Control Programado</span>
-              <span class="timeline-card-date">${formatDatePE(p.fecha_limite)} (en ${escapeHtml(p.dias_restantes)} días)</span>
+              <span class="timeline-card-date">${fechaPE(p.fecha_limite)} (en ${escapeHtml(p.dias_restantes)} días)</span>
             </div>
             <div class="timeline-card-body">
               <strong>Establecimiento:</strong> ${escapeHtml(p.puerta_entrada || 'Hospital II-1 Huarmey')}<br>
-              Seguimiento regular cada ${escapeHtml(p.frecuencia_hearts || 90)} días. Adherencia al esquema terapéutico vigente.
+              Seguimiento regular cada ${escapeHtml(frecuencia)} días. Adherencia al esquema terapéutico vigente.
             </div>
           </div>
         </div>
@@ -1410,7 +1467,7 @@ class App {
     // Conducta clínica resumida y serena (sin saturar la pantalla)
     let conductaTexto = '';
     let conductaClase = 'conducta-neutral';
-    if (p.fallecido) {
+    if (fallecido) {
       conductaTexto = `Paciente registrado como fallecido en monitoreo DNT (${escapeHtml(p.observacion || 'Verificado')}). Excluir de programación activa.`;
       conductaClase = 'conducta-dark';
     } else if (isHosix) {
@@ -1420,10 +1477,10 @@ class App {
       conductaTexto = `Cita vencida hace ${escapeHtml(p.dias_vencido)} días. Según Vía Clínica HEARTS, requiere citación prioritaria en HOSIX o visita domiciliaria en ${escapeHtml(p.sector_sanitario)}.`;
       conductaClase = 'conducta-red';
     } else if (p.semaforo === 'yellow') {
-      conductaTexto = `Próximo control programado en ${escapeHtml(p.dias_restantes)} días (${formatDatePE(p.fecha_limite)}). Enviar recordatorio preventivo por WhatsApp.`;
+      conductaTexto = `Próximo control programado en ${escapeHtml(p.dias_restantes)} días (${fechaPE(p.fecha_limite)}). Enviar recordatorio preventivo por WhatsApp.`;
       conductaClase = 'conducta-yellow';
     } else {
-      conductaTexto = `Seguimiento al día en meta terapéutica. Continuar control cada ${escapeHtml(p.frecuencia_hearts || 90)} días en ${escapeHtml(p.puerta_entrada)}.`;
+      conductaTexto = `Próximo control dentro del plazo. Continuar control cada ${escapeHtml(frecuencia)} días en ${escapeHtml(p.puerta_entrada)}.`;
       conductaClase = 'conducta-green';
     }
 
@@ -1599,7 +1656,7 @@ class App {
               <section class="hearts-section">
                 <div class="hearts-section-header">
                   <span class="hearts-sec-title">${iconLab} IV. Laboratorio Clínico y Metabólico</span>
-                  <span class="hearts-sec-tag">Fecha Examen: ${formatDatePE(p.fecha_examenes)}</span>
+                  <span class="hearts-sec-tag">Fecha Examen: ${fechaPE(p.fecha_examenes)}</span>
                 </div>
                 <div class="hearts-section-body">
                   <!-- Subbloque 1: Control Glicémico (Separados individualmente) -->
@@ -1637,10 +1694,11 @@ class App {
                 <div class="hearts-section-body">
                   <!-- Fila de Programación en 3 Celdas Individuales -->
                   <div class="hearts-grid-3" style="margin-bottom:12px;">
-                    ${renderMetricCell('Periodicidad HEARTS', p.frecuencia_hearts ? `Cada ${escapeHtml(p.frecuencia_hearts)} días` : 'Cada 30 días', '', isControlado ? 'Controlado' : 'No controlado')}
-                    ${renderMetricCell('Próxima Cita', formatDatePE(p.fecha_limite), '', 'Agenda DNT')}
+                    ${renderMetricCell('Periodicidad HEARTS', `Cada ${frecuencia} días`, '', isControlado ? 'Controlado' : 'No controlado')}
+                    ${renderMetricCell('Próxima Cita', formatDatePE(p.fecha_limite), '', 'Agenda DNT', citaExcede ? 'warn' : 'neutral', citaExcede ? 'Excede el intervalo' : '')}
                     ${renderMetricCell('Fuente Registro', isHosix ? 'HOSIX (Brecha)' : 'Padrón Estandarizado', '', p.estado_empadronamiento || '')}
                   </div>
+                  ${avisoCita}
                   <div class="hearts-grid-3" style="margin-bottom:12px;">
                     ${renderMetricCell('Consentimiento WhatsApp', ({ si: 'Sí, firmado', no: 'No autoriza', sin_registrar: 'Sin registrar' })[window.WhatsappNotifier.estadoConsentimiento(p)], '', p.consentimiento_fecha ? `Registrado el ${formatDatePE(p.consentimiento_fecha)}` : '')}
                   </div>
@@ -1658,7 +1716,7 @@ class App {
                   <!-- Barra Serena de Conducta Vía Clínica HEARTS -->
                   <div class="hearts-conducta-bar ${conductaClase}">
                     <strong>Conducta Vía Clínica HEARTS:</strong> ${conductaTexto}
-                    ${p.nota_duplicado_padron ? `<div style="margin-top:4px; font-size:var(--font-xs); opacity:0.9;">${iconRefresh} <strong>Trazabilidad:</strong> ${p.nota_duplicado_padron}</div>` : ''}
+                    ${p.nota_duplicado_padron ? `<div style="margin-top:4px; font-size:var(--font-xs); opacity:0.9;">${iconRefresh} <strong>Trazabilidad:</strong> ${escapeHtml(p.nota_duplicado_padron)}</div>` : ''}
                   </div>
                 </div>
               </section>
@@ -1943,9 +2001,50 @@ class App {
     this.render();
   }
 
+  /** Fecha (AAAA-MM-DD) del último control: la del padrón o, si no la trae, la de la última observación. null si no se sabe. */
+  _fechaUltimoControl(p) {
+    const RC = window.ReglasClinicas;
+    const directa = RC.parseFechaLocal(p.fecha_ultimo_control);
+    if (directa) return RC.aTexto(directa);
+    let mejor = null;
+    (Array.isArray(p.observations) ? p.observations : []).forEach(o => {
+      const f = o ? RC.parseFechaLocal(o.fecha_registro) : null;
+      if (f && (!mejor || f > mejor)) mejor = f;
+    });
+    return mejor ? RC.aTexto(mejor) : null;
+  }
+
+  /**
+   * K3-03: la PRÓXIMA CITA real del paciente = la mayor fecha entre appointments[].fecha_cita y proxima_cita que sea de
+   * hoy en adelante (hoy = día de Lima). Devuelve AAAA-MM-DD, o null si no tiene ninguna.
+   */
+  proximaCitaDe(p) {
+    const RC = window.ReglasClinicas;
+    const hoy = RC.parseFechaLocal(window.FechaLima.hoy());
+    const candidatas = (p && Array.isArray(p.appointments) ? p.appointments : []).map(a => (a ? a.fecha_cita : null));
+    candidatas.push(p ? p.proxima_cita : null);
+    let mejor = null;
+    let mejorDias = null;
+    for (const f of candidatas) {
+      const dias = RC.diasHasta(f, hoy); // null si no es una fecha; negativo si ya pasó
+      if (dias === null || dias < 0) continue;
+      if (mejorDias === null || dias > mejorDias) {
+        mejor = RC.aTexto(RC.parseFechaLocal(f));
+        mejorDias = dias;
+      }
+    }
+    return mejor;
+  }
+
   enviarWhatsApp(idOrDni) {
     const p = this.findPatient(idOrDni);
     if (!p) return;
+
+    // Un paciente fallecido no recibe avisos (K3-02/K3-03): ni se le pide el consentimiento.
+    if (window.ReglasClinicas.esFallecido(p)) {
+      this.showToast('El paciente figura como fallecido: no se le envían avisos por WhatsApp.', 'warning', 4000);
+      return;
+    }
 
     // Sin consentimiento registrado no se genera el enlace (A12, Ley N° 29733).
     // Si ya respondió "No" no se vuelve a preguntar; si nunca se registró (paciente anterior al formulario), se pregunta una vez.
@@ -1959,9 +2058,13 @@ class App {
       return;
     }
 
-    const fechaSugerida = new Date();
-    fechaSugerida.setDate(fechaSugerida.getDate() + 3);
-    const fechaStr = fechaSugerida.toLocaleDateString('es-PE');
+    // La fecha del aviso es la de la próxima cita real (antes: «hoy + 3 días» del navegador, que no era la cita)
+    const proxima = this.proximaCitaDe(p);
+    if (!proxima) {
+      this.showToast('El paciente no tiene próxima cita programada: genere primero la pre-cita.', 'warning', 5000);
+      return;
+    }
+    const fechaStr = proxima.split('-').reverse().join('/'); // dd/mm/aaaa
 
     const url = window.WhatsappNotifier.generarEnlace(p, fechaStr);
     if (!url) {
@@ -2248,11 +2351,31 @@ class App {
         return;
       }
       const processed = window.HosixParser.processRecords(records);
-      this.upsertPatients(processed);
-      this.render();
-      this.showToast(`¡Ingesta exitosa! Se procesaron y georreferenciaron ${processed.length} pacientes.`, 'success', 5000);
+      // Las filas sin documento válido ya no entran (el parser las deja en `observados`): se dice cuántas y por qué.
+      const observados = Array.isArray(processed.observados) ? processed.observados : [];
+      if (processed.length > 0) {
+        this.upsertPatients(processed);
+        this.render();
+        this.showToast(`¡Ingesta exitosa! Se procesaron y georreferenciaron ${processed.length} pacientes.`, 'success', 5000);
+      }
+      if (observados.length > 0) {
+        this.showToast(this.textoFilasObservadas(observados, processed.length === 0), processed.length === 0 ? 'danger' : 'warning', 12000);
+      } else if (processed.length === 0) {
+        this.showToast('El archivo no contiene filas válidas: no se cargó ningún paciente.', 'danger', 6000);
+      }
     };
     reader.readAsText(file);
+  }
+
+  /** Texto del aviso de filas del CSV de HOSIX que no se cargaron: cuántas, por qué y cuáles (las primeras). */
+  textoFilasObservadas(observados, ningunaCargada) {
+    const n = observados.length;
+    const motivos = [...new Set(observados.map(o => String((o && o.motivo) || 'sin motivo')))];
+    const filas = observados.slice(0, 8).map(o => (o && o.fila !== undefined && o.fila !== null ? o.fila : '?')).join(', ');
+    const mas = n > 8 ? ` y ${n - 8} más` : '';
+    const cuenta = n === 1 ? '1 fila no se cargó' : `${n} filas no se cargaron`;
+    const cabeza = ningunaCargada ? `No se cargó ninguna fila del archivo: ${cuenta}` : cuenta;
+    return `${cabeza} (${motivos.join('; ')}). ${n === 1 ? 'Fila' : 'Filas'}: ${filas}${mas}. Corrija el archivo y vuelva a subirlo.`;
   }
 
   /**

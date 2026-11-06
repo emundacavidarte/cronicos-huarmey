@@ -9,7 +9,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 2000; /* sobre las ventanas de la aplicación (1500-1600), bajo los avisos y la pantalla de acceso (components.css) */
   background-color: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
   align-items: center;
