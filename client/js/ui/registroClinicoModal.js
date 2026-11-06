@@ -193,6 +193,10 @@
                         <label class="reg-label">Dirección y Referencia <span class="req">*</span></label>
                         <input type="text" id="reg-direccion" class="reg-input" placeholder="Ej.: Jr. Bolognesi 230 · Av. Grau 450 · Mz B Lt 4 AH La Victoria" required>
                         <div id="reg-geo-preview" class="reg-geo-preview" aria-live="polite"></div>
+                        <div id="reg-geo-card" class="reg-geo-card" hidden>
+                          <div class="reg-geo-card-titulo">Confirme dónde vive: arrastre el marcador a la vivienda o haga clic en el mapa (solo si conoce el lugar)</div>
+                          <div id="reg-geo-mapa" class="reg-geo-mapa"></div>
+                        </div>
                       </div>
 
                       <div class="reg-field">
@@ -569,6 +573,8 @@
         sector: document.getElementById('reg-sector'),
         direccion: document.getElementById('reg-direccion'),
         geoPreview: document.getElementById('reg-geo-preview'),
+        geoCard: document.getElementById('reg-geo-card'),
+        geoMapa: document.getElementById('reg-geo-mapa'),
         eessAds: document.getElementById('reg-eess-adscripcion'),
         eessCtrl: document.getElementById('reg-eess-control'),
 
@@ -734,6 +740,9 @@
       this.dom.seguro.value = 'SIS';
       this.dom.sector.value = '';
       if (this.dom.geoPreview) this.dom.geoPreview.innerHTML = '';
+      this.geoConfirmada = null;
+      if (this.picker) this.picker.setPuntoPorDireccion(null, true);
+      if (this.dom.geoCard) this.dom.geoCard.hidden = true;
       this.dom.eessAds.value = 'Hospital de Apoyo Huarmey (00001741, II-1)';
       this.dom.eessCtrl.value = 'Hospital de Apoyo Huarmey (00001741, II-1)';
       this.dom.dxConfirmado.value = 'Sí';
@@ -846,6 +855,11 @@
       this.dom.sector.value = p.sector || p.sector_sanitario || '';
       if (!this.dom.sector.value) this.dom.sector.value = ''; // un sector GeoRIS («Sector 67») no está en la lista del padrón
       this.dom.direccion.value = (p.direccion && p.direccion !== 'Sin dirección consignada') ? p.direccion : '';
+      // Una ubicación ya confirmada (a mano, GPS o del sistema de origen) se muestra fija y no se recalcula
+      if (this.picker) this.picker.setPuntoPorDireccion(null, true);
+      this.geoConfirmada = (p.latitud != null && p.longitud != null && ['exacta', 'origen'].includes(p.precision_geo))
+        ? { lat: p.latitud, lng: p.longitud, precision_geo: p.precision_geo, geo_fuente: p.geo_fuente, geo_precision_m: p.geo_precision_m, manual: true, preexistente: true }
+        : null;
       this.actualizarVistaGeo();
       this.dom.eessAds.value = p.establecimiento_adscripcion || 'Hospital de Apoyo Huarmey (00001741, II-1)';
       this.dom.eessCtrl.value = p.establecimiento_control || p.puerta_entrada || 'Hospital de Apoyo Huarmey (00001741, II-1)';
@@ -1039,33 +1053,80 @@
      */
     textoPrecision(prec) {
       return ({
-        exacta: 'exacta', origen: 'del sistema de origen', cuadra: 'aproximada a la cuadra (±50 m)',
+        exacta: 'exacta (confirmada)', origen: 'del sistema de origen', cuadra: 'aproximada a la cuadra (±50 m)',
         calle: 'aproximada: sobre la calle', sector: 'aproximada: centro del sector', localidad: 'aproximada: centro de la localidad'
       })[prec] || 'sin ubicar';
     }
 
-    /** Muestra debajo de la dirección dónde quedará el paciente y con qué precisión, antes de guardar. */
+    /**
+     * Muestra debajo de la dirección dónde quedará el paciente y con qué precisión, y la tarjeta con el mapa
+     * y el marcador arrastrable para confirmarlo o corregirlo en el momento (cuando el mapa está disponible).
+     */
     actualizarVistaGeo() {
       const box = this.dom.geoPreview;
       if (!box) return;
       const direccion = this.dom.direccion.value.trim();
       const sector = this.dom.sector.value;
       const geocoder = window.AncashGeocoder;
-      if (!direccion || !geocoder) { box.innerHTML = ''; box.className = 'reg-geo-preview'; return; }
-      const g = geocoder.resolverUbicacion({ direccion, sector });
       const esc = (t) => String(t === undefined || t === null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      const confirmada = this.geoConfirmada || (this.picker && this.picker.getValor() && this.picker.getValor().manual ? this.picker.getValor() : null);
+
+      if (!direccion && !confirmada) {
+        box.innerHTML = ''; box.className = 'reg-geo-preview';
+        if (this.dom.geoCard) this.dom.geoCard.hidden = true;
+        return;
+      }
+      const g = geocoder && direccion ? geocoder.resolverUbicacion({ direccion, sector }) : { matched: false };
+
+      // Tarjeta con mapa: solo si Leaflet está disponible (si no, queda la vista previa en texto)
+      const puedeMapa = typeof L !== 'undefined' && window.UbicacionPicker && this.dom.geoCard && this.dom.geoMapa;
+      if (puedeMapa) {
+        this.dom.geoCard.hidden = false;
+        if (!this.picker) {
+          try {
+            this.picker = window.UbicacionPicker.crear(this.dom.geoMapa, {
+              onChange: (v) => {
+                if (v && v.manual && !v.preexistente) this.geoConfirmada = null; // el picker manda
+                if (v && !v.manual) this.geoConfirmada = null;
+                this.pintarTextoGeo(v, this._ultimoGeo);
+              }
+            });
+          } catch (e) { this.picker = null; }
+        }
+        if (this.picker) {
+          this.picker.refrescar();
+          if (this.geoConfirmada && !(this.picker.getValor() && this.picker.getValor().manual)) this.picker.setConfirmada(this.geoConfirmada);
+          this._ultimoGeo = g;
+          this.picker.setPuntoPorDireccion(g.matched ? g : null);
+        }
+      }
+      this._ultimoGeo = g;
+      this.pintarTextoGeo(this.picker ? this.picker.getValor() : confirmada, g);
+    }
+
+    /** Texto de la vista previa: confirmado a mano, aproximado por dirección o no ubicado */
+    pintarTextoGeo(valor, g) {
+      const box = this.dom.geoPreview;
+      if (!box) return;
+      const esc = (t) => String(t === undefined || t === null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      if (valor && valor.manual) {
+        box.className = 'reg-geo-preview geo-ok';
+        box.innerHTML = `📍 <b>Ubicación ${esc(this.textoPrecision(valor.precision_geo || 'exacta'))}</b> · ${valor.geo_fuente === 'gps_dispositivo' ? 'tomada con GPS' : (valor.preexistente ? 'confirmada anteriormente' : 'confirmada en el mapa')}`;
+        return;
+      }
+      g = g || {};
       if (!g.matched) {
         box.className = 'reg-geo-preview geo-sin';
-        box.innerHTML = '📍 <b>No se reconoce esta dirección.</b> Pregunte el nombre de la calle y el número, o el asentamiento humano y una referencia cercana (colegio, mercado, posta). Si no se reconoce, el paciente quedará «sin ubicar».';
+        box.innerHTML = '📍 <b>No se reconoce esta dirección.</b> Pregunte el nombre de la calle y el número, o el asentamiento humano y una referencia cercana (colegio, mercado, posta). Si conoce el lugar, márquelo en el mapa; si no, quedará «sin ubicar».';
         return;
       }
       const bueno = g.precision_geo === 'exacta' || g.precision_geo === 'cuadra';
       box.className = `reg-geo-preview ${bueno ? 'geo-ok' : 'geo-aprox'}`;
-      const sugerencia = g.precision_geo === 'calle' ? ' Pida el número de puerta para ubicarlo en su cuadra.'
-        : (g.precision_geo === 'sector' || g.precision_geo === 'localidad') ? ' Pida el nombre de la calle y el número para afinar.' : '';
+      const sugerencia = g.precision_geo === 'calle' ? 'Pida el número de puerta para ubicarlo en su cuadra.'
+        : (g.precision_geo === 'sector' || g.precision_geo === 'localidad') ? 'Pida el nombre de la calle y el número para afinar.' : '';
       box.innerHTML = `📍 <b>Ubicación ${esc(this.textoPrecision(g.precision_geo))}</b>${g.toponym ? ` · ${esc(g.toponym)}` : ''}${g.sector ? ` · ${esc(g.sector)}` : ''}` +
         `${g.detalle_geo ? `<br><span class="geo-detalle">${esc(g.detalle_geo)}</span>` : ''}${g.sector_incierto ? '<br><span class="geo-detalle">La calle cruza más de un sector GeoRIS: el sector es aproximado.</span>' : ''}` +
-        `${sugerencia ? `<br><span class="geo-detalle">${esc(sugerencia.trim())}</span>` : ''}`;
+        `${sugerencia ? `<br><span class="geo-detalle">${esc(sugerencia)}</span>` : ''}`;
     }
 
     async commitSave() {
@@ -1115,9 +1176,14 @@
         const calc = calculadora.calcularPadron(formData);
         // La ubicación sale de la dirección + el sector declarado; sin coincidencia queda «sin ubicar» (no se inventa)
         const geocoder = window.AncashGeocoder || null;
-        const geo = geocoder
+        let geo = geocoder
           ? geocoder.resolverUbicacion({ direccion, sector })
           : { lat: null, lng: null, precision_geo: null, geo_fuente: null, matched: false };
+        // Si se confirmó en el mapa (o con GPS), esa ubicación manda sobre la calculada con la dirección
+        const manual = this.geoConfirmada || (this.picker && this.picker.getValor() && this.picker.getValor().manual ? this.picker.getValor() : null);
+        if (manual) {
+          geo = { lat: manual.lat, lng: manual.lng, precision_geo: manual.precision_geo || 'exacta', geo_fuente: manual.geo_fuente || 'mapa_manual', geo_precision_m: manual.geo_precision_m || null, matched: true };
+        }
 
         const pas = parseInt(this.dom.pasHoy.value, 10) || null;
         const pad = parseInt(this.dom.padHoy.value, 10) || null;
@@ -1147,6 +1213,7 @@
           longitud: geo.lng,
           precision_geo: geo.precision_geo || undefined,
           geo_fuente: geo.geo_fuente || undefined,
+          geo_precision_m: geo.geo_precision_m || undefined,
           conditions: [],
           observations: (this.currentPatient?.observations ? [...this.currentPatient.observations] : []),
           appointments: (this.currentPatient?.appointments ? [...this.currentPatient.appointments] : [])

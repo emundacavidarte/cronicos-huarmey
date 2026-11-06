@@ -163,6 +163,37 @@ closeDb();
         const sum = (await call('GET', '/api/alerts/summary', token)).json;
         assert.strictEqual(sum.geo.sin_ubicacion, geo.resumen_geo.sin_ubicacion);
       });
+      await step('PUT /api/patients/:id/ubicacion confirma la vivienda (exacta, con quién) y una recarga del Excel no la pisa', async () => {
+        const r = await call('PUT', '/api/patients/pac-geo-2/ubicacion', token, { latitud: -10.0712, longitud: -78.1489, geo_fuente: 'mapa_manual' });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.json));
+        assert.strictEqual(r.json.data.precision_geo, 'exacta');
+        assert.strictEqual(r.json.data.geo_confirmado_por, 'admin');
+        assert.ok(r.json.data.sector_georis, 'calcula el sector GeoRIS');
+        // Recarga del padrón con la misma dirección y una ubicación aproximada del geocodificador del navegador
+        await call('POST', '/api/padron/importar-lote', token, { patients: [
+          { id: 'pac-geo-2', dni: '92000002', direccion: 'Pje Primavera s/n', latitud: -10.0689, longitud: -78.1524, precision_geo: 'sector', geo_fuente: 'geocodificador' }
+        ] });
+        const geo = (await call('GET', '/api/patients/geo', token)).json;
+        const f = geo.features.find(x => x.properties.id === 'pac-geo-2');
+        assert.ok(f, 'ahora tiene pin');
+        assert.deepStrictEqual(f.geometry.coordinates, [-78.1489, -10.0712]);
+        assert.strictEqual(f.properties.precision_geo, 'exacta');
+      });
+      await step('PUT /ubicacion rechaza coordenadas fuera de Áncash o intercambiadas (400) y sin sesión (401)', async () => {
+        assert.strictEqual((await call('PUT', '/api/patients/pac-geo-1/ubicacion', token, { latitud: -12.05, longitud: -77.04 })).status, 400);
+        assert.strictEqual((await call('PUT', '/api/patients/pac-geo-1/ubicacion', token, { latitud: -78.15, longitud: -10.07 })).status, 400);
+        assert.strictEqual((await call('PUT', '/api/patients/pac-geo-1/ubicacion', null, { latitud: -10.07, longitud: -78.15 })).status, 401);
+        assert.strictEqual((await call('PUT', '/api/patients/no-existe/ubicacion', token, { latitud: -10.07, longitud: -78.15 })).status, 404);
+      });
+      await step('El registrante de una ubicación confirmada sale de la sesión, no del cuerpo', async () => {
+        await call('POST', '/api/padron/importar-lote', token, { patients: [
+          { id: 'pac-geo-3', dni: '92000003', apellidos_nombres: 'PACIENTE INVENTADO GEO TRES', direccion: 'Jr. Bolognesi 120', latitud: -10.0667, longitud: -78.1541, precision_geo: 'exacta', geo_fuente: 'mapa_manual', geo_confirmado_por: 'otra.persona' }
+        ] });
+        const lista = (await call('GET', '/api/cronicos', token)).json;
+        const p = lista.find(x => x.id === 'pac-geo-3');
+        assert.strictEqual(p.geo_confirmado_por, 'admin');
+        assert.strictEqual(p.precision_geo, 'exacta');
+      });
     } finally {
       await srv.stop();
     }

@@ -822,10 +822,14 @@ class MapManager {
     }
     const el = this._geoResumenControl.getContainer();
     if (!el) return;
+    const puedeRevisar = !!(window.RevisarUbicacionModal && window.app && window.app.permisos && window.app.permisos().escribir);
     el.innerHTML = `📍 <b>${enMapa}</b> en el mapa` +
       (aprox ? ` · <b>${aprox}</b> aproximados <span title="Ubicados por dirección: cuadra, calle, sector o localidad. Borde discontinuo.">(borde discontinuo)</span>` : '') +
       `<br><span class="${sinUbicar ? 'geo-sin-ubicar' : ''}">⚠ ${sinUbicar} sin ubicar</span>` +
-      (sinUbicar ? ' <span style="opacity:.8">(dirección no reconocida: no tienen pin)</span>' : '');
+      (sinUbicar ? ' <span style="opacity:.8">(dirección no reconocida: no tienen pin)</span>' : '') +
+      (puedeRevisar ? '<br><button type="button" class="geo-revisar-btn" data-accion="revisar-ubicaciones">Revisar ubicaciones</button>' : '');
+    const btn = el.querySelector('[data-accion="revisar-ubicaciones"]');
+    if (btn) btn.addEventListener('click', () => window.RevisarUbicacionModal.abrir());
   }
 
   /**

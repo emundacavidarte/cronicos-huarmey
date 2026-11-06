@@ -716,7 +716,7 @@
           const direccion = r.direccion || '';
           // Ubicación EXACTA si la matriz trae Latitud/Longitud (o «Coordenadas») válidas; si no, aproximada por dirección
           const geo = geocoder
-            ? geocoder.resolverUbicacion({ latitud: r.latitud, longitud: r.longitud, coordenadas: r.coordenadas_gps, direccion, fuente: 'matriz_excel' })
+            ? geocoder.resolverUbicacion({ latitud: r.latitud, longitud: r.longitud, coordenadas: r.coordenadas_gps, direccion, sector: r.sector, fuente: 'matriz_excel' })
             : { lat: null, lng: null, sector: null, precision_geo: null, geo_fuente: null, matched: false };
           if (geo.exacta) resumenGeo.exacta++;
           else if (geo.matched) resumenGeo.aproximada++;
@@ -848,6 +848,11 @@
             // El servidor es la fuente de verdad de la ubicación (no deja que una aproximación pise una ubicación exacta)
             if (typeof window.app.loadInitialData === 'function') await window.app.loadInitialData();
             window.app.showToast(`🎉 ¡Ingesta Exitosa! Se guardaron ${processedPatients.length} pacientes en el servidor. ${txtGeo}.`, 'success', 9000);
+            // Lista «por revisar»: si hay pacientes sin ubicar o solo con el centro del sector, se abre para corregirlos en el mapa
+            const porRevisar = processedPatients.filter(pp => !pp.precision_geo || ['sin_ubicacion', 'sector', 'localidad', 'calle'].includes(pp.precision_geo)).length;
+            if (porRevisar > 0 && window.RevisarUbicacionModal && window.app.permisos && window.app.permisos().escribir) {
+              setTimeout(() => window.RevisarUbicacionModal.abrir(), 600);
+            }
           } else if (backendErrorMsg) {
             window.app.showToast(`⚠️ Pacientes cargados en pantalla, pero el servidor reportó: ${backendErrorMsg}`, 'warning', 7000);
           } else {

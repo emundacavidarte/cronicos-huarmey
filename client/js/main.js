@@ -502,6 +502,10 @@ class App {
     });
     const modalPre = document.getElementById('modal-precita');
     if (modalPre) modalPre.classList.remove('active');
+    // Panel «Revisar ubicaciones»: nombra pacientes, se destruye al cerrar sesión
+    const modalUbic = document.getElementById('modal-revisar-ubicacion');
+    if (modalUbic) modalUbic.remove();
+    if (window.RevisarUbicacionModal) { window.RevisarUbicacionModal.el = null; window.RevisarUbicacionModal.picker = null; window.RevisarUbicacionModal.actual = null; window.RevisarUbicacionModal.hechos.clear(); }
     const avisos = document.getElementById('toast-container'); // un aviso de pre-cita puede nombrar a un paciente
     if (avisos) avisos.innerHTML = '';
     const lista = document.getElementById('patient-list');

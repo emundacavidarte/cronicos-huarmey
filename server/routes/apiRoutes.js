@@ -342,6 +342,28 @@ router.get('/indicadores/convenio', requireScope(ROLES_DASHBOARD), (req, res) =>
   res.json({ success: true, ...resultado });
 });
 
+// --- Ubicación de la vivienda confirmada a mano (G-06): marcador arrastrado en el mapa o GPS del dispositivo ---
+router.put('/patients/:id/ubicacion', requireScope(ROLES_ESCRITURA), (req, res) => {
+  const patient = db.getPatientByIdOrDni(String(req.params.id || '').trim().slice(0, 64));
+  if (!patient || !scope.canSeePatient(req.user, patient)) return res.status(404).json({ error: 'Paciente no encontrado' });
+  const denied = scope.checkWrite(req.user, [{ patients: [], observations: [{ patient_id: patient.id }] }]);
+  if (denied) return forbidden(res, denied);
+  const b = req.body || {};
+  const result = db.setUbicacionConfirmada(patient.id, { latitud: b.latitud, longitud: b.longitud, geo_fuente: b.geo_fuente, geo_precision_m: b.geo_precision_m }, { username: req.user.username, role: req.user.role });
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  const p = result.patient;
+  // Auditoría sin coordenadas (dato personal): solo quién, a quién y con qué fuente
+  db.addAuditLog('SISTEMA_LOCAL', 'UBICACION_CONFIRMADA', { patient_id: p.id, geo_fuente: p.geo_fuente }, req.auditContext);
+  res.json({
+    success: true,
+    data: {
+      patient_id: p.id, latitud: p.latitud, longitud: p.longitud, precision_geo: p.precision_geo, geo_fuente: p.geo_fuente,
+      geo_precision_m: p.geo_precision_m, sector_georis: p.sector_georis, sector_sanitario: p.sector_sanitario,
+      geo_confirmado_por: p.geo_confirmado_por, geo_confirmado_fecha: p.geo_confirmado_fecha
+    }
+  });
+});
+
 // --- Consentimiento para recordatorios por WhatsApp (A12, Ley N° 29733) ---
 router.put('/patients/:id/consentimiento', requireScope(ROLES_ESCRITURA), (req, res) => {
   const patient = db.getPatientByIdOrDni(String(req.params.id || '').trim().slice(0, 64));
@@ -641,6 +663,13 @@ router.post('/padron/importar-lote', requireScope(ROLES_ESCRITURA), (req, res) =
         // Campos numéricos que la ficha muestra: si no son números, se descartan (el semáforo y los días se recalculan)
         for (const campo of ['dias_restantes', 'dias_vencido', 'edad', 'frecuencia_hearts', 'fila_excel']) {
           if (p[campo] !== undefined && p[campo] !== null && p[campo] !== '' && !Number.isFinite(Number(p[campo]))) delete p[campo];
+        }
+        // Ubicación confirmada a mano en el registro (G-06): quién y cuándo salen de la sesión, nunca del cuerpo
+        delete p.geo_confirmado_por;
+        delete p.geo_confirmado_fecha;
+        if (p.geo_fuente === 'mapa_manual' || p.geo_fuente === 'gps_dispositivo') {
+          p.geo_confirmado_por = req.user.username;
+          p.geo_confirmado_fecha = new Date().toISOString();
         }
         // Consentimiento de WhatsApp (A12): quién y cuándo salen de la sesión; si ya estaba registrado igual, se conserva
         delete p.consentimiento_fecha;

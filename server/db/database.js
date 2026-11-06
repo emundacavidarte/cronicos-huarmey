@@ -713,6 +713,21 @@ class Database {
     return { ok: true, patient };
   }
 
+  /**
+   * Ubicación de la vivienda confirmada a mano (mapa o GPS). `registrante` sale del usuario autenticado.
+   * Devuelve { ok:true, patient } o { ok:false, error }.
+   */
+  setUbicacionConfirmada(idOrDni, datos, registrante) {
+    const pid = this.resolvePatientId(idOrDni);
+    const patient = this.patientByIdMap.get(String(pid));
+    if (!patient) return { ok: false, error: 'El paciente no existe' };
+    const r = geoPaciente.confirmarManual(patient, datos || {}, registrante);
+    if (!r.ok) return r;
+    this.invalidateCache();
+    this.scheduleSave();
+    return { ok: true, patient };
+  }
+
   // --- Línea de tiempo del paciente (A11): eventos, no historia clínica ---
 
   /**

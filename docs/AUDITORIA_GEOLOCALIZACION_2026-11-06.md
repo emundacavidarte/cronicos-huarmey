@@ -51,8 +51,28 @@ El catastro del repositorio (OpenStreetMap) **no tiene números de puerta, manza
 - «Mz B Lt 4 AH La Victoria» → centro del asentamiento (precisión «sector»);
 - una calle que no está en el catastro → sin ubicar, nunca un punto inventado.
 
-## 6. Decisiones pendientes (G-06)
+## 6. G-06: cómo funciona ahora (decisión del usuario del 06/11/2026: sin buscador externo)
 
-1. **Geocodificador externo** (tipo Google Maps o ArcGIS): se parece más a «buscar en Maps», pero envía direcciones a un tercero (Ley N.° 29733), exige clave de API e internet, y puede tener costo.
-2. **Plano de manzanas y lotes** (COFOPRI o municipalidad): es la única vía para ubicar «Mz B Lt 4» en su lote.
-3. **Tarjeta con mapa y marcador arrastrable** en el registro web para corregir en el momento, y lista «por revisar» después de cargar el Excel.
+No hay un plano de lotes en línea que se pueda usar. En la búsqueda no apareció ningún servicio público de COFOPRI con manzanas y lotes de Huarmey. COFOPRI menciona su plataforma Llaqta, pero sin un servicio abierto confirmado. Además, este entorno no tiene salida a esos servidores. Si la municipalidad o COFOPRI entregan un día el plano (shape o GeoJSON con manzana y lote), se agrega como un índice más, igual que las calles.
+
+**Carga del padrón Excel o de la historia clínica (HOSIX, Galenos, Pakamuros, FHIR):** nadie anota coordenadas. Cada paciente se ubica solo con su **dirección y su sector**, en este orden:
+1. Calle del catastro + número de puerta → **cuadra** (±50 m).
+2. Calle sin número → **sobre la calle**.
+3. Asentamiento o caserío reconocido, o sector declarado → **centro del sector o de la localidad**.
+4. Nada reconocible → **sin ubicar** (sin pin, contado aparte).
+
+Al terminar la carga, el aviso dice cuántos quedaron en cada nivel. Si hay pendientes, se abre **«Revisar ubicaciones»**.
+
+**Registro directo en la web:** al escribir la dirección aparecen la vista previa y una **tarjeta con el mapa y el marcador**. Si quien registra conoce el lugar, arrastra el marcador o hace clic en la vivienda, y la ubicación queda **«exacta (confirmada)»**. En la visita domiciliaria puede usar **«Usar mi GPS»**. Si no lo conoce, no toca nada y queda la ubicación por dirección.
+
+**«Revisar ubicaciones»** (botón en el contador del mapa): lista los pacientes sin ubicar y los aproximados. Se elige uno, se marca en el mapa y se guarda (`PUT /api/patients/:id/ubicacion`). Queda como exacta, con quién la confirmó y cuándo.
+
+**Protección:** una ubicación exacta (confirmada en el mapa o por GPS) o del sistema de origen **no la reemplaza** una carga posterior del Excel con la misma dirección. Si la dirección cambia (el paciente se mudó), sí se recalcula.
+
+## 7. Cómo comprobar la exactitud en campo
+
+1. Tomar entre 50 y 100 direcciones reales de distintos sectores, con el punto GPS en la puerta de la vivienda. Usar la plantilla `templates/muestra_control_geolocalizacion.csv`, que solo lleva dirección, sector y GPS: **sin nombres ni DNI**.
+2. Ejecutar `node tools/medir_exactitud_campo.js muestra.csv`. Da la mediana y el percentil 90 del error en metros, el porcentaje a ≤ 50, ≤ 100 y ≤ 250 m, y si la numeración de cuadras va en el sentido supuesto.
+3. Las calles que salgan «sin ubicar» o con el sentido invertido se corrigen en el diccionario (`ancashGeocoder.js`) y se vuelve a medir.
+
+Pruebas automáticas: `npm test` (19 suites) y `node server/tests/browser/testNavegadorGeo.js` (7 pasos en un navegador real: contador, vista previa, arrastre del marcador, guardado del registro, carga del Excel con apertura de «Revisar ubicaciones», corrección y guardado, sin errores de JavaScript).

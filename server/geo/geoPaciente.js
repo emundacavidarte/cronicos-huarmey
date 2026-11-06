@@ -112,6 +112,8 @@ function aplicar(reg, entrante, ctx) {
     reg.geo_fuente = entrante.geo_fuente === 'geocodificador' ? 'geocodificador' : (entrante.geo_fuente || 'origen');
     if (!validacion.motivo) delete reg.geo_alerta;
     delete reg.geo_motivo;
+    const pm = Number(entrante.geo_precision_m);
+    reg.geo_precision_m = Number.isFinite(pm) && pm > 0 && pm <= 5000 ? Math.round(pm) : null;
     aplicarSectorGeoris(reg);
     return reg;
   }
@@ -156,4 +158,32 @@ function aplicar(reg, entrante, ctx) {
   return reg;
 }
 
-module.exports = { validarEntrante, protegerExistente, aplicar, direccionReal, tieneCoordenadas, geocoder };
+const FUENTES_MANUALES = new Set(['mapa_manual', 'gps_dispositivo']);
+
+/**
+ * Ubicación confirmada a mano (panel «Revisar ubicaciones» o registro): exacta, con quién y cuándo.
+ * Devuelve { ok:true } o { ok:false, error }.
+ */
+function confirmarManual(reg, datos, registrante) {
+  const fuente = FUENTES_MANUALES.has(datos && datos.geo_fuente) ? datos.geo_fuente : 'mapa_manual';
+  const v = geocoder.validarCoordenadas(datos && datos.latitud, datos && datos.longitud);
+  if (!v.ok) return { ok: false, error: `Coordenadas no válidas para Áncash (${v.motivo})` };
+  reg.latitud = +v.lat.toFixed(6);
+  reg.longitud = +v.lng.toFixed(6);
+  reg.precision_geo = 'exacta';
+  reg.geo_fuente = fuente;
+  const pm = Number(datos.geo_precision_m);
+  reg.geo_precision_m = Number.isFinite(pm) && pm > 0 && pm <= 5000 ? Math.round(pm) : null;
+  reg.geo_confirmado_por = registrante && registrante.username ? String(registrante.username) : null;
+  reg.geo_confirmado_fecha = new Date().toISOString();
+  reg.geo_direccion_confirmada = reg.direccion || null;
+  delete reg.geo_alerta;
+  delete reg.geo_motivo;
+  reg.geo_detalle = null;
+  reg.sector_incierto = false;
+  aplicarSectorGeoris(reg);
+  if (!reg.sector_sanitario) reg.sector_sanitario = reg.sector_georis;
+  return { ok: true };
+}
+
+module.exports = { validarEntrante, protegerExistente, aplicar, confirmarManual, direccionReal, tieneCoordenadas, geocoder };
