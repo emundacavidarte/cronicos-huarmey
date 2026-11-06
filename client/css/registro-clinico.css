@@ -471,3 +471,46 @@
     border-top: 1px solid #e2e8f0;
   }
 }
+
+/* Fase 3 (P3-01, P3-08, K3-04): pista del último control, propuesta de cita y aviso del intervalo */
+.reg-pista {
+  grid-column: 1 / -1;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.reg-pista[hidden] {
+  display: none;
+}
+
+.reg-pista-cita {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+.reg-aviso-cita {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #9a3412;
+  background: #ffedd5;
+  border: 1px solid #fdba74;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-top: 4px;
+}
+
+.reg-aviso-cita[hidden] {
+  display: none;
+}
+
+.reg-estado-control {
+  font-weight: 700;
+  margin-top: 2px;
+}
