@@ -8,10 +8,20 @@
  * IP02, IP03 e IP04; Anexo 04 (CIE-10 de HTA y DM). El periodo de medición es enero a agosto de 2026.
  *
  * Límites declarados (el prototipo no tiene los registros del SIS):
- *  - "Atendido" = paciente con al menos un control con fecha dentro del periodo en los datos del prototipo.
+ *  - "Atendido" (denominador de IP02, IP03 e IP04) = paciente con un control o un examen con fecha dentro del periodo,
+ *    en los datos del prototipo. Control = presión mensual del padrón, observación fechada, evento de tipo «control» o
+ *    fecha del último control. Examen = HbA1c, creatinina o albuminuria. Antes esta cabecera decía solo «al menos un
+ *    control»; el cálculo siempre contó también los exámenes (hallazgo K3-11 de la Fase 3).
  *  - Las presiones mensuales del padrón no traen día: dos controles cuentan si caen en meses distintos.
  *  - Un dato sin fecha no cuenta.
  *  - El control HEARTS y el telemonitoreo se miden sobre el año completo del periodo; IP02, IP03 e IP04, sobre enero a agosto.
+ *
+ * Definiciones por cerrar (el cálculo NO se cambió en la Fase 4b; cada una espera la respuesta de la licenciada de
+ * crónicos o el texto del convenio, y el módulo sigue haciendo hoy lo que dicen estas líneas):
+ *  [PENDIENTE: ¿«atendido» para IP02, IP03 e IP04 es solo un control, o también un examen de HbA1c, creatinina o albuminuria? Hoy cuenta los dos (pregunta 19; ficha IP04 del convenio, corpus no conectado)]
+ *  [PENDIENTE: ¿la hipertensión renovascular I15.0 entra al indicador? Hoy esHta() la deja fuera «según el Anexo 04», pero el padrón admite I10-I15 (pregunta 19; contrastar con el Anexo 04 del convenio)]
+ *  [PENDIENTE: ¿«Cambió de residencia» y «Abandono (solo después de intentar contactarlo)» salen del denominador? Hoy solo sale el fallecido (activo()) (pregunta 16)]
+ *  [PENDIENTE: las columnas pas_ene a pas_dic del padrón no tienen año; el periodo por defecto es 2026 y se asume ese año para todas las presiones mensuales: en enero de 2027 el padrón no distinguirá un año de otro (hallazgo K3-11 d; por definir con la licenciada y el SIS)]
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {

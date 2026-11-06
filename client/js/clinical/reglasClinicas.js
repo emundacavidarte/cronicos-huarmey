@@ -25,10 +25,15 @@
   const REGLAS = Object.freeze({
     // P4: meta de PA para todos (vía HEARTS, PP 0018, manual HIS e IP04: < 140/90)
     META_PA: Object.freeze({ sistolica: 140, diastolica: 90 }),
-    // P4-P6: meta en alto riesgo (DM, ERC, ECV o riesgo CV >= RIESGO_CV_ALTO_PORC). Guía interna: < 130/80.
-    // La vía fija solo la sistólica < 130; la diastólica < 80 viene de la guía interna (P5).
-    META_PA_ALTO_RIESGO: Object.freeze({ sistolica: 130, diastolica: 80 }),
+    // P4-P6: meta en alto riesgo (DM, ERC, ECV o riesgo CV >= RIESGO_CV_ALTO_PORC). La vía HEARTS fija SOLO la sistólica < 130 y no
+    // una diastólica distinta de la general (< 90). La guía interna decía < 130/80 (06/11/2026: se alineó con la vía).
+    // [PENDIENTE: confirmar con el texto íntegro de la vía HEARTS; si exige < 80, es cambiar este 90.]
+    META_PA_ALTO_RIESGO: Object.freeze({ sistolica: 130, diastolica: 90 }),
     RIESGO_CV_ALTO_PORC: 10,
+    // P6: cortes de nivel de riesgo CV (< 5 bajo, 5-9 moderado, 10-19 alto, >= 20 muy alto) y metas de LDL (mg/dL).
+    // La guía interna y la vía no los traen: están como los tenía el sistema, pendientes de la tabla que use el programa.
+    RIESGO_CV_CORTES: Object.freeze({ moderado: 5, alto: 10, muyAlto: 20 }),
+    LDL_META: Object.freeze({ altoRiesgo: 70, otros: 100 }),
     // P7: HbA1c < 7 % (vía HEARTS). La guía interna decía <= 7,0: hay que corregir la guía o confirmar.
     HBA1C_META: 7.0,
     // P7: glucemia 70-130 (PP 0018 2026). Con HbA1c y glucemia a la vez se exigen AMBAS (más estricto que el «o» del PP 0018).

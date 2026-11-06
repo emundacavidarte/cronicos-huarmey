@@ -1,109 +1,108 @@
 /**
  * heartsEngine.js
  * Motor Clínico de Inteligencia Sanitaria basado en la Iniciativa HEARTS (MINSA / OPS)
- * Reglas de periodicidad de citas (30 vs 90 días) y semáforo de riesgo para HTA y DM2.
+ * Reglas de periodicidad de citas (30 vs 90 días) y semáforo de riesgo para HTA y diabetes.
+ *
+ * Fase 3 (T3-02, K3-07): este módulo ya no tiene lógica propia de meta, estado de control, diagnósticos ni fechas.
+ *   - metas, diagnósticos, estado de control, frecuencia y fechas: reglasClinicas.js (ReglasClinicas)
+ *   - semáforo (color, días, fallecidos, HOSIX, cita cumplida): semaforo.js (SemaforoHearts)
+ * Ambos se cargan antes en index.html; en Node se obtienen con require.
  */
-
-class HeartsEngine {
-  /**
-   * Evalúa la condición de un paciente bajo el protocolo HEARTS
-   * @param {Object} patient Objeto paciente con condiciones, citas y observaciones
-   */
-  evaluatePatient(patient) {
-    const conditions = patient.conditions || [];
-    const observations = patient.observations || [];
-    const appointments = patient.appointments || [];
-
-    // 1. Diagnósticos prioritarios
-    const hasHta = conditions.some(c => c.cie10_cod?.startsWith('I10') || c.diagnostico?.toLowerCase().includes('hipertens'));
-    const hasDm2 = conditions.some(c => c.cie10_cod?.startsWith('E11') || c.diagnostico?.toLowerCase().includes('diabet'));
-
-    // 2. Última observación clínica (Presión Arterial / HbA1c)
-    const latestObs = observations.sort((a,b) => new Date(b.fecha_registro) - new Date(a.fecha_registro))[0];
-    
-    let isControlado = false;
-    let pas = latestObs?.pa_sistolica ?? patient.pa_sistolica ?? null;
-    let pad = latestObs?.pa_diastolica ?? patient.pa_diastolica ?? null;
-    let hba1c = latestObs?.hba1c ?? patient.hba1c ?? null;
-    let glucosa = latestObs?.glucosa ?? patient.glucosa ?? null;
-    const hasAnyVital = (pas !== null && pad !== null) || hba1c !== null || glucosa !== null;
-
-    if (patient.fallecido) {
-      isControlado = false;
-    } else if (latestObs && latestObs.estado_control === 'Controlado' && hasAnyVital) {
-      isControlado = true;
-    } else if (latestObs && (latestObs.estado_control === 'No Controlado' || latestObs.estado_control === 'Sin Datos de Control en Padrón')) {
-      isControlado = false;
-    } else if (hasAnyVital) {
-      // Evaluación estricta por umbrales clínicos HEARTS: PA < 140/90, HbA1c < 7.0% y Glucosa 70-130 mg/dL
-      const paOk = (pas !== null && pad !== null) ? (pas < 140 && pad < 90) : !hasHta;
-      let gluOk = true;
-      if (hasDm2) {
-        if (hba1c !== null && glucosa !== null) gluOk = (hba1c < 7.0 && glucosa >= 70 && glucosa <= 130);
-        else if (hba1c !== null) gluOk = (hba1c < 7.0);
-        else if (glucosa !== null) gluOk = (glucosa >= 70 && glucosa <= 130);
-        else gluOk = false;
-      }
-      isControlado = paOk && gluOk;
-    }
-
-    // 3. Periodicidad oficial HEARTS: 30 días si NO controlado; 90 días si CONTROLADO
-    const frecuenciaDias = isControlado ? 90 : 30;
-
-    // 4. Última cita o cita programada
-    const sortedAppts = [...appointments].sort((a,b) => new Date(b.fecha_cita) - new Date(a.fecha_cita));
-    const latestAppt = sortedAppts[0];
-
-    let semaforo = 'gray';
-    let diasRestantes = null;
-    let diasVencido = 0;
-    let fechaLimite = null;
-
-    if (latestAppt && latestAppt.fecha_cita) {
-      fechaLimite = new Date(latestAppt.fecha_cita);
-      const hoy = new Date();
-      // Reset horas para cálculo exacto de días
-      hoy.setHours(0,0,0,0);
-      fechaLimite.setHours(0,0,0,0);
-
-      const diffMs = fechaLimite.getTime() - hoy.getTime();
-      diasRestantes = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-      if (diasRestantes > 7) {
-        semaforo = 'green'; // Control Vigente
-      } else if (diasRestantes >= 0) {
-        semaforo = 'yellow'; // Próximo a vencer (a 7 días o menos)
-      } else {
-        semaforo = 'red'; // Vencido / Inasistente (Deserción)
-        diasVencido = Math.abs(diasRestantes);
-      }
-    }
-
-    // 5. Recomendación de adscripción territorial
-    let recomendacion = "Control hospitalario regular en Hospital II-1 Huarmey.";
-    if (isControlado && (patient.puerta_entrada && !patient.puerta_entrada.includes('HOSPITAL'))) {
-      recomendacion = `Paciente controlado en meta HEARTS. Candidato para contrarreferencia y recojo trimestral de medicación en su puerta de entrada: ${patient.puerta_entrada}.`;
-    } else if (!isControlado) {
-      recomendacion = `Paciente no controlado (PA: ${pas || '--'}/${pad || '--'}). Requiere control mensual a los 30 días y ajuste terapéutico en Medicina Interna.`;
-    }
-
-    return {
-      hasHta,
-      hasDm2,
-      estado_control: isControlado ? 'Controlado' : 'No Controlado',
-      frecuencia_hearts: frecuenciaDias,
-      semaforo,
-      dias_restantes: diasRestantes,
-      dias_vencido: diasVencido,
-      fecha_limite: fechaLimite ? fechaLimite.toISOString().split('T')[0] : 'Sin fecha',
-      recomendacion
-    };
+(function (root) {
+  const enNode = typeof module !== 'undefined' && module.exports;
+  const R = enNode ? require('./reglasClinicas') : root.ReglasClinicas;
+  const SemaforoHearts = enNode ? require('./semaforo') : root.SemaforoHearts;
+  if (!R || !SemaforoHearts) {
+    throw new Error('Motor clínico incompleto: reglasClinicas.js y semaforo.js deben cargarse antes que heartsEngine.js');
   }
-}
 
-// Exportación
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = new HeartsEngine();
-} else {
-  window.HeartsEngine = new HeartsEngine();
-}
+  class HeartsEngine {
+    /**
+     * Evalúa la condición de un paciente bajo el protocolo HEARTS. No modifica al paciente ni sus listas.
+     * @param {Object} patient Objeto paciente con condiciones, citas y observaciones
+     * @param {Date} [hoy] fecha de referencia (por defecto, hoy); solo para pruebas
+     */
+    evaluatePatient(patient, hoy) {
+      const p = patient || {};
+      const observations = Array.isArray(p.observations) ? p.observations.filter(o => o && typeof o === 'object') : [];
+
+      // 1. Diagnósticos (I10-I15, E10-E14) y banderas de alto riesgo, siempre por reglasClinicas
+      const perfil = R.perfilClinico(p);
+
+      // 2. Mediciones: la observación más reciente por fecha (en una copia: la lista del paciente no se reordena)
+      //    Ante igual fecha gana la que está más adelante en la lista (misma regla que semaforo.js: ultimaPorFecha).
+      const porFecha = observations
+        .map((o, i) => { const f = R.parseFechaLocal(o.fecha_registro); return { o, i, t: f ? f.getTime() : -Infinity }; })
+        .sort((a, b) => (a.t === b.t ? b.i - a.i : (b.t > a.t ? 1 : -1)))
+        .map(x => x.o);
+      const latestObs = porFecha[0];
+      const elegir = (a, b) => (R.tieneValor(a) ? a : (R.tieneValor(b) ? b : null));
+      const med = {
+        pas: elegir(latestObs && latestObs.pa_sistolica, p.pa_sistolica),
+        pad: elegir(latestObs && latestObs.pa_diastolica, p.pa_diastolica),
+        hba1c: elegir(latestObs && latestObs.hba1c, p.hba1c),
+        glucosa: elegir(latestObs && latestObs.glucosa, p.glucosa)
+      };
+
+      // 3. Estado de control: sale de las MEDICIONES (K3-01). La etiqueta guardada solo cuenta si no hay ninguna medición,
+      //    y entonces solo en la dirección segura: «No Controlado». Nunca «Controlado» sin mediciones.
+      let estado = R.estadoControl(med, perfil);
+      if (estado === R.SIN_DATOS) {
+        const etiqueta = elegir(latestObs && latestObs.estado_control, p.estado_control);
+        if (etiqueta === 'No Controlado') estado = 'No Controlado';
+      }
+
+      // 4. «Estable» = las últimas REGLAS.CONTROLES_PARA_ESTABLE observaciones están en meta, cada una por sí sola (K3-05)
+      const n = R.REGLAS.CONTROLES_PARA_ESTABLE;
+      let estable = false;
+      if (estado === 'Controlado' && porFecha.length >= n) {
+        estable = porFecha.slice(0, n).every((o, i) => R.estadoControl(
+          i === 0 ? med : { pas: o.pa_sistolica, pad: o.pa_diastolica, hba1c: o.hba1c, glucosa: o.glucosa },
+          perfil
+        ) === 'Controlado');
+      }
+
+      // 5. Periodicidad HEARTS: 30 días si no está controlado; 90 solo si está controlado Y estable
+      const frecuencia = R.frecuenciaDias(estado, estable);
+
+      // 6. Semáforo: única implementación en semaforo.js (fechas locales, fallecidos, HOSIX, cita cumplida)
+      const sem = SemaforoHearts.calcularSemaforo({ ...p, observations }, hoy);
+
+      // 7. Recomendación de adscripción territorial
+      let recomendacion = 'Control hospitalario regular en Hospital II-1 Huarmey.';
+      const valorPA = (v) => (v === null || v === undefined ? '--' : v);
+      if (R.esFallecido(p)) {
+        recomendacion = 'Paciente fallecido: no se programan controles ni recordatorios.';
+      } else if (estado === 'Controlado') {
+        if (!estable) {
+          recomendacion = `Paciente en meta en la última medición; completar ${n} controles en meta para pasar al control cada ${R.REGLAS.DIAS_CONTROLADO} días.`;
+        } else if (p.puerta_entrada && !String(p.puerta_entrada).includes('HOSPITAL')) {
+          recomendacion = `Paciente controlado en meta HEARTS. Candidato para contrarreferencia y recojo trimestral de medicación en su puerta de entrada: ${p.puerta_entrada}.`;
+        }
+      } else if (estado === 'No Controlado') {
+        recomendacion = `Paciente no controlado (PA: ${valorPA(med.pas)}/${valorPA(med.pad)}). Requiere control mensual a los ${R.REGLAS.DIAS_NO_CONTROLADO} días y ajuste terapéutico en Medicina Interna.`;
+      } else {
+        recomendacion = 'Sin mediciones registradas: tomar presión arterial y glucemia para evaluar el control.';
+      }
+
+      return {
+        hasHta: perfil.hta,
+        hasDm2: perfil.dm,
+        estado_control: estado,
+        frecuencia_hearts: frecuencia,
+        semaforo: sem.semaforo,
+        dias_restantes: sem.dias_restantes,
+        dias_vencido: sem.dias_vencido,
+        fecha_limite: sem.fecha_limite,
+        recomendacion
+      };
+    }
+  }
+
+  // Exportación
+  if (enNode) {
+    module.exports = new HeartsEngine();
+  } else {
+    root.HeartsEngine = new HeartsEngine();
+  }
+})(typeof window !== 'undefined' ? window : this);

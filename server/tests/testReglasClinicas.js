@@ -44,7 +44,7 @@ step('hipertenso 120/70 → Controlado; 140/90 → No Controlado (el corte es < 
   assert.strictEqual(R.estadoControl({ pas: 140, pad: 80 }, perfil({ hta: true })), 'No Controlado');
   assert.strictEqual(R.estadoControl({ pas: 130, pad: 90 }, perfil({ hta: true })), 'No Controlado');
 });
-step('K3-07: una sola meta para el paciente: DM2 con 135/85 es No Controlado en TODOS los módulos (130/80 en alto riesgo)', () => {
+step('K3-07: una sola meta para el paciente: DM2 con 135/85 es No Controlado en TODOS los módulos (sistólica < 130 en alto riesgo)', () => {
   assert.strictEqual(R.estadoControl({ pas: 135, pad: 85, hba1c: 6.5 }, perfil({ dm: true, hta: true })), 'No Controlado');
   assert.strictEqual(R.metaPA(perfil({ dm: true })).sistolica, 130);
   assert.strictEqual(R.metaPA(perfil({ hta: true })).sistolica, 140);
